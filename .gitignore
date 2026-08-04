@@ -11,3 +11,10 @@ local.properties
 # audition candidates stay local; the one the bundled asset is cut from is tracked
 media/*
 !media/freesound_community-singing-bowl-hit-3-33366.mp3
+
+# Signing material. A release key that reaches a remote is compromised and cannot be
+# rotated for an already-published app — it must never be committed in the first place.
+*.jks
+*.keystore
+keystore.properties
+signing.properties
