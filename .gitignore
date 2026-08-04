@@ -1,0 +1,9 @@
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+
+# machine-local Claude Code state, not project config
+.claude/settings.local.json
+.claude/*.tmp.*
