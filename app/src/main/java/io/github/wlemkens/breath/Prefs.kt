@@ -20,11 +20,20 @@ enum class SoundMode(val label: String) {
     SILENT("Silent"),
 }
 
+/** The built-in marker sounds, used when the user hasn't pointed a phase at their own mp3. */
+enum class MarkerTone(val label: String) {
+    BELL("Bell"),
+
+    /** Pitched by phase — see [markerHz]. */
+    GONG("Gong"),
+}
+
 @Serializable
 data class PhaseSound(
     val mode: SoundMode = SoundMode.WAVES,
-    /** content:// URI of the user's own mp3. Null falls back to a synthesized bell. */
+    /** content:// URI of the user's own mp3. Null falls back to a synthesized [tone]. */
     val markerUri: String? = null,
+    val tone: MarkerTone = MarkerTone.BELL,
 )
 
 @Serializable

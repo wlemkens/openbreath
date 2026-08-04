@@ -118,7 +118,8 @@ const val EDGE_MS = 500
  */
 const val EDGE_FLOOR_AT_PEAK = 0.3f
 
-private fun eased(p: Float) = ((1.0 - cos(PI * p)) / 2.0).toFloat()
+/** Raised cosine: 0 at 0, 1 at 1, flat at both ends. The app's one easing curve. */
+internal fun eased(p: Float) = ((1.0 - cos(PI * p)) / 2.0).toFloat()
 
 /**
  * Which phases end at the instant [from] gives way to [next]: [from] itself, plus every

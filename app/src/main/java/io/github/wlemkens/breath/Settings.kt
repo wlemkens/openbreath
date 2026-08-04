@@ -170,7 +170,8 @@ fun SettingsScreen(
                                 pickMp3.launch(arrayOf("audio/*"))
                             }) { Text(if (sound.markerUri == null) "Choose mp3" else "Change") }
                             Text(
-                                sound.markerUri?.let { context.displayName(Uri.parse(it)) } ?: "built-in bell",
+                                sound.markerUri?.let { context.displayName(Uri.parse(it)) }
+                                    ?: "built-in ${sound.tone.label.lowercase()}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.weight(1f),
@@ -179,6 +180,20 @@ fun SettingsScreen(
                                 TextButton(onClick = {
                                     editPreset { it.withSound(phase) { s -> s.copy(markerUri = null) } }
                                 }) { Text("Clear") }
+                            }
+                        }
+                        // only meaningful while no mp3 of their own is standing in for it
+                        if (sound.markerUri == null) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                MarkerTone.entries.forEach { tone ->
+                                    FilterChip(
+                                        selected = sound.tone == tone,
+                                        onClick = {
+                                            editPreset { it.withSound(phase) { s -> s.copy(tone = tone) } }
+                                        },
+                                        label = { Text(tone.label) },
+                                    )
+                                }
                             }
                         }
                     }

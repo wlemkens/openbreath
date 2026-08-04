@@ -7,3 +7,7 @@ local.properties
 # machine-local Claude Code state, not project config
 .claude/settings.local.json
 .claude/*.tmp.*
+
+# audition candidates stay local; the one the bundled asset is cut from is tracked
+media/*
+!media/freesound_community-singing-bowl-hit-3-33366.mp3

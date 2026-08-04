@@ -146,6 +146,28 @@ class SessionTest {
     }
 
     @Test
+    fun `the gong is low at the top of the breath and higher at the bottom`() {
+        // a slower playback rate is a lower pitch: the end of the in-hold leads into an
+        // exhale (downward), the end of the out-hold into an inhale (upward)
+        assertEquals(true, gongRate(Phase.HOLD_IN) < gongRate(Phase.HOLD_OUT))
+        // the bowl is used as recorded for the high tone, never sped up
+        assertEquals(1f, gongRate(Phase.HOLD_OUT), 1e-3f)
+        // and SoundPool only resamples within 0.5x..2x
+        assertEquals(true, gongRate(Phase.HOLD_IN) >= 0.5f)
+
+        // the inhale shares the in-hold's pitch, so a zero-length hold between them is one sound
+        assertEquals(gongRate(Phase.INHALE), gongRate(Phase.HOLD_IN), 1e-3f)
+        assertEquals(gongRate(Phase.EXHALE), gongRate(Phase.HOLD_OUT), 1e-3f)
+
+        // the bell rings identically wherever it is used
+        assertEquals(
+            markerRate(MarkerTone.BELL, Phase.HOLD_IN),
+            markerRate(MarkerTone.BELL, Phase.HOLD_OUT),
+            1e-3f,
+        )
+    }
+
+    @Test
     fun `an all zero timing is rejected rather than dividing by zero`() {
         assertThrows(IllegalArgumentException::class.java) { Timing(0, 0, 0, 0) }
         assertThrows(IllegalArgumentException::class.java) { Timing(inhaleMs = -1) }

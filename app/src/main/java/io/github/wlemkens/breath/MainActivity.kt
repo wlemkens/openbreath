@@ -133,7 +133,7 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
             if (config.vibrate) context.buzz()
             ended.filter { preset.soundOf(it).mode == SoundMode.MARKER }
                 // two phases ending on the same instant must not play the same sound twice
-                .distinctBy { preset.soundOf(it).markerUri }
+                .distinctBy { markers.soundIdOf(it, preset) }
                 .forEach { markers.play(it, preset) }
         }
 
