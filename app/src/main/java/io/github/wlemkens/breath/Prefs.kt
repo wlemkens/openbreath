@@ -83,6 +83,12 @@ data class Config(
     val cycles: Int = 20,
     val vibrate: Boolean = false,
     val muteNotifications: Boolean = false,
+    /**
+     * A bowl at the end of the session. On by default: the whole point of a timed meditation
+     * is not having to check whether it is over, and with your eyes shut a silent ending
+     * leaves you sitting there wondering.
+     */
+    val endSound: Boolean = true,
 ) {
     val active: Preset get() = presets[activeIndex]
 

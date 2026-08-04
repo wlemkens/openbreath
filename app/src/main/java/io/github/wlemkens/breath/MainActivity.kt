@@ -124,6 +124,9 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
         }
         if (config.muteNotifications) dnd.silence()
         markers.prepare(preset)
+        // starting again while the last session's bowl is still ringing would play the first
+        // breath over its tail
+        markers.stopSessionEnd()
 
         val base = elapsed
         var prev = phaseAt(base, timing)
@@ -151,9 +154,17 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
                 val now = withFrameNanos { it }
                 val e = base + (now - t0) / 1_000_000
                 if (e >= total) {
-                    // the final phase completed, plus any zero-length phase trailing it
-                    val opens = phaseAt(total, timing).phase
-                    boundaryCrossed(phasesEndingBetween(prev.phase, opens, timing))
+                    if (config.endSound) {
+                        // the session ending is the larger event; the final phase's own marker
+                        // on top of it would only muddy the moment. The buzz still belongs to
+                        // the phase boundary, so it stays.
+                        if (config.vibrate) context.buzz()
+                        markers.playSessionEnd()
+                    } else {
+                        // the final phase completed, plus any zero-length phase trailing it
+                        val opens = phaseAt(total, timing).phase
+                        boundaryCrossed(phasesEndingBetween(prev.phase, opens, timing))
+                    }
                     elapsed = total
                     running = false
                     break

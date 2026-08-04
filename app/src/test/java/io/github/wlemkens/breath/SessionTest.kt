@@ -186,5 +186,8 @@ class SessionTest {
         assertEquals(0, empty.activeIndex)
         // and a preset whose phases sum to zero still yields a usable timing
         assertEquals(Timing().cycleMs, Preset("bad", 0, 0, 0, 0).timing.cycleMs)
+        // the end-of-session bowl is on unless turned off; a silent ending leaves you
+        // sitting there not knowing whether it finished
+        assertEquals(true, Config().endSound)
     }
 }

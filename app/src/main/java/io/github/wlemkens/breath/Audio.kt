@@ -219,6 +219,8 @@ class PhaseMarkers(private val context: Context) {
     private val loaded = mutableMapOf<String, Int>()
     private val fades = Handler(Looper.getMainLooper())
     private var bowl = -1
+    private var endBowl = -1
+    private var endStream = 0
     private var bell: AudioTrack? = null
 
     init {
@@ -240,6 +242,14 @@ class PhaseMarkers(private val context: Context) {
         if (bowl < 0) {
             runCatching { bowl = pool.load(context, R.raw.singing_bowl, 1) }
                 .onFailure { Log.w(TAG, "could not load the singing bowl", it) }
+        }
+        // res/raw/session_end.mp3 is media/freesound_community-025535_singing-bowl-60767.mp3
+        // cut to 12 s with its fade baked in. The original runs 50 s, which would be nearly
+        // 5 MB of PCM in a SoundPool; unlike the phase gong this needs no fade in code —
+        // a session that is over can simply ring out.
+        if (endBowl < 0) {
+            runCatching { endBowl = pool.load(context, R.raw.session_end, 1) }
+                .onFailure { Log.w(TAG, "could not load the session end bowl", it) }
         }
         for (phase in Phase.entries) {
             val uri = preset.soundOf(phase).markerUri ?: continue
@@ -268,6 +278,24 @@ class PhaseMarkers(private val context: Context) {
             id != null -> pool.play(id, 1f, 1f, 1, 0, 1f)
             sound.tone == MarkerTone.GONG -> playBowl(gongRate(phase))
             else -> playBell()
+        }
+    }
+
+    /** The bowl that marks the end of a whole session. Rings out on its own; no fade needed. */
+    fun playSessionEnd() {
+        if (endBowl < 0) return
+        endStream = pool.play(endBowl, 1f, 1f, 1, 0, 1f)
+        if (endStream == 0) Log.w(TAG, "session end bowl id=$endBowl did not start")
+    }
+
+    /**
+     * Cuts the end bowl short. It rings for 12 s, which is long enough that starting another
+     * session would otherwise play the first breath over the tail of the last one.
+     */
+    fun stopSessionEnd() {
+        if (endStream != 0) {
+            pool.stop(endStream)
+            endStream = 0
         }
     }
 
@@ -308,6 +336,8 @@ class PhaseMarkers(private val context: Context) {
         bell?.release()
         bell = null
         bowl = -1
+        endBowl = -1
+        endStream = 0
         loaded.clear()
     }
 

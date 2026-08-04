@@ -264,6 +264,11 @@ fun SettingsScreen(
             }
         }
         item {
+            ToggleRow("Bowl at the end of the session", config.endSound) {
+                onChange(config.copy(endSound = it))
+            }
+        }
+        item {
             ToggleRow("Silence notifications", config.muteNotifications) {
                 onChange(config.copy(muteNotifications = it))
             }
