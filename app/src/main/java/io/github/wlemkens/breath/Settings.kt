@@ -6,6 +6,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -34,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     config: Config,
@@ -75,7 +78,12 @@ fun SettingsScreen(
 
         item { SectionLabel("Preset") }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // FlowRow, not Row: the preset count and their names are both user data, so a
+            // single line runs off the screen edge as soon as there are a few
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 config.presets.forEachIndexed { i, p ->
                     FilterChip(
                         selected = i == config.activeIndex,
@@ -86,7 +94,10 @@ fun SettingsScreen(
             }
         }
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 AssistChip(onClick = { renaming = true }, label = { Text("Rename") })
                 AssistChip(
                     onClick = {
