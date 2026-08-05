@@ -15,6 +15,16 @@ Functionality includes:
 - Some progress tracking, including streaks and badges
 - Alarm to remind you to take the exersises. Several alarms can be configured.
 
+  # Licensing
+  The code is MIT licensed — see LICENSE.
+
+  The bundled audio is **not** covered by that grant. `app/src/main/res/raw/*.mp3` are cuts
+  of the files in `media/`, which came from the `freesound_community` Pixabay account, and
+  their terms have not been confirmed. That normally means CC0 or the Pixabay Content
+  License rather than MIT. Worth settling before publishing, because whichever it is may
+  oblige us to ship an attribution notice in the app, and an MIT repo containing
+  third-party assets under unstated terms is a mismatch waiting to be noticed.
+
   # Details
   ## Sounds during the phases
   During hte breathing phases, there are different sound options available.
