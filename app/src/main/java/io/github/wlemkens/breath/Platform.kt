@@ -29,6 +29,17 @@ fun Context.buzz(ms: Long = 45L) {
  * afterwards. Does nothing at all unless the user has granted policy access, which only
  * they can do from system settings — see [notificationPolicyIntent].
  */
+/**
+ * What to put back once the meditation stops. UNKNOWN is a value the system may report but
+ * a no-op to write, and writing it would strand the phone in DND, so it becomes ALL.
+ */
+internal fun restorableFilter(current: Int) =
+    if (current == NotificationManager.INTERRUPTION_FILTER_UNKNOWN) {
+        NotificationManager.INTERRUPTION_FILTER_ALL
+    } else {
+        current
+    }
+
 class DndGuard(private val context: Context) {
     private var previous: Int? = null
 
@@ -40,7 +51,7 @@ class DndGuard(private val context: Context) {
     fun silence() {
         val manager = nm ?: return
         if (!manager.isNotificationPolicyAccessGranted || previous != null) return
-        previous = manager.currentInterruptionFilter
+        previous = restorableFilter(manager.currentInterruptionFilter)
         runCatching { manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALARMS) }
     }
 
