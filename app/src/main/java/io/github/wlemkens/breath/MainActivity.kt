@@ -73,11 +73,17 @@ private fun Breath(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val config by remember { context.configFlow() }.collectAsState(initial = null)
+    val goals by remember { context.goalsFlow() }.collectAsState(initial = null)
     var showSettings by remember { mutableStateOf(false) }
     var showLog by remember { mutableStateOf(false) }
     var showReminders by remember { mutableStateOf(false) }
+    var showGoals by remember { mutableStateOf(false) }
+    var showAchievements by remember { mutableStateOf(false) }
 
-    val current = config ?: return // first frame, before DataStore has read
+    // first frames, before DataStore has read. An empty list here would be a lie the goal screen
+    // could act on: saving a goal built on "no goals yet" writes over every goal there is
+    val current = config ?: return
+    val saved = goals ?: return
 
     when {
         showSettings -> SettingsScreen(
@@ -89,12 +95,24 @@ private fun Breath(modifier: Modifier = Modifier) {
 
         showLog -> LogScreen(onBack = { showLog = false }, modifier = modifier)
 
+        showGoals -> GoalsScreen(
+            goals = saved,
+            onChange = { scope.launch { context.saveGoals(it) } },
+            onBack = { showGoals = false },
+            modifier = modifier,
+        )
+
+        showAchievements ->
+            AchievementsScreen(saved, onBack = { showAchievements = false }, modifier = modifier)
+
         showReminders -> RemindersScreen(onBack = { showReminders = false }, modifier = modifier)
 
         else -> SessionScreen(
             current,
             onOpenSettings = { showSettings = true },
             onOpenLog = { showLog = true },
+            onOpenGoals = { showGoals = true },
+            onOpenAchievements = { showAchievements = true },
             onOpenReminders = { showReminders = true },
             modifier = modifier,
         )
@@ -106,6 +124,8 @@ fun SessionScreen(
     config: Config,
     onOpenSettings: () -> Unit,
     onOpenLog: () -> Unit,
+    onOpenGoals: () -> Unit,
+    onOpenAchievements: () -> Unit,
     onOpenReminders: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -252,12 +272,28 @@ fun SessionScreen(
                             onClick = { menuOpen = false; onOpenLog() },
                         )
                         DropdownMenuItem(
+                            text = { Text("Goals") },
+                            onClick = { menuOpen = false; onOpenGoals() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Achievements") },
+                            onClick = { menuOpen = false; onOpenAchievements() },
+                        )
+                        DropdownMenuItem(
                             text = { Text("Reminders") },
                             onClick = { menuOpen = false; onOpenReminders() },
                         )
                         DropdownMenuItem(
                             text = { Text("Settings") },
                             onClick = { menuOpen = false; onOpenSettings() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Feedback") },
+                            onClick = {
+                                menuOpen = false
+                                // a phone with nothing that opens links is not a crash
+                                runCatching { context.startActivity(feedbackIntent()) }
+                            },
                         )
                     }
                 }

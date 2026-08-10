@@ -375,7 +375,7 @@ private fun SecondsSlider(label: String, ms: Int, minMs: Int, maxMs: Int, onChan
 }
 
 @Composable
-private fun LabelledSlider(
+internal fun LabelledSlider(
     label: String,
     value: Float,
     range: ClosedFloatingPointRange<Float>,

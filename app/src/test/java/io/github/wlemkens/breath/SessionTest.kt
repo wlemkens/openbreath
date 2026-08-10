@@ -1,9 +1,13 @@
 package io.github.wlemkens.breath
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 class SessionTest {
     // 4s in, 2s hold, 6s out, 1s hold = 13s cycle
@@ -205,6 +209,87 @@ class SessionTest {
         assertEquals("4 – 7 – 8", entryFor(0L, 0L, Preset("4-7-8", 4000, 7000, 8000, 0)).pattern)
         // an entry from before timings were logged has nothing to show rather than "0 – 0"
         assertEquals("", Entry(1_000L, 60_000L, "Box 4").pattern)
+    }
+
+    @Test
+    fun `a goal counts only the sittings inside its own period, in its own unit`() {
+        val zone = ZoneId.of("Europe/Brussels")
+        val noon = ZonedDateTime.of(2026, 8, 12, 12, 0, 0, 0, zone)
+        val startOfDay = periodStartMs(GoalPeriod.DAY, noon)
+        val startOfWeek = periodStartMs(GoalPeriod.WEEK, noon)
+
+        val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
+        val log = listOf(
+            entryFor(startOfDay - 1, 600_000L, preset), // last night, inside the week only
+            entryFor(startOfDay + 1, 300_000L, preset),
+            entryFor(startOfDay + 2, 120_000L, preset),
+        )
+
+        fun goal(metric: GoalMetric) = Goal(id = 1, metric = metric)
+        // 5 + 2 minutes today; the ten from last night belong to yesterday
+        assertEquals(7, log.towards(goal(GoalMetric.MINUTES), startOfDay))
+        assertEquals(17, log.towards(goal(GoalMetric.MINUTES), startOfWeek))
+        assertEquals(2, log.towards(goal(GoalMetric.SITTINGS), startOfDay))
+        // 300s and 120s of an 11s breath: 27 and 10 whole ones
+        assertEquals(37, log.towards(goal(GoalMetric.BREATHS), startOfDay))
+        // reached is the whole of "did I manage it", and short of the target is not reached
+        assertTrue(Goal(id = 1, metric = GoalMetric.SITTINGS, target = 2).reached(2))
+        assertFalse(Goal(id = 1, metric = GoalMetric.SITTINGS, target = 3).reached(2))
+    }
+
+    @Test
+    fun `a streak counts back from now, and today's blank page does not break it`() {
+        val zone = ZoneId.of("Europe/Brussels")
+        val wednesdayNoon = ZonedDateTime.of(2026, 8, 12, 12, 0, 0, 0, zone)
+        val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
+        fun on(day: Int, hour: Int = 9) =
+            entryFor(ZonedDateTime.of(2026, 8, day, hour, 0, 0, 0, zone).toInstant().toEpochMilli(), 300_000L, preset)
+
+        // Monday and Tuesday sat, Wednesday not yet
+        val upToYesterday = listOf(on(10), on(11))
+        assertEquals(2, upToYesterday.streak(EVERY_DAY, wednesdayNoon))
+        // sitting today extends it rather than starting again
+        assertEquals(3, (upToYesterday + on(12)).streak(EVERY_DAY, wednesdayNoon))
+        // but a whole day missed ends it: Tuesday empty leaves only today
+        assertEquals(1, listOf(on(10), on(12)).streak(EVERY_DAY, wednesdayNoon))
+        // and nothing since Sunday means the run is over, not merely paused
+        assertEquals(0, listOf(on(9)).streak(EVERY_DAY, wednesdayNoon))
+    }
+
+    @Test
+    fun `a streak is of the goal being reached, not of sitting at all`() {
+        val zone = ZoneId.of("Europe/Brussels")
+        val wednesdayNoon = ZonedDateTime.of(2026, 8, 12, 12, 0, 0, 0, zone)
+        val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
+        fun on(day: Int, hour: Int, ms: Long) =
+            entryFor(ZonedDateTime.of(2026, 8, day, hour, 0, 0, 0, zone).toInstant().toEpochMilli(), ms, preset)
+
+        val tenADay = Goal(id = 1, metric = GoalMetric.MINUTES, period = GoalPeriod.DAY, target = 10)
+        // Monday reached in two sittings; Tuesday sat, but only for six minutes
+        val log = listOf(on(10, 9, 300_000L), on(10, 18, 360_000L), on(11, 9, 360_000L))
+        assertEquals(0, log.streak(tenADay, wednesdayNoon))
+        // the same days do carry a streak of merely turning up
+        assertEquals(2, log.streak(EVERY_DAY, wednesdayNoon))
+
+        // a weekly goal counts weeks: this one is reached in the week of the 10th alone
+        val weekly = Goal(id = 2, metric = GoalMetric.MINUTES, period = GoalPeriod.WEEK, target = 15)
+        assertEquals(1, log.streak(weekly, wednesdayNoon))
+    }
+
+    @Test
+    fun `a goal keeps a target its own metric can mean`() {
+        // 300 breaths is a fair week; 300 minutes is not a target, it is a typo
+        assertEquals(
+            GoalMetric.MINUTES.max,
+            Goal(id = 1, metric = GoalMetric.MINUTES, target = 300).sane().target,
+        )
+        assertEquals(
+            GoalMetric.BREATHS.min,
+            Goal(id = 2, metric = GoalMetric.BREATHS, target = 1).sane().target,
+        )
+        // one already in range is left exactly as it was
+        val fine = Goal(id = 3, metric = GoalMetric.SITTINGS, target = 2)
+        assertEquals(fine, fine.sane())
     }
 
     @Test

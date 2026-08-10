@@ -37,12 +37,3 @@ Functionality includes:
 
   # TODO
   - A support button (€4, €20, €50 euro) to Paypal?
-  - Goals
-    - n amount of practices/breaths/time per day/week
-  - Achievements
-    - days in a row
-    - total excercices
-    - total minutes
-    - minutes today
-  - Feedback via a google form
-  - Change the top menu to 3 dots that drop down the menu

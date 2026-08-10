@@ -10,6 +10,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.time.Instant
+import java.time.LocalDate
+import java.time.Period
+import java.time.ZonedDateTime
+import java.time.temporal.TemporalAdjusters
+import java.time.temporal.WeekFields
+import java.util.Locale
 
 enum class SoundMode(val label: String) {
     /** Continuous waves for the whole phase, cutoff riding the breath. */
@@ -224,6 +231,97 @@ suspend fun Context.logSession(at: Long, durationMs: Long, preset: Preset) {
     }
 }
 
+/** What a [Goal] counts. The range is the metric's own: ten sittings and ten breaths differ. */
+enum class GoalMetric(val label: String, val singular: String, val min: Int, val max: Int, val step: Int) {
+    SITTINGS("sittings", "sitting", 1, 10, 1),
+    BREATHS("breaths", "breath", 10, 300, 10),
+    MINUTES("minutes", "minute", 5, 120, 5),
+}
+
+fun GoalMetric.unit(count: Int) = if (count == 1) singular else label
+
+enum class GoalPeriod(val label: String, val heading: String, val each: String, val unit: String) {
+    DAY("Each day", "Today", "a day", "day"),
+    WEEK("Each week", "This week", "a week", "week"),
+}
+
+/** "5 days in a row", the length of a streak said in this period's own unit. */
+fun GoalPeriod.run(count: Int) = "$count ${if (count == 1) unit else "${unit}s"} in a row"
+
+/**
+ * One thing to aim at, e.g. one sitting a day or a hundred breaths a week. Several can be kept
+ * at once, and they are counted from the log rather than tallied as you go — so setting one up
+ * credits the practice you had already done, and changing your mind about it costs nothing.
+ */
+@Serializable
+data class Goal(
+    val id: Int,
+    val metric: GoalMetric = GoalMetric.MINUTES,
+    val period: GoalPeriod = GoalPeriod.DAY,
+    val target: Int = 10,
+) {
+    /** "Today: 7 of 10 minutes" — what you have done, against what you said you would. */
+    fun headline(done: Int) = "${period.heading}: $done of $target ${metric.unit(target)}"
+
+    /** "1 sitting a day", the goal said plainly. */
+    val description: String get() = "$target ${metric.unit(target)} ${period.each}"
+
+    fun reached(done: Int) = done >= target
+
+    /** A target stored against one metric is nonsense against another. */
+    fun sane() = copy(target = target.coerceIn(metric.min, metric.max))
+}
+
+/**
+ * The date the period containing [date] began. A week starts where the reader's own calendar
+ * starts it, the same as the day chips on a reminder.
+ */
+internal fun periodStartDate(period: GoalPeriod, date: LocalDate): LocalDate = when (period) {
+    GoalPeriod.DAY -> date
+    GoalPeriod.WEEK ->
+        date.with(TemporalAdjusters.previousOrSame(WeekFields.of(Locale.getDefault()).firstDayOfWeek))
+}
+
+/** The instant the current goal period began. */
+internal fun periodStartMs(period: GoalPeriod, now: ZonedDateTime): Long =
+    periodStartDate(period, now.toLocalDate()).atStartOfDay(now.zone).toInstant().toEpochMilli()
+
+/** What these sittings add up to in [metric]'s own unit. */
+internal fun List<Entry>.tally(metric: GoalMetric): Int = when (metric) {
+    GoalMetric.SITTINGS -> size
+    // a sitting logged before breaths were counted contributes none, which is honest
+    GoalMetric.BREATHS -> sumOf { it.cycles }
+    GoalMetric.MINUTES -> (sumOf { it.durationMs } / 60_000L).toInt()
+}
+
+/** What the sittings since [since] add up to, in [goal]'s own unit. */
+internal fun List<Entry>.towards(goal: Goal, since: Long): Int =
+    filter { it.at >= since }.tally(goal.metric)
+
+/**
+ * How many periods in a row [goal] has been reached, counting back from now. The period in
+ * progress cannot break a streak — a day you have not finished yet is not a day you failed —
+ * so a run stands until a whole day or week goes by without reaching it.
+ */
+internal fun List<Entry>.streak(goal: Goal, now: ZonedDateTime): Int {
+    val reached = groupBy {
+        periodStartDate(goal.period, Instant.ofEpochMilli(it.at).atZone(now.zone).toLocalDate())
+    }.filterValues { it.tally(goal.metric) >= goal.target }.keys
+    val step = if (goal.period == GoalPeriod.DAY) Period.ofDays(1) else Period.ofWeeks(1)
+
+    var at = periodStartDate(goal.period, now.toLocalDate())
+    if (at !in reached) at = at.minus(step)
+    var run = 0
+    while (at in reached) {
+        run++
+        at = at.minus(step)
+    }
+    return run
+}
+
+/** Practising at all, once a day, is a streak worth keeping whether or not a goal says so. */
+internal val EVERY_DAY = Goal(id = 0, metric = GoalMetric.SITTINGS, period = GoalPeriod.DAY, target = 1)
+
 /**
  * How often a [Reminder] comes back. The fortnightly pair go by the ISO week number rather than
  * counting from the day you set them, so "every odd week" means the same weeks to you as it does
@@ -248,6 +346,20 @@ data class Reminder(
     val days: Set<Int> = setOf(1),
     val enabled: Boolean = true,
 )
+
+// its own key rather than a field of Config: goals and settings are edited on different screens,
+// and a whole-Config write from one would roll back what the other had just saved
+private val GOALS = stringPreferencesKey("goals")
+
+private fun decodeGoals(stored: String?): List<Goal> =
+    stored?.let { runCatching { json.decodeFromString<List<Goal>>(it) }.getOrNull() } ?: emptyList()
+
+fun Context.goalsFlow(): Flow<List<Goal>> = store.data.map { decodeGoals(it[GOALS]).map { g -> g.sane() } }
+
+suspend fun Context.saveGoals(goals: List<Goal>) {
+    val encoded = json.encodeToString(goals.map { it.sane() })
+    store.edit { it[GOALS] = encoded }
+}
 
 private val REMINDERS = stringPreferencesKey("reminders")
 
