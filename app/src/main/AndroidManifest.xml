@@ -5,6 +5,9 @@
     <!-- lets the app silence notifications for the length of a meditation; the user still
          has to grant policy access from system settings before it does anything -->
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <!-- the breathing flashlight, which setTorchMode drives without the CAMERA permission.
+         Optional: a phone without a flash installs fine and just hides the setting's effect -->
+    <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
 
     <application
         android:icon="@mipmap/ic_launcher"

@@ -91,6 +91,8 @@ data class Config(
     val durationMs: Long = 5 * 60_000L,
     val cycles: Int = 20,
     val vibrate: Boolean = false,
+    /** The torch brightens with the inhale and fades with the exhale. */
+    val flashlight: Boolean = false,
     val muteNotifications: Boolean = false,
     /**
      * A bowl at the end of the session. On by default: the whole point of a timed meditation

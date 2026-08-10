@@ -96,16 +96,19 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
     val synth = remember { WaveSynth() }
     val markers = remember { PhaseMarkers(context) }
     val dnd = remember { DndGuard(context) }
+    val torch = remember { Torch(context) }
 
     var running by remember { mutableStateOf(false) }
     var elapsed by remember { mutableLongStateOf(0L) }
 
-    // a session that outlives its screen would leave audio playing and the phone in DND
+    // a session that outlives its screen would leave audio playing, the torch burning and the
+    // phone in DND
     DisposableEffect(Unit) {
         onDispose {
             synth.stop()
             markers.release()
             dnd.restore()
+            torch.off()
         }
     }
 
@@ -179,10 +182,12 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
                 elapsed = e
                 synth.openness = state.openness
                 synth.phaseGain = wavesLevel(state)
+                if (config.flashlight) torch.follow(state)
             }
         } finally {
             synth.stop()
             dnd.restore()
+            torch.off()
         }
     }
 

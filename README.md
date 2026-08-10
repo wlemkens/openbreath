@@ -2,6 +2,21 @@
 
 An Android app for heart coherence breathing meditations.
 
+## Features
+
+- Presets for the usual patterns, and your own timings for the in, hold, out and hold phases.
+- A breath cue to follow with your eyes: a sphere that opens as you breathe in and closes as you
+  breathe out, either as a glow or a point cloud, in a colour you pick.
+- Soundscapes per phase — waves that rise and fall with the breath, a marker at each phase change
+  (singing bowl, bell, or an mp3 of your own), or silence.
+- A singing bowl at the end of the session, so you don't have to check whether it is over.
+- Optional vibration at each phase change.
+- Optional flashlight that brightens as you breathe in and fades as you breathe out — the breath
+  to follow with your eyes shut.
+- Optional silencing of notifications for the length of the session, put back exactly as it was
+  afterwards.
+- Time remaining, a dot per breath, and a breath count, each hideable for a barer screen.
+
 ## Installing on a device
 
 You need `adb`; everything else comes down with the Gradle build. Android Studio already installed it

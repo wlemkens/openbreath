@@ -49,5 +49,4 @@ Functionality includes:
     - total excercices
     - total minutes
     - minutes today
-  - Breathing flashlight (increases with inhale, decreases with exhale)
   - Feedback via a google form

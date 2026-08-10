@@ -55,6 +55,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val preset = config.active
     val dnd = remember { DndGuard(context) }
+    val torch = remember { Torch(context) }
 
     fun editPreset(f: (Preset) -> Preset) {
         onChange(config.copy(presets = config.presets.toMutableList().also { it[config.activeIndex] = f(preset) }))
@@ -269,6 +270,18 @@ fun SettingsScreen(
         item {
             ToggleRow("Vibrate at each phase change", config.vibrate) {
                 onChange(config.copy(vibrate = it))
+            }
+        }
+        item {
+            ToggleRow("Flashlight follows the breath", config.flashlight) {
+                onChange(config.copy(flashlight = it))
+            }
+            if (config.flashlight && !torch.available) {
+                Text(
+                    "This device has no flashlight",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
         }
         item {
