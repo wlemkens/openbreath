@@ -285,6 +285,30 @@ fun SettingsScreen(
                 }
             }
         }
+
+        item { SectionLabel("Breath cue") }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CueStyle.entries.forEach { style ->
+                    FilterChip(
+                        selected = config.cue == style,
+                        onClick = { onChange(config.copy(cue = style)) },
+                        label = { Text(style.label) },
+                    )
+                }
+            }
+        }
+
+        item { SectionLabel("Progress on screen") }
+        item {
+            ToggleRow("Time remaining", config.showTime) { onChange(config.copy(showTime = it)) }
+        }
+        item {
+            ToggleRow("Dots", config.showDots) { onChange(config.copy(showDots = it)) }
+        }
+        item {
+            ToggleRow("Breath count", config.showBreaths) { onChange(config.copy(showBreaths = it)) }
+        }
         item { HorizontalDivider(Modifier.padding(vertical = 24.dp)) }
     }
 

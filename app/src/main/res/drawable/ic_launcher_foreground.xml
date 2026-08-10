@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The breathing sphere from the session screen: radial Glow -> Deep, faint ring at
+     the full-inhale radius. Kept inside the centre 72dp so the launcher mask can't clip it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:pathData="M54,20 a34,34 0 1,0 0,68 a34,34 0 1,0 0,-68z"
+        android:strokeWidth="1.5"
+        android:strokeColor="#5FD6C8"
+        android:strokeAlpha="0.35" />
+
+    <path android:pathData="M54,28 a26,26 0 1,0 0,52 a26,26 0 1,0 0,-52z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="46"
+                android:centerY="46"
+                android:gradientRadius="34">
+                <item android:offset="0" android:color="#F25FD6C8" />
+                <item android:offset="0.6" android:color="#BFFAF0E2" />
+                <item android:offset="1" android:color="#33FAF0E2" />
+            </gradient>
+        </aapt:attr>
+    </path>
+</vector>

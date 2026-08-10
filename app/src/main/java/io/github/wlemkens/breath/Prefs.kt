@@ -28,6 +28,15 @@ enum class MarkerTone(val label: String) {
     GONG("Gong"),
 }
 
+/** What the breath cue on the session screen looks like. */
+enum class CueStyle(val label: String) {
+    /** Points packed into a core at the bottom of the breath, opening into a sphere at the top. */
+    CLOUD("Cloud"),
+
+    /** The plain gradient sphere. */
+    GLOW("Glow"),
+}
+
 @Serializable
 data class PhaseSound(
     val mode: SoundMode = SoundMode.WAVES,
@@ -89,6 +98,11 @@ data class Config(
      * leaves you sitting there wondering.
      */
     val endSound: Boolean = true,
+    /** The three progress readouts, each independently hideable for a barer screen. */
+    val showTime: Boolean = true,
+    val showDots: Boolean = true,
+    val showBreaths: Boolean = true,
+    val cue: CueStyle = CueStyle.CLOUD,
 ) {
     val active: Preset get() = presets[activeIndex]
 
@@ -111,7 +125,12 @@ private val DEFAULT_PRESETS = listOf(
 
 private val Context.store by preferencesDataStore("breath")
 private val CONFIG = stringPreferencesKey("config")
-private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+// coerceInputValues so that retiring an enum constant costs that one field its default rather than
+// failing the whole decode — the fallback below is all-or-nothing, and losing every saved preset
+// over a renamed cue style is not a trade worth making
+private val json = Json {
+    ignoreUnknownKeys = true; encodeDefaults = true; coerceInputValues = true
+}
 
 /** A config written by an older build must not crash the app — fall back to defaults. */
 fun Context.configFlow(): Flow<Config> = store.data.map { prefs ->

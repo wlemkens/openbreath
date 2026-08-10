@@ -35,9 +35,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextAlign
@@ -47,8 +45,8 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.launch
 
 private val Ink = Color(0xFF07090F)
-private val Glow = Color(0xFF5FD6C8)
-private val Deep = Color(0xFF1E4B78)
+internal val Glow = Color(0xFF5FD6C8)
+internal val Deep = Color(0xFF1E4B78)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -211,16 +209,21 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
         )
 
         Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-            Sphere(if (running) state.openness else 0f)
+            Cue(config.cue, if (running) state.openness else 0f)
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(mmss(total - elapsed), style = MaterialTheme.typography.displaySmall)
-            Text(
-                "breath ${(state.cycle + 1).coerceAtMost(cycles)} of $cycles",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (config.showTime) {
+                Text(mmss(total - elapsed), style = MaterialTheme.typography.displaySmall)
+            }
+            if (config.showDots) Dots(cycles, elapsed.toFloat() / total)
+            if (config.showBreaths) {
+                Text(
+                    "breath ${(state.cycle + 1).coerceAtMost(cycles)} of $cycles",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             Spacer(Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Button(onClick = { if (finished) elapsed = 0L else running = !running }) {
@@ -241,25 +244,21 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
     }
 }
 
-/** The breath cue: a sphere that grows on the inhale and shrinks on the exhale. */
+/**
+ * One dot per breath, filling left to right. Drawn rather than laid out so that the spacing
+ * divides the width whatever the breath count is — a 60-breath session gets 60 dots, not a
+ * row that runs off the edge.
+ */
 @Composable
-private fun Sphere(openness: Float) {
-    Canvas(Modifier.fillMaxSize()) {
-        val max = size.minDimension / 2f * 0.95f
-        val r = max * (0.24f + 0.76f * openness)
-        // a faint ring at full size, so the growth has something to grow towards
-        drawCircle(Glow.copy(alpha = 0.10f), radius = max, center = center, style = Stroke(1.dp.toPx()))
-        drawCircle(
-            brush = Brush.radialGradient(
-                0f to Glow.copy(alpha = 0.95f),
-                0.6f to Deep.copy(alpha = 0.75f),
-                1f to Deep.copy(alpha = 0.05f),
-                center = Offset(center.x, center.y),
-                radius = r,
-            ),
-            radius = r,
-            center = center,
-        )
+private fun Dots(count: Int, progress: Float) {
+    Canvas(Modifier.fillMaxWidth().height(16.dp)) {
+        val step = size.width / count
+        val r = minOf(step * 0.3f, 3.dp.toPx())
+        repeat(count) { i ->
+            // the dot for the breath in progress fades in as that breath is taken
+            val fill = (progress * count - i).coerceIn(0f, 1f)
+            drawCircle(Glow.copy(alpha = 0.15f + 0.85f * fill), r, Offset(step * (i + 0.5f), size.height / 2))
+        }
     }
 }
 
