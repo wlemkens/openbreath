@@ -150,6 +150,80 @@ suspend fun Context.saveConfig(config: Config) {
     store.edit { it[CONFIG] = encoded }
 }
 
+/**
+ * One sitting, however much of it was actually breathed. The timing is copied in rather than
+ * referenced: a preset that is renamed or re-timed later must not rewrite what was breathed.
+ * The four phases default to 0 for entries logged before they were recorded — see [pattern].
+ */
+@Serializable
+data class Entry(
+    /** Epoch ms at which it was started. Doubles as its identity — see [logSession]. */
+    val at: Long,
+    val durationMs: Long,
+    val preset: String,
+    val inhaleMs: Int = 0,
+    val holdInMs: Int = 0,
+    val exhaleMs: Int = 0,
+    val holdOutMs: Int = 0,
+    /** Whole breaths finished. The tail of a part-breathed cycle is in [durationMs] only. */
+    val cycles: Int = 0,
+) {
+    /** "5.5 – 5.5" or "4 – 7 – 8", in seconds. Empty for an entry logged before timings were. */
+    val pattern: String
+        get() = listOf(inhaleMs, holdInMs, exhaleMs, holdOutMs)
+            // a zero-length phase is one the breath never had, not one that took no time
+            .filter { it > 0 }
+            // whole seconds written whole; a decimal separator is the locale's business, so
+            // trimming a trailing ".0" off the formatted string is not the way to do it
+            .joinToString(" – ") { if (it % 1000 == 0) "${it / 1000}" else "%.1f".format(it / 1000f) }
+}
+
+/** What to log for a sitting of [durationMs] on [preset], started at [at]. */
+internal fun entryFor(at: Long, durationMs: Long, preset: Preset) = Entry(
+    at = at,
+    durationMs = durationMs,
+    preset = preset.name,
+    inhaleMs = preset.inhaleMs,
+    holdInMs = preset.holdInMs,
+    exhaleMs = preset.exhaleMs,
+    holdOutMs = preset.holdOutMs,
+    cycles = (durationMs / preset.timing.cycleMs).toInt(),
+)
+
+/** Shorter than this was a mistap, not a meditation. */
+const val LOGGED_MIN_MS = 20_000L
+
+// ponytail: one JSON blob rewritten per sitting, capped. Years of daily practice fit; move to a
+// row store if it ever has to hold tens of thousands.
+private const val HISTORY_MAX = 2000
+
+private val HISTORY = stringPreferencesKey("history")
+
+private fun decodeHistory(stored: String?): List<Entry> =
+    stored?.let { runCatching { json.decodeFromString<List<Entry>>(it) }.getOrNull() } ?: emptyList()
+
+fun Context.historyFlow(): Flow<List<Entry>> = store.data.map { decodeHistory(it[HISTORY]) }
+
+/**
+ * The log with [entry] recorded, or unchanged if the sitting was too short to have been one.
+ * Keyed on the start time, so pausing, resuming and finishing a single sitting keeps rewriting
+ * one entry rather than logging three.
+ */
+internal fun List<Entry>.logging(entry: Entry): List<Entry> =
+    if (entry.durationMs < LOGGED_MIN_MS) this
+    else (filterNot { it.at == entry.at } + entry).takeLast(HISTORY_MAX)
+
+/** Records what was breathed. Every stop calls this, including the ones that logged nothing. */
+suspend fun Context.logSession(at: Long, durationMs: Long, preset: Preset) {
+    store.edit { prefs ->
+        val old = decodeHistory(prefs[HISTORY])
+        val new = old.logging(entryFor(at, durationMs, preset))
+        // logging returns the list it was given when there was nothing to record; not rewriting
+        // the store then keeps a tap on Start and Pause from churning it
+        if (new !== old) prefs[HISTORY] = json.encodeToString(new)
+    }
+}
+
 /** Human-readable name for a picked mp3; the raw URI's last segment is usually a document id. */
 fun Context.displayName(uri: Uri): String =
     runCatching {

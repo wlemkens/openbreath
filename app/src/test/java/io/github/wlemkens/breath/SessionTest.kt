@@ -1,6 +1,7 @@
 package io.github.wlemkens.breath
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
@@ -189,5 +190,39 @@ class SessionTest {
         // the end-of-session bowl is on unless turned off; a silent ending leaves you
         // sitting there not knowing whether it finished
         assertEquals(true, Config().endSound)
+    }
+
+    @Test
+    fun `a logged sitting keeps the timing it was breathed at, and counts whole breaths only`() {
+        val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
+        // 84s of an 11s breath: seven finished, and the eighth is in the duration but uncounted
+        val entry = entryFor(1_000L, 84_000L, preset)
+        assertEquals(7, entry.cycles)
+        assertEquals(5500, entry.inhaleMs)
+        assertEquals(0, entry.holdInMs)
+        // zero-length phases are left out, and whole seconds are written without a decimal
+        assertEquals("5.5 – 5.5", entry.pattern)
+        assertEquals("4 – 7 – 8", entryFor(0L, 0L, Preset("4-7-8", 4000, 7000, 8000, 0)).pattern)
+        // an entry from before timings were logged has nothing to show rather than "0 – 0"
+        assertEquals("", Entry(1_000L, 60_000L, "Box 4").pattern)
+    }
+
+    @Test
+    fun `a sitting too short to count is not logged at all`() {
+        val log = listOf(Entry(1_000L, 60_000L, "Box 4"))
+        // the same list back, which is what tells the store there is nothing to rewrite
+        assertSame(log, log.logging(Entry(2_000L, LOGGED_MIN_MS - 1, "Box 4")))
+        assertEquals(2, log.logging(Entry(2_000L, LOGGED_MIN_MS, "Box 4")).size)
+    }
+
+    @Test
+    fun `pausing and carrying on rewrites the sitting rather than logging a second one`() {
+        val started = 1_000L
+        val paused = emptyList<Entry>().logging(Entry(started, 60_000L, "Box 4"))
+        val finished = paused.logging(Entry(started, 300_000L, "Box 4"))
+        assertEquals(1, finished.size)
+        assertEquals(300_000L, finished.single().durationMs)
+        // a genuinely new sitting is a new start time, so it lands alongside
+        assertEquals(2, finished.logging(Entry(started + 1, 60_000L, "Box 4")).size)
     }
 }

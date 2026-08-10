@@ -43,7 +43,6 @@ Functionality includes:
     - with a configurable name
   - Goals
     - n amount of practices/breaths/time per day/week
-  - A history of all the (partial) excercises done
   - Achievements
     - days in a row
     - total excercices

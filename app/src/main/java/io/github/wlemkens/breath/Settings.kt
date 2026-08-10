@@ -272,16 +272,13 @@ fun SettingsScreen(
                 onChange(config.copy(vibrate = it))
             }
         }
-        item {
-            ToggleRow("Flashlight follows the breath", config.flashlight) {
-                onChange(config.copy(flashlight = it))
-            }
-            if (config.flashlight && !torch.available) {
-                Text(
-                    "This device has no flashlight",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
+        // a switch for hardware the phone hasn't got is just a puzzle; the setting stays stored
+        // either way, so a phone that does have one still finds it turned on
+        if (torch.available) {
+            item {
+                ToggleRow("Flashlight follows the breath", config.flashlight) {
+                    onChange(config.copy(flashlight = it))
+                }
             }
         }
         item {
@@ -355,7 +352,7 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SectionLabel(text: String) {
+internal fun SectionLabel(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.titleSmall,

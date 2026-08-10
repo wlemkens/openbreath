@@ -16,6 +16,8 @@ An Android app for heart coherence breathing meditations.
 - Optional silencing of notifications for the length of the session, put back exactly as it was
   afterwards.
 - Time remaining, a dot per breath, and a breath count, each hideable for a barer screen.
+- A log of every sitting, day by day, with the pattern you breathed and the breaths you finished.
+  The ones you cut short count too — anything over twenty seconds.
 
 ## Installing on a device
 

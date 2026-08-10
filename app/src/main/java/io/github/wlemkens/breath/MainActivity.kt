@@ -42,7 +42,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private val Ink = Color(0xFF07090F)
 
@@ -69,23 +71,36 @@ private fun Breath(modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     val config by remember { context.configFlow() }.collectAsState(initial = null)
     var showSettings by remember { mutableStateOf(false) }
+    var showLog by remember { mutableStateOf(false) }
 
     val current = config ?: return // first frame, before DataStore has read
 
-    if (showSettings) {
-        SettingsScreen(
+    when {
+        showSettings -> SettingsScreen(
             config = current,
             onChange = { scope.launch { context.saveConfig(it) } },
             onBack = { showSettings = false },
             modifier = modifier,
         )
-    } else {
-        SessionScreen(current, onOpenSettings = { showSettings = true }, modifier = modifier)
+
+        showLog -> LogScreen(onBack = { showLog = false }, modifier = modifier)
+
+        else -> SessionScreen(
+            current,
+            onOpenSettings = { showSettings = true },
+            onOpenLog = { showLog = true },
+            modifier = modifier,
+        )
     }
 }
 
 @Composable
-fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier = Modifier) {
+fun SessionScreen(
+    config: Config,
+    onOpenSettings: () -> Unit,
+    onOpenLog: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
     val view = LocalView.current
     val preset = config.active
@@ -100,6 +115,10 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
 
     var running by remember { mutableStateOf(false) }
     var elapsed by remember { mutableLongStateOf(0L) }
+
+    // when this sitting began, which is what the log entry is keyed on: pausing and carrying on
+    // rewrites the same entry rather than adding a second one
+    var startedAt by remember { mutableLongStateOf(0L) }
 
     // a session that outlives its screen would leave audio playing, the torch burning and the
     // phone in DND
@@ -132,7 +151,11 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
         markers.stopSessionEnd()
 
         val base = elapsed
+        if (base == 0L) startedAt = System.currentTimeMillis()
         var prev = phaseAt(base, timing)
+        // read back in the finally instead of `elapsed`, which Reset clears in the same event
+        // that stops the session — the breaths taken still happened
+        var breathed = base
 
         fun boundaryCrossed(ended: List<Phase>) {
             // one buzz per boundary, however many zero-length phases ended on it
@@ -169,6 +192,7 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
                         boundaryCrossed(phasesEndingBetween(prev.phase, opens, timing))
                     }
                     elapsed = total
+                    breathed = total
                     running = false
                     break
                 }
@@ -180,6 +204,7 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
                     prev = state
                 }
                 elapsed = e
+                breathed = e
                 synth.openness = state.openness
                 synth.phaseGain = wavesLevel(state)
                 if (config.flashlight) torch.follow(state)
@@ -188,6 +213,9 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
             synth.stop()
             dnd.restore()
             torch.off()
+            // pausing and leaving the screen both cancel this coroutine, and a cancelled one
+            // cannot suspend — without NonCancellable every sitting but a completed one is lost
+            withContext(NonCancellable) { context.logSession(startedAt, breathed, preset) }
         }
     }
 
@@ -202,7 +230,10 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.weight(1f))
-            if (!running) TextButton(onClick = onOpenSettings) { Text("Settings") }
+            if (!running) {
+                TextButton(onClick = onOpenLog) { Text("Log") }
+                TextButton(onClick = onOpenSettings) { Text("Settings") }
+            }
         }
 
         Text(
@@ -269,7 +300,7 @@ private fun Dots(count: Int, progress: Float, glow: Color) {
     }
 }
 
-private fun mmss(ms: Long): String {
+internal fun mmss(ms: Long): String {
     val s = (ms / 1000).coerceAtLeast(0L)
     return "%d:%02d".format(s / 60, s % 60)
 }
