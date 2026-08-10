@@ -10,6 +10,8 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.provider.Settings
+import android.text.format.DateFormat
+import java.util.Calendar
 import kotlin.math.roundToInt
 
 fun Context.vibrator(): Vibrator? =
@@ -69,6 +71,22 @@ class DndGuard(private val context: Context) {
 }
 
 fun notificationPolicyIntent() = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+
+/**
+ * A time of day written the way this phone writes them. Not [java.time.format.DateTimeFormatter]:
+ * that follows the locale alone, and whether the clock reads 14:00 or 2:00 PM is a setting the
+ * user makes for themselves, separately from where they live.
+ */
+fun Context.clockTime(hour: Int, minute: Int): String =
+    DateFormat.getTimeFormat(this).format(
+        Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.MINUTE, minute)
+        }.time
+    )
+
+/** Whether that clock is the 24-hour one, for pickers that have to be asked up front. */
+fun Context.uses24Hour(): Boolean = DateFormat.is24HourFormat(this)
 
 /**
  * The breath as a torch strength, 0 meaning off. Variable brightness only exists from API 33,

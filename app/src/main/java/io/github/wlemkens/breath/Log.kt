@@ -72,7 +72,11 @@ fun LogScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             items(sittings, key = { it.at }) { entry ->
                 Column(Modifier.padding(bottom = 6.dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(entry.at.zoned().format(timeFormat), style = MaterialTheme.typography.bodyMedium)
+                        val began = entry.at.zoned()
+                        Text(
+                            context.clockTime(began.hour, began.minute),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
                         Text(
                             entry.preset,
                             style = MaterialTheme.typography.bodyMedium,
@@ -100,9 +104,9 @@ fun LogScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 private fun Long.zoned() = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault())
 
 // localized rather than a hand-written pattern: the log is read at a glance, in the reader's own
-// conventions for date order and for whether 13:00 is a time of day
+// conventions for date order. The time of day goes through Context.clockTime instead, which also
+// honours the phone's 24-hour setting
 private val dayFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
-private val timeFormat = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
 private fun hoursMinutes(ms: Long): String {
     val minutes = ms / 60_000

@@ -224,6 +224,43 @@ suspend fun Context.logSession(at: Long, durationMs: Long, preset: Preset) {
     }
 }
 
+/**
+ * How often a [Reminder] comes back. The fortnightly pair go by the ISO week number rather than
+ * counting from the day you set them, so "every odd week" means the same weeks to you as it does
+ * to a wall planner.
+ */
+enum class Repeat(val label: String) {
+    DAILY("Daily"),
+    WEEKLY("Weekly"),
+    ODD_WEEKS("Every odd week"),
+    EVEN_WEEKS("Every even week"),
+}
+
+@Serializable
+data class Reminder(
+    /** Stable for the life of the reminder: it is also the alarm's request code. */
+    val id: Int,
+    val name: String = "Breathe",
+    val hour: Int = 8,
+    val minute: Int = 0,
+    val repeat: Repeat = Repeat.DAILY,
+    /** ISO days of the week, 1 = Monday. More than one is allowed. Ignored by [Repeat.DAILY]. */
+    val days: Set<Int> = setOf(1),
+    val enabled: Boolean = true,
+)
+
+private val REMINDERS = stringPreferencesKey("reminders")
+
+private fun decodeReminders(stored: String?): List<Reminder> =
+    stored?.let { runCatching { json.decodeFromString<List<Reminder>>(it) }.getOrNull() } ?: emptyList()
+
+fun Context.remindersFlow(): Flow<List<Reminder>> = store.data.map { decodeReminders(it[REMINDERS]) }
+
+suspend fun Context.saveReminders(reminders: List<Reminder>) {
+    val encoded = json.encodeToString(reminders)
+    store.edit { it[REMINDERS] = encoded }
+}
+
 /** Human-readable name for a picked mp3; the raw URI's last segment is usually a document id. */
 fun Context.displayName(uri: Uri): String =
     runCatching {

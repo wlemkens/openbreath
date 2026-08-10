@@ -75,6 +75,7 @@ private fun Breath(modifier: Modifier = Modifier) {
     val config by remember { context.configFlow() }.collectAsState(initial = null)
     var showSettings by remember { mutableStateOf(false) }
     var showLog by remember { mutableStateOf(false) }
+    var showReminders by remember { mutableStateOf(false) }
 
     val current = config ?: return // first frame, before DataStore has read
 
@@ -88,10 +89,13 @@ private fun Breath(modifier: Modifier = Modifier) {
 
         showLog -> LogScreen(onBack = { showLog = false }, modifier = modifier)
 
+        showReminders -> RemindersScreen(onBack = { showReminders = false }, modifier = modifier)
+
         else -> SessionScreen(
             current,
             onOpenSettings = { showSettings = true },
             onOpenLog = { showLog = true },
+            onOpenReminders = { showReminders = true },
             modifier = modifier,
         )
     }
@@ -102,6 +106,7 @@ fun SessionScreen(
     config: Config,
     onOpenSettings: () -> Unit,
     onOpenLog: () -> Unit,
+    onOpenReminders: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -245,6 +250,10 @@ fun SessionScreen(
                         DropdownMenuItem(
                             text = { Text("Log") },
                             onClick = { menuOpen = false; onOpenLog() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Reminders") },
+                            onClick = { menuOpen = false; onOpenReminders() },
                         )
                         DropdownMenuItem(
                             text = { Text("Settings") },

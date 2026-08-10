@@ -37,10 +37,6 @@ Functionality includes:
 
   # TODO
   - A support button (€4, €20, €50 euro) to Paypal?
-  - Reminders : recurring reminders
-    - daily, weekly, bi-weekly
-    - at a certain time
-    - with a configurable name
   - Goals
     - n amount of practices/breaths/time per day/week
   - Achievements
@@ -49,3 +45,4 @@ Functionality includes:
     - total minutes
     - minutes today
   - Feedback via a google form
+  - Change the top menu to 3 dots that drop down the menu

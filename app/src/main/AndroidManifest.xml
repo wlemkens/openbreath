@@ -9,6 +9,13 @@
          Optional: a phone without a flash installs fine and just hides the setting's effect -->
     <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
 
+    <!-- reminders. POST_NOTIFICATIONS is asked for when the first one is made, not on a first
+         run; SCHEDULE_EXACT_ALARM is granted from system settings or not at all, and without it
+         a reminder falls back to an inexact alarm rather than not arriving -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
     <application
         android:icon="@mipmap/ic_launcher"
         android:label="Breath"
@@ -23,6 +30,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- a reboot clears the alarm table, so the receiver re-arms every reminder from
+             storage on BOOT_COMPLETED as well as ringing them -->
+        <receiver
+            android:name=".ReminderReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
