@@ -36,4 +36,4 @@ Functionality includes:
   The base sound is waves coming ashore. During the breath in, the pitch goes up, during breathing out, the pitch goes down.
 
   # TODO
-  - A support button (€4, €20, €50 euro) to Paypal?
+  - A link for rating in the app store

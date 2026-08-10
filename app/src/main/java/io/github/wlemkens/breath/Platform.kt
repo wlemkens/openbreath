@@ -80,6 +80,15 @@ private const val FEEDBACK_FORM =
 /** Opens the form in a browser. The app sends nothing itself — you fill it in and it is yours. */
 fun feedbackIntent() = Intent(Intent.ACTION_VIEW, Uri.parse(FEEDBACK_FORM))
 
+private const val PAYPAL_ME = "https://paypal.me/wimlemkens"
+
+/**
+ * PayPal, with the amount already filled in when one was chosen. Nothing is charged here and no
+ * amount is remembered: the app opens a page and steps out of the way.
+ */
+fun paypalIntent(euros: Int? = null) =
+    Intent(Intent.ACTION_VIEW, Uri.parse(if (euros == null) PAYPAL_ME else "$PAYPAL_ME/${euros}EUR"))
+
 /**
  * A time of day written the way this phone writes them. Not [java.time.format.DateTimeFormatter]:
  * that follows the locale alone, and whether the clock reads 14:00 or 2:00 PM is a setting the

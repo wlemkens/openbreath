@@ -79,6 +79,7 @@ private fun Breath(modifier: Modifier = Modifier) {
     var showReminders by remember { mutableStateOf(false) }
     var showGoals by remember { mutableStateOf(false) }
     var showAchievements by remember { mutableStateOf(false) }
+    var showSupport by remember { mutableStateOf(false) }
 
     // first frames, before DataStore has read. An empty list here would be a lie the goal screen
     // could act on: saving a goal built on "no goals yet" writes over every goal there is
@@ -107,6 +108,8 @@ private fun Breath(modifier: Modifier = Modifier) {
 
         showReminders -> RemindersScreen(onBack = { showReminders = false }, modifier = modifier)
 
+        showSupport -> SupportScreen(onBack = { showSupport = false }, modifier = modifier)
+
         else -> SessionScreen(
             current,
             onOpenSettings = { showSettings = true },
@@ -114,6 +117,7 @@ private fun Breath(modifier: Modifier = Modifier) {
             onOpenGoals = { showGoals = true },
             onOpenAchievements = { showAchievements = true },
             onOpenReminders = { showReminders = true },
+            onOpenSupport = { showSupport = true },
             modifier = modifier,
         )
     }
@@ -127,6 +131,7 @@ fun SessionScreen(
     onOpenGoals: () -> Unit,
     onOpenAchievements: () -> Unit,
     onOpenReminders: () -> Unit,
+    onOpenSupport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -286,6 +291,10 @@ fun SessionScreen(
                         DropdownMenuItem(
                             text = { Text("Settings") },
                             onClick = { menuOpen = false; onOpenSettings() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Support") },
+                            onClick = { menuOpen = false; onOpenSupport() },
                         )
                         DropdownMenuItem(
                             text = { Text("Feedback") },

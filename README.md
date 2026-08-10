@@ -23,6 +23,8 @@ An Android app for heart coherence breathing meditations.
 - Achievements: days in a row, sittings, minutes, minutes today, and a streak per goal. Read back
   out of the log too, so a goal set today already shows the run of days behind it.
 - A feedback form, opened in your browser. The app sends nothing on its own.
+- A support page. The app is free and stays free; if you want to send something, PayPal opens in
+  your browser. Nothing is charged from the app, and it is never told whether you did.
 - Reminders: as many as you like, each with its own name and time — daily, or on the days you
   pick, every week or in the odd or even weeks of the year. Nothing is asked of you until you
   make the first one.
