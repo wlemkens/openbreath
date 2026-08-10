@@ -1,10 +1,13 @@
 package io.github.wlemkens.breath
 
 import android.content.Intent
+import android.graphics.Color as AndroidColor
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -12,7 +15,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -26,11 +31,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -298,6 +306,7 @@ fun SettingsScreen(
                 }
             }
         }
+        item { CueColour(config.cueColor) { onChange(config.copy(cueColor = it)) } }
 
         item { SectionLabel("Progress on screen") }
         item {
@@ -362,6 +371,7 @@ private fun LabelledSlider(
     range: ClosedFloatingPointRange<Float>,
     steps: Int,
     readout: String,
+    onChangeFinished: (() -> Unit)? = null,
     onChange: (Float) -> Unit,
 ) {
     Column {
@@ -369,7 +379,52 @@ private fun LabelledSlider(
             Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
             Text(readout, style = MaterialTheme.typography.bodyMedium)
         }
-        Slider(value = value, onValueChange = onChange, valueRange = range, steps = steps.coerceAtLeast(0))
+        Slider(
+            value = value,
+            onValueChange = onChange,
+            onValueChangeFinished = onChangeFinished,
+            valueRange = range,
+            steps = steps.coerceAtLeast(0),
+        )
+    }
+}
+
+/**
+ * The bright end of the breath cue, and the colour of the progress dots. Hue/saturation/brightness
+ * rather than three RGB sliders: picking a colour by eye means moving one thing at a time, and on
+ * RGB every axis drags the other two along with it.
+ */
+@Composable
+private fun CueColour(argb: Int, onChange: (Int) -> Unit) {
+    // Seeded once. Nothing outside this row edits the stored colour while it is on screen, and
+    // reading it back each time would snap a fully desaturated colour's hue to red, since grey
+    // has no hue to recover.
+    val seed = remember { FloatArray(3).also { AndroidColor.colorToHSV(argb, it) } }
+    var h by remember { mutableFloatStateOf(seed[0]) }
+    var s by remember { mutableFloatStateOf(seed[1]) }
+    var v by remember { mutableFloatStateOf(seed[2]) }
+    val picked = AndroidColor.HSVToColor(floatArrayOf(h, s, v))
+    // on release, not on every frame of the drag: the cue is not on this screen to follow along,
+    // and a slider at 60fps would be 60 DataStore writes a second
+    val commit = { onChange(picked) }
+
+    Column {
+        Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(28.dp).clip(CircleShape).background(Color(picked)))
+            Text(
+                "Cue and dots",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f).padding(start = 12.dp),
+            )
+            TextButton(onClick = {
+                AndroidColor.colorToHSV(DEFAULT_CUE_COLOR, seed)
+                h = seed[0]; s = seed[1]; v = seed[2]
+                onChange(DEFAULT_CUE_COLOR)
+            }) { Text("Reset") }
+        }
+        LabelledSlider("Hue", h, 0f..360f, 0, "%.0f°".format(h), commit) { h = it }
+        LabelledSlider("Saturation", s, 0f..1f, 0, "%.0f%%".format(s * 100), commit) { s = it }
+        LabelledSlider("Brightness", v, 0f..1f, 0, "%.0f%%".format(v * 100), commit) { v = it }
     }
 }
 

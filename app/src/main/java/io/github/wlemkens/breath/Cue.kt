@@ -10,6 +10,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
@@ -20,20 +21,20 @@ import kotlin.math.sqrt
 
 /** The breath cue: something that grows on the inhale and shrinks on the exhale. */
 @Composable
-fun Cue(style: CueStyle, openness: Float) {
-    if (style == CueStyle.GLOW) GlowSphere(openness) else PointCloud(openness)
+fun Cue(style: CueStyle, openness: Float, glow: Color) {
+    if (style == CueStyle.GLOW) GlowSphere(openness, glow) else PointCloud(openness, glow)
 }
 
-/** The original: a soft sphere, teal core fading through deep blue. */
+/** The original: a soft sphere, [glow] core fading through deep blue. */
 @Composable
-private fun GlowSphere(openness: Float) {
+private fun GlowSphere(openness: Float, glow: Color) {
     Canvas(Modifier.fillMaxSize()) {
         val max = maxRadius()
         val r = max * (0.24f + 0.76f * openness)
-        rimRing(max)
+        rimRing(max, glow)
         drawCircle(
             brush = Brush.radialGradient(
-                0f to Glow.copy(alpha = 0.95f),
+                0f to glow.copy(alpha = 0.95f),
                 0.6f to Deep.copy(alpha = 0.75f),
                 1f to Deep.copy(alpha = 0.05f),
                 center = center,
@@ -51,7 +52,7 @@ private fun GlowSphere(openness: Float) {
  * see is one object turning rather than a swarm reshuffling.
  */
 @Composable
-private fun PointCloud(openness: Float) {
+private fun PointCloud(openness: Float, glow: Color) {
     val pts = remember { cuePoints() }
     // the session clock only ticks while running; the cloud drifts on the idle screen too
     val seconds = remember { mutableFloatStateOf(0f) }
@@ -66,11 +67,11 @@ private fun PointCloud(openness: Float) {
         val t = seconds.floatValue
         val max = maxRadius()
         val r = max * (0.24f + 0.76f * openness)
-        rimRing(max)
+        rimRing(max, glow)
         // the old gradient, dimmed, still under the points — it is what gives the cloud volume
         drawCircle(
             brush = Brush.radialGradient(
-                0f to Glow.copy(alpha = 0.18f),
+                0f to glow.copy(alpha = 0.18f),
                 0.6f to Deep.copy(alpha = 0.14f),
                 1f to Deep.copy(alpha = 0f),
                 center = center,
@@ -150,7 +151,7 @@ private fun PointCloud(openness: Float) {
             // a point off on its own lifts out of the depth fade, so the breakaway is legible even
             // when it is round the back
             val alpha = twinkle * (0.10f + 0.90f * d * d + 0.7f * strayed)
-            val color = lerp(Deep, Glow, d)
+            val color = lerp(Deep, glow, d)
             val at = Offset(center.x + x1 * r, center.y + y2 * r)
             val size = dot * (0.9f + 1.3f * d) * (0.75f + 0.5f * s1)
 
@@ -165,8 +166,8 @@ private fun PointCloud(openness: Float) {
 private fun DrawScope.maxRadius() = size.minDimension / 2f * 0.95f
 
 /** A faint ring at full size, so the growth has something to grow towards. */
-private fun DrawScope.rimRing(max: Float) =
-    drawCircle(Glow.copy(alpha = 0.10f), max, center, style = Stroke(1.dp.toPx()))
+private fun DrawScope.rimRing(max: Float, glow: Color) =
+    drawCircle(glow.copy(alpha = 0.10f), max, center, style = Stroke(1.dp.toPx()))
 
 /** Off-axis, so the lattice poles never sit in the middle of the face. */
 private const val TILT = 0.4f

@@ -45,7 +45,8 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.launch
 
 private val Ink = Color(0xFF07090F)
-internal val Glow = Color(0xFF5FD6C8)
+
+/** The far end of the cue's gradient. Fixed; only the bright end is the user's to pick. */
 internal val Deep = Color(0xFF1E4B78)
 
 class MainActivity : ComponentActivity() {
@@ -90,6 +91,7 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
     val preset = config.active
     val timing = preset.timing
     val total = remember(config) { config.limit.totalMs(timing) }
+    val glow = Color(config.cueColor)
 
     val synth = remember { WaveSynth() }
     val markers = remember { PhaseMarkers(context) }
@@ -209,14 +211,14 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
         )
 
         Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-            Cue(config.cue, if (running) state.openness else 0f)
+            Cue(config.cue, if (running) state.openness else 0f, glow)
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             if (config.showTime) {
                 Text(mmss(total - elapsed), style = MaterialTheme.typography.displaySmall)
             }
-            if (config.showDots) Dots(cycles, elapsed.toFloat() / total)
+            if (config.showDots) Dots(cycles, elapsed.toFloat() / total, glow)
             if (config.showBreaths) {
                 Text(
                     "breath ${(state.cycle + 1).coerceAtMost(cycles)} of $cycles",
@@ -250,14 +252,14 @@ fun SessionScreen(config: Config, onOpenSettings: () -> Unit, modifier: Modifier
  * row that runs off the edge.
  */
 @Composable
-private fun Dots(count: Int, progress: Float) {
+private fun Dots(count: Int, progress: Float, glow: Color) {
     Canvas(Modifier.fillMaxWidth().height(16.dp)) {
         val step = size.width / count
         val r = minOf(step * 0.3f, 3.dp.toPx())
         repeat(count) { i ->
             // the dot for the breath in progress fades in as that breath is taken
             val fill = (progress * count - i).coerceIn(0f, 1f)
-            drawCircle(Glow.copy(alpha = 0.15f + 0.85f * fill), r, Offset(step * (i + 0.5f), size.height / 2))
+            drawCircle(glow.copy(alpha = 0.15f + 0.85f * fill), r, Offset(step * (i + 0.5f), size.height / 2))
         }
     }
 }

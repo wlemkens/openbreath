@@ -103,6 +103,8 @@ data class Config(
     val showDots: Boolean = true,
     val showBreaths: Boolean = true,
     val cue: CueStyle = CueStyle.CLOUD,
+    /** Opaque ARGB. The bright end of the cue, and the colour of the breath dots. */
+    val cueColor: Int = DEFAULT_CUE_COLOR,
 ) {
     val active: Preset get() = presets[activeIndex]
 
@@ -116,6 +118,9 @@ data class Config(
         return copy(activeIndex = activeIndex.coerceIn(0, presets.size - 1))
     }
 }
+
+/** The teal the app shipped with. */
+const val DEFAULT_CUE_COLOR: Int = 0xFF5FD6C8.toInt()
 
 private val DEFAULT_PRESETS = listOf(
     Preset("Coherence 5.5", 5500, 0, 5500, 0),
