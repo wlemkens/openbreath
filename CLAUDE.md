@@ -19,11 +19,15 @@ Functionality includes:
   The code is MIT licensed — see LICENSE.
 
   The bundled audio is **not** covered by that grant. `app/src/main/res/raw/*.mp3` are cuts
-  of the files in `media/`, which came from the `freesound_community` Pixabay account, and
-  their terms have not been confirmed. That normally means CC0 or the Pixabay Content
-  License rather than MIT. Worth settling before publishing, because whichever it is may
-  oblige us to ship an attribution notice in the app, and an MIT repo containing
-  third-party assets under unstated terms is a mismatch waiting to be noticed.
+  of files in `media/` from the `freesound_community` Pixabay account, released under
+  **CC0 1.0** (public domain dedication). CC0 requires no attribution, so nothing has to
+  ship in the app, but we credit the source anyway in README and here:
+
+  - `res/raw/session_end.mp3` — cut from `media/freesound_community-025535_singing-bowl-60767.mp3`
+  - `res/raw/singing_bowl.mp3` — cut from `media/freesound_community-singing-bowl-hit-3-33366.mp3`
+
+  `media/alex_jauk-zen-gong-199844.mp3` is by a different Pixabay uploader and is **not**
+  shipped in the APK. Confirm its terms separately before using it.
 
   # Details
   ## Sounds during the phases
@@ -31,4 +35,19 @@ Functionality includes:
 
   The base sound is waves coming ashore. During the breath in, the pitch goes up, during breathing out, the pitch goes down.
 
-  ## 
+  # TODO
+  - A support button (€4, €20, €50 euro) to Paypal?
+  - Reminders : recurring reminders
+    - daily, weekly, bi-weekly
+    - at a certain time
+    - with a configurable name
+  - Goals
+    - n amount of practices/breaths/time per day/week
+  - A history of all the (partial) excercises done
+  - Achievements
+    - days in a row
+    - total excercices
+    - total minutes
+    - minutes today
+  - Breathing flashlight (increases with inhale, decreases with exhale)
+  - Feedback via a google form
