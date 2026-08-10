@@ -16,6 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -231,8 +234,24 @@ fun SessionScreen(
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Spacer(Modifier.weight(1f))
             if (!running) {
-                TextButton(onClick = onOpenLog) { Text("Log") }
-                TextButton(onClick = onOpenSettings) { Text("Settings") }
+                var menuOpen by remember { mutableStateOf(false) }
+                // Box, so the menu hangs off the button rather than the top of the screen
+                Box {
+                    IconButton(onClick = { menuOpen = true }) {
+                        // the glyph rather than material-icons: a whole dependency for three dots
+                        Text("⋮", style = MaterialTheme.typography.titleLarge)
+                    }
+                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Log") },
+                            onClick = { menuOpen = false; onOpenLog() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Settings") },
+                            onClick = { menuOpen = false; onOpenSettings() },
+                        )
+                    }
+                }
             }
         }
 
