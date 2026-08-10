@@ -116,5 +116,9 @@ gitignored). Until then, debug builds are the way onto a device.
 
 ## Licence
 
-Code is MIT — see [LICENSE](LICENSE). The bundled audio is **not** covered by that grant; see
-[CLAUDE.md](CLAUDE.md).
+Code is MIT — see [LICENSE](LICENSE).
+
+The bundled audio is **not** covered by that grant. `app/src/main/res/raw/*.mp3` are cuts of files
+from the [freesound_community](https://pixabay.com/users/freesound_community-46691455/) Pixabay
+account, released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). CC0 asks for
+no attribution; the credit is here because it is the decent thing, not because it is owed.
