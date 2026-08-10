@@ -90,6 +90,18 @@ fun paypalIntent(euros: Int? = null) =
     Intent(Intent.ACTION_VIEW, Uri.parse(if (euros == null) PAYPAL_ME else "$PAYPAL_ME/${euros}EUR"))
 
 /**
+ * The app's own store page, where the rating is. market:// opens the Play app directly; a phone
+ * without it — or a build installed from anywhere else — falls back to the web listing. Trying
+ * and catching rather than asking first, which on modern Android needs a <queries> manifest
+ * entry just to be told the answer.
+ */
+fun Context.openRating() {
+    val web = "https://play.google.com/store/apps/details?id=$packageName"
+    runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName"))) }
+        .onFailure { runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(web))) } }
+}
+
+/**
  * A time of day written the way this phone writes them. Not [java.time.format.DateTimeFormatter]:
  * that follows the locale alone, and whether the clock reads 14:00 or 2:00 PM is a setting the
  * user makes for themselves, separately from where they live.

@@ -36,4 +36,3 @@ Functionality includes:
   The base sound is waves coming ashore. During the breath in, the pitch goes up, during breathing out, the pitch goes down.
 
   # TODO
-  - A link for rating in the app store

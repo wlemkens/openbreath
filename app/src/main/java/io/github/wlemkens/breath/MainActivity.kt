@@ -273,28 +273,24 @@ fun SessionScreen(
                     }
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         DropdownMenuItem(
-                            text = { Text("Log") },
-                            onClick = { menuOpen = false; onOpenLog() },
+                            text = { Text("Settings") },
+                            onClick = { menuOpen = false; onOpenSettings() },
                         )
                         DropdownMenuItem(
                             text = { Text("Goals") },
                             onClick = { menuOpen = false; onOpenGoals() },
                         )
                         DropdownMenuItem(
-                            text = { Text("Achievements") },
-                            onClick = { menuOpen = false; onOpenAchievements() },
-                        )
-                        DropdownMenuItem(
                             text = { Text("Reminders") },
                             onClick = { menuOpen = false; onOpenReminders() },
                         )
                         DropdownMenuItem(
-                            text = { Text("Settings") },
-                            onClick = { menuOpen = false; onOpenSettings() },
+                            text = { Text("Achievements") },
+                            onClick = { menuOpen = false; onOpenAchievements() },
                         )
                         DropdownMenuItem(
-                            text = { Text("Support") },
-                            onClick = { menuOpen = false; onOpenSupport() },
+                            text = { Text("Log") },
+                            onClick = { menuOpen = false; onOpenLog() },
                         )
                         DropdownMenuItem(
                             text = { Text("Feedback") },
@@ -303,6 +299,14 @@ fun SessionScreen(
                                 // a phone with nothing that opens links is not a crash
                                 runCatching { context.startActivity(feedbackIntent()) }
                             },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Support") },
+                            onClick = { menuOpen = false; onOpenSupport() },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Rate") },
+                            onClick = { menuOpen = false; context.openRating() },
                         )
                     }
                 }
