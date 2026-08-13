@@ -105,6 +105,29 @@ class SessionTest {
     }
 
     @Test
+    fun `a marker that varies by phase still sounds once at a skipped hold`() {
+        // a zero-length hold ends on the same instant as the phase before it. Both are asked
+        // for their sound, and the two answers must be one sound, not two struck together
+        for (tone in MarkerTone.entries) {
+            assertEquals(
+                "$tone splits the top of the breath",
+                markerRate(tone, Phase.INHALE),
+                markerRate(tone, Phase.HOLD_IN),
+                1e-4f,
+            )
+            assertEquals(
+                "$tone splits the bottom of the breath",
+                markerRate(tone, Phase.EXHALE),
+                markerRate(tone, Phase.HOLD_OUT),
+                1e-4f,
+            )
+        }
+        // and the two turns of the breath are told apart, which is the point of varying at all
+        assertEquals(true, markerRate(MarkerTone.TICK, Phase.INHALE) != markerRate(MarkerTone.TICK, Phase.EXHALE))
+        assertEquals(true, markerRate(MarkerTone.GONG, Phase.INHALE) != markerRate(MarkerTone.GONG, Phase.EXHALE))
+    }
+
+    @Test
     fun `a short phase is not swallowed by its own fades`() {
         // a 600 ms hold: ramp capped at 200 ms, so it still reaches full level in the middle
         val short = Timing(inhaleMs = 4000, holdInMs = 600, exhaleMs = 4000, holdOutMs = 0)
@@ -290,6 +313,44 @@ class SessionTest {
         // and no goals at all is not "done" — a reminder that skipped itself for want of
         // anything to measure would simply never arrive
         assertFalse(emptyList<Goal>().allReached(log, noon))
+    }
+
+    @Test
+    fun `a milestone run counts days where every daily goal was met`() {
+        val zone = ZoneId.of("Europe/Brussels")
+        val wednesdayNoon = ZonedDateTime.of(2026, 8, 12, 12, 0, 0, 0, zone)
+        val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
+        fun on(day: Int, hour: Int, ms: Long) =
+            entryFor(ZonedDateTime.of(2026, 8, day, hour, 0, 0, 0, zone).toInstant().toEpochMilli(), ms, preset)
+
+        val tenMinutes = Goal(id = 1, metric = GoalMetric.MINUTES, target = 10)
+        val weekly = Goal(id = 2, metric = GoalMetric.MINUTES, period = GoalPeriod.WEEK, target = 300)
+        // Mon and Tue reached the ten minutes, Wed is only halfway there so far
+        val log = listOf(on(10, 9, 600_000L), on(11, 9, 600_000L), on(12, 9, 300_000L))
+
+        // today falling short does not end the run: the day is not over
+        assertEquals(2, log.allReachedStreak(listOf(tenMinutes), wednesdayNoon))
+        // a weekly goal nowhere near met would make every day fail, so it is left out entirely
+        assertEquals(2, log.allReachedStreak(listOf(tenMinutes, weekly), wednesdayNoon))
+        // with no daily goals the bar is simply having practised, so Wednesday counts too
+        assertEquals(3, log.allReachedStreak(listOf(weekly), wednesdayNoon))
+        // and a day missed in the middle ends it
+        assertEquals(1, listOf(on(10, 9, 600_000L), on(12, 9, 600_000L))
+            .allReachedStreak(listOf(tenMinutes), wednesdayNoon))
+    }
+
+    @Test
+    fun `a milestone is due once, and a run that passed one while away still gets its moment`() {
+        assertEquals(null, dueMilestone(days = 2, celebrated = 0))
+        assertEquals(3, dueMilestone(days = 3, celebrated = 0))
+        // shown once: the same run does not celebrate again tomorrow
+        assertEquals(null, dueMilestone(days = 4, celebrated = 3))
+        assertEquals(7, dueMilestone(days = 7, celebrated = 3))
+        // opened after a fortnight away: the longest one passed, not the first or all of them
+        assertEquals(30, dueMilestone(days = 45, celebrated = 3))
+        // past the last fixed length it is every anniversary, and nothing in between
+        assertEquals(null, dueMilestone(days = 700, celebrated = 500))
+        assertEquals(730, dueMilestone(days = 730, celebrated = 500))
     }
 
     @Test

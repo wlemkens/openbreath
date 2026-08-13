@@ -5,7 +5,8 @@ Functionality includes:
 - custom timing of the in, hold, out and hold phases.
 - custom soundscapes for the different phases:
   - a sound duing each phase
-  - or a sound at the end of each phase
+  - or a sound at the end of each phase: singing bowl, bell or metronome tick, pitched by the
+    turn it marks so going into a breath in does not sound like going out
   - the end sounds can be the users own mp3s
 - optional automatic disabling of notifications during the meditation
 - optional vibration during at the end of each phase
@@ -40,6 +41,7 @@ Functionality includes:
   The base sound is waves coming ashore. During the breath in, the pitch goes up, during breathing out, the pitch goes down.
 
   # TODO
-  - Milestones: 3 days all goals reached, a week, a month, 100 days, half a year, a year, 500 days, every year
   - whale sound
-  - metronom sound as alternative to the gong between phases
+  - Brightness/timbre sweep: a tone that gets brighter/richer on inhale and darker/softer on exhale
+  - Harmonic content — add overtones on inhale that dissolve on exhale
+  

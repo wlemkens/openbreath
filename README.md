@@ -8,7 +8,8 @@ An Android app for heart coherence breathing meditations.
 - A breath cue to follow with your eyes: a sphere that opens as you breathe in and closes as you
   breathe out, either as a glow or a point cloud, in a colour you pick.
 - Soundscapes per phase — waves that rise and fall with the breath, a marker at each phase change
-  (singing bowl, bell, or an mp3 of your own), or silence.
+  (singing bowl, bell, metronome tick, or an mp3 of your own), or silence. The bowl and the tick
+  are pitched by the turn they mark, so going into a breath in does not sound like going out.
 - A singing bowl at the end of the session, so you don't have to check whether it is over.
 - Optional vibration at each phase change.
 - Optional flashlight that brightens as you breathe in and fades as you breathe out — the breath
@@ -22,6 +23,9 @@ An Android app for heart coherence breathing meditations.
   Counted from the log, so a new goal credits the practice you had already done.
 - Achievements: days in a row, sittings, minutes, minutes today, and a streak per goal. Read back
   out of the log too, so a goal set today already shows the run of days behind it.
+- Milestones at 3 days, a week, a month, 100 days, half a year, a year, 500 days and every year
+  after — a run of days with everything you set yourself done. Each one says so once, with the
+  breath cue breathing at you.
 - A feedback form, opened in your browser. The app sends nothing on its own.
 - A support page. The app is free and stays free; if you want to send something, PayPal opens in
   your browser. Nothing is charged from the app, and it is never told whether you did.

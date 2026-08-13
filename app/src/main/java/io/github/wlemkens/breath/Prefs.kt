@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -33,6 +34,9 @@ enum class MarkerTone(val label: String) {
 
     /** Pitched by phase — see [markerHz]. */
     GONG("Gong"),
+
+    /** A metronome's click, pitched by phase like the gong. */
+    TICK("Tick"),
 }
 
 /** What the breath cue on the session screen looks like. */
@@ -326,6 +330,68 @@ internal fun List<Entry>.streak(goal: Goal, now: ZonedDateTime): Int {
 internal fun List<Goal>.allReached(history: List<Entry>, now: ZonedDateTime): Boolean =
     isNotEmpty() && all { it.reached(history.towards(it, periodStartMs(it.period, now))) }
 
+/**
+ * Days in a row on which everything asked for that day was done. Weekly goals are left out:
+ * one is unmet for most of its own week, so counting it would make a daily streak impossible.
+ * With no daily goals set the bar is simply having practised, which is the figure the
+ * achievements screen already calls "days in a row".
+ */
+internal fun List<Entry>.allReachedStreak(goals: List<Goal>, now: ZonedDateTime): Int {
+    val daily = goals.filter { it.period == GoalPeriod.DAY }.ifEmpty { listOf(EVERY_DAY) }
+    val byDay = groupBy { Instant.ofEpochMilli(it.at).atZone(now.zone).toLocalDate() }
+    fun met(day: LocalDate) =
+        byDay[day].orEmpty().let { entries -> daily.all { entries.tally(it.metric) >= it.target } }
+
+    // today counts if it is already done, and cannot break the run if it is not: the day is
+    // not over yet
+    var at = now.toLocalDate()
+    if (!met(at)) at = at.minusDays(1)
+    var run = 0
+    while (met(at)) {
+        run++
+        at = at.minusDays(1)
+    }
+    return run
+}
+
+/** The lengths worth marking. Past the last of them, every anniversary. */
+private val MILESTONE_DAYS = listOf(3, 7, 30, 100, 182, 365, 500)
+
+internal fun isMilestone(days: Int) = days in MILESTONE_DAYS || (days > 500 && days % 365 == 0)
+
+/**
+ * The milestone to celebrate for a [days]-long run, given the last one already celebrated —
+ * the longest one reached rather than one landed on exactly, so a streak that passes a
+ * milestone while the app is closed still gets its moment when it is next opened.
+ */
+internal fun dueMilestone(days: Int, celebrated: Int): Int? =
+    (celebrated + 1..days).lastOrNull { isMilestone(it) }
+
+internal fun milestoneLabel(days: Int): String = when {
+    days == 7 -> "A week"
+    days == 30 -> "A month"
+    days == 182 -> "Half a year"
+    days == 365 -> "A year"
+    days > 365 && days % 365 == 0 -> "${days / 365} years"
+    else -> "$days days"
+}
+
+/**
+ * Says what was done and what it means. Written per length rather than from a template: a
+ * hundred days is not three days with a bigger number in it, and a line that fits both fits
+ * neither well.
+ */
+internal fun milestoneMessage(days: Int): String = when {
+    days <= 3 -> "Three days in a row, everything you set yourself done. This is how a practice begins."
+    days <= 7 -> "A week of it, every goal met. It is starting to stick."
+    days <= 30 -> "A month without missing what you asked of yourself. That is not chance any more."
+    days <= 100 -> "A hundred days. Most things do not last that long. This one has."
+    days <= 182 -> "Half a year of keeping your word to yourself, one breath at a time."
+    days <= 365 -> "A year. Every day, everything you set yourself, done."
+    days <= 500 -> "Five hundred days. There is little left to say."
+    else -> "${days / 365} years of it, unbroken."
+}
+
 /** Practising at all, once a day, is a streak worth keeping whether or not a goal says so. */
 internal val EVERY_DAY = Goal(id = 0, metric = GoalMetric.SITTINGS, period = GoalPeriod.DAY, target = 1)
 
@@ -370,6 +436,15 @@ fun Context.goalsFlow(): Flow<List<Goal>> = store.data.map { decodeGoals(it[GOAL
 suspend fun Context.saveGoals(goals: List<Goal>) {
     val encoded = json.encodeToString(goals.map { it.sane() })
     store.edit { it[GOALS] = encoded }
+}
+
+/** The longest milestone already shown, so a run is celebrated once rather than every launch. */
+private val CELEBRATED = intPreferencesKey("celebrated")
+
+fun Context.celebratedFlow(): Flow<Int> = store.data.map { it[CELEBRATED] ?: 0 }
+
+suspend fun Context.saveCelebrated(days: Int) {
+    store.edit { it[CELEBRATED] = days }
 }
 
 private val REMINDERS = stringPreferencesKey("reminders")

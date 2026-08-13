@@ -13,6 +13,7 @@ import java.util.Random
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.exp
+import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -160,9 +161,27 @@ fun gongRate(phase: Phase): Float = when (phase) {
     Phase.EXHALE, Phase.HOLD_OUT -> 1f
 }
 
-/** The bell has one pitch wherever it rings, so only the gong varies. */
-fun markerRate(tone: MarkerTone, phase: Phase): Float =
-    if (tone == MarkerTone.GONG) gongRate(phase) else 1f
+/** Base pitch of the metronome tick, before [tickRate] moves it. */
+private const val TICK_HZ = 900f
+
+/**
+ * The tick that starts an inhale rings a fifth above the one that starts an exhale, so a breath
+ * reads as a downbeat and an offbeat rather than as a row of identical clicks.
+ *
+ * Grouped exactly as [gongRate] is, and for the same reason: two phases ending on one instant —
+ * which is what a zero-length hold means — have to agree on a pitch, or they sound twice.
+ */
+fun tickRate(phase: Phase): Float = when (phase) {
+    Phase.INHALE, Phase.HOLD_IN -> 1f
+    Phase.EXHALE, Phase.HOLD_OUT -> 1.5f
+}
+
+/** The bell has one pitch wherever it rings; the other two follow the breath. */
+fun markerRate(tone: MarkerTone, phase: Phase): Float = when (tone) {
+    MarkerTone.GONG -> gongRate(phase)
+    MarkerTone.TICK -> tickRate(phase)
+    MarkerTone.BELL -> 1f
+}
 
 /**
  * The bowl recording rings for nearly 15 s, longer than a breath phase. It plays at full
@@ -222,6 +241,7 @@ class PhaseMarkers(private val context: Context) {
     private var endBowl = -1
     private var endStream = 0
     private var bell: AudioTrack? = null
+    private val ticks = mutableMapOf<Float, AudioTrack>()
 
     init {
         // a marker that silently fails to decode is a phase boundary with no sound at all,
@@ -277,6 +297,7 @@ class PhaseMarkers(private val context: Context) {
             // the user's own file plays whole — truncating their choice is not ours to do
             id != null -> pool.play(id, 1f, 1f, 1, 0, 1f)
             sound.tone == MarkerTone.GONG -> playBowl(gongRate(phase))
+            sound.tone == MarkerTone.TICK -> playTick(tickRate(phase))
             else -> playBell()
         }
     }
@@ -330,11 +351,26 @@ class PhaseMarkers(private val context: Context) {
         }
     }
 
+    /**
+     * One track per pitch, kept because a tick is 60 ms of buffer and rendering one on the
+     * boundary itself would be the audible thing about it.
+     */
+    private fun playTick(rate: Float) {
+        val track = ticks.getOrPut(rate) { ticked(TICK_HZ * rate) }
+        runCatching {
+            track.stop()
+            track.reloadStaticData()
+            track.play()
+        }
+    }
+
     fun release() {
         fades.removeCallbacksAndMessages(null)
         pool.release()
         bell?.release()
         bell = null
+        ticks.values.forEach { it.release() }
+        ticks.clear()
         bowl = -1
         endBowl = -1
         endStream = 0
@@ -391,6 +427,39 @@ class PhaseMarkers(private val context: Context) {
         // every marker lands at the same peak. Left to a fixed scalar, each tone and pitch
         // ends up a different loudness purely from how its partials happen to sum — and
         // normalising also makes clipping impossible rather than merely unlikely.
+        var peak = 0f
+        for (v in raw) peak = maxOf(peak, abs(v))
+        val scale = if (peak > 0f) MARKER_PEAK / peak else 0f
+        return staticTrack(ShortArray(n) { (raw[it] * scale).toInt().toShort() })
+    }
+
+    /**
+     * A metronome click: a short sine gone in about 40 ms, with a filtered noise transient on
+     * top. The noise is what the ear hears as the tick; the sine is what gives it a pitch to
+     * tell one boundary from another. No detune and no partials — shimmer is what makes a bell
+     * sound like a bell, and a metronome is meant to be a hard, plain edge.
+     */
+    private fun ticked(hz: Float): AudioTrack {
+        val seconds = 0.06
+        val n = (SR * seconds).toInt()
+        val raw = FloatArray(n)
+        val rnd = Random()
+        // the same one-pole as the struck markers, and the same correction for what it costs
+        val clickA = 1.0 - exp(-2.0 * PI * STRIKE_HZ / SR)
+        val clickNorm = 1.0 / sqrt(clickA / (2.0 - clickA))
+        var clickLp = 0.0
+
+        for (i in 0 until n) {
+            val t = i.toDouble() / SR
+            clickLp += clickA * ((rnd.nextFloat() * 2 - 1) - clickLp)
+            // starts at zero either way: a sine from phase 0 and noise through a closed filter
+            val body = sin(2 * PI * hz * t) * exp(-90.0 * t)
+            val click = clickLp * clickNorm * exp(-260.0 * t)
+            // whatever is left at the end of the buffer would click on its own, so taper out
+            val taper = 1.0 - (i.toDouble() / n).pow(6)
+            raw[i] = ((body * 0.7 + click * 0.6) * taper).toFloat()
+        }
+
         var peak = 0f
         for (v in raw) peak = maxOf(peak, abs(v))
         val scale = if (peak > 0f) MARKER_PEAK / peak else 0f

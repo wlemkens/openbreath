@@ -86,6 +86,9 @@ private fun Breath(modifier: Modifier = Modifier) {
     val current = config ?: return
     val saved = goals ?: return
 
+    // over whichever screen is showing: a milestone is worth interrupting a settings tweak for
+    MilestoneWatch(current, saved)
+
     when {
         showSettings -> SettingsScreen(
             config = current,
