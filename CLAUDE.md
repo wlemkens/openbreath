@@ -41,6 +41,5 @@ Functionality includes:
 
   # TODO
   - Milestones: 3 days all goals reached, a week, a month, 100 days, half a year, a year, 500 days, every year
-  - nicer transition between breathing out and breathing in
   - whale sound
   - metronom sound as alternative to the gong between phases

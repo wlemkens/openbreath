@@ -83,38 +83,31 @@ data class PhaseState(
      * Eased with the same raised cosine as [openness]: a linear amplitude ramp sounds abrupt
      * at both ends, because loudness is perceived closer to logarithmically than linearly.
      *
-     * Both the length and the depth scale with [openness], because a boundary at peak inhale
-     * has far more amplitude to travel than one at the bottom of the exhale:
-     *
-     *  - the ramp stretches to twice [EDGE_MS] at the top of the breath, halving its slope;
-     *  - and it bottoms out at [EDGE_FLOOR_AT_PEAK] rather than silence, because a hole of
-     *    silence punched into the loudest part of the soundscape is what reads as harsh.
-     *
-     * At the bottom of the breath the floor is 0, so that boundary still fades to true
-     * silence — it already sounded right and this deliberately leaves it alone.
+     * Every boundary is treated alike — the same [EDGE_RAMP_MS] and the same
+     * [EDGE_FLOOR_AT_PEAK] floor, whatever the breath is doing. The dip used to shrink toward
+     * the bottom of the exhale, on the reasoning that a quiet boundary has less amplitude to
+     * travel; in the ear that came out as a gap, because it reached true silence at the one
+     * turn the breath should carry through without pause.
      *
      * Capped at a third of the phase, so at least the middle third always plays at full level.
      */
     val edge: Float
         get() {
-            val ramp = minOf((EDGE_MS * (1f + openness)).toInt(), phaseMs / 3)
+            val ramp = minOf(EDGE_RAMP_MS, phaseMs / 3)
             if (ramp <= 0) return 1f
             val sinceStart = progress * phaseMs
             val dip = eased((minOf(sinceStart, phaseMs - sinceStart) / ramp).coerceIn(0f, 1f))
-            val floor = EDGE_FLOOR_AT_PEAK * openness
-            return floor + (1f - floor) * dip
+            return EDGE_FLOOR_AT_PEAK + (1f - EDGE_FLOOR_AT_PEAK) * dip
         }
 }
 
-/**
- * Fade length at the quiet end of the breath; doubles towards the loud end. A tuning knob —
- * adjust it by ear.
- */
-const val EDGE_MS = 500
+/** Fade length at every phase boundary. A tuning knob — adjust it by ear. */
+const val EDGE_RAMP_MS = 1000
 
 /**
- * How far the fade ducks at the top of the breath: 0 would be full silence, 1 no dip at all.
- * A tuning knob — lower it for a starker boundary, raise it for a smoother one.
+ * How far the fade ducks: 0 would be full silence, 1 no dip at all. A tuning knob — lower it
+ * for a starker boundary, raise it for a smoother one. Never 0: the breath should turn without
+ * the soundscape ever going away.
  */
 const val EDGE_FLOOR_AT_PEAK = 0.3f
 

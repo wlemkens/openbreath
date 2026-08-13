@@ -70,11 +70,10 @@ class SessionTest {
 
     @Test
     fun `every phase fades in and out so its boundary is audible`() {
-        // at the bottom of the breath the dip reaches true silence
-        assertEquals(0f, phaseAt(0, t).edge, 1e-3f) // inhale begins
-        assertEquals(0f, phaseAt(12000, t).edge, 1e-3f) // hold_out begins
-
-        // at the top it ducks hard but never to silence: a hole at peak volume reads as harsh
+        // never to silence, at either end of the breath: a hole punched in the soundscape is
+        // what reads as a gap rather than a turn
+        assertEquals(EDGE_FLOOR_AT_PEAK, phaseAt(0, t).edge, 0.02f) // inhale begins
+        assertEquals(EDGE_FLOOR_AT_PEAK, phaseAt(12000, t).edge, 0.02f) // hold_out begins
         assertEquals(EDGE_FLOOR_AT_PEAK, phaseAt(4000, t).edge, 0.02f) // hold_in begins
         assertEquals(EDGE_FLOOR_AT_PEAK, phaseAt(6000, t).edge, 0.02f) // exhale begins
         assertEquals(EDGE_FLOOR_AT_PEAK, phaseAt(3999, t).edge, 0.02f) // 1 ms before inhale ends
@@ -85,24 +84,24 @@ class SessionTest {
         assertEquals(1f, phaseAt(2000, t).edge, 1e-3f) // inhale
         assertEquals(1f, phaseAt(9000, t).edge, 1e-3f) // exhale
 
-        // eased, not linear: a quarter into the ramp is well below a quarter of the level,
+        // eased, not linear: a quarter into the ramp is well below a quarter of the way up,
         // which is what stops the fade sounding abrupt
-        assertEquals(0.146f, phaseAt(EDGE_MS / 4L, t).edge, 1e-2f)
-        assertEquals(0.5f, phaseAt(EDGE_MS / 2L, t).edge, 1e-2f)
+        val quarter = phaseAt(EDGE_RAMP_MS / 4L, t).edge
+        assertEquals(true, quarter < EDGE_FLOOR_AT_PEAK + 0.25f * (1f - EDGE_FLOOR_AT_PEAK))
+        // halfway up the ramp is halfway up the range, the one point the cosine is symmetric on
+        assertEquals(0.65f, phaseAt(EDGE_RAMP_MS / 2L, t).edge, 1e-2f)
     }
 
     @Test
-    fun `the fade is longer at the loud top of the breath than the quiet bottom`() {
-        // 400 ms in from the quiet bottom of the breath is already well up the ramp, while
-        // 400 ms out from the loud peak has barely begun to drop: the loud boundary gets the
-        // longer, gentler fade, which is what stops it sounding harder than the quiet one
-        assertEquals(true, phaseAt(400, t).edge > phaseAt(4000 - 400, t).edge)
+    fun `both turns of the breath fade alike`() {
+        // the same distance either side of a boundary gives the same level, wherever in the
+        // breath it falls. The exhale used to fade to silence into the next inhale while the
+        // inhale only ducked into the exhale, and that difference was audible as a gap
+        assertEquals(phaseAt(4000 - 400, t).edge, phaseAt(400, t).edge, 1e-3f)
 
-        // same comparison across the two boundaries themselves: leaving the peak into the
-        // exhale fades in more slowly than leaving the trough into the next inhale
-        val fromPeak = phaseAt(6000 + 400, t).edge // exhale begins at full openness
-        val fromTrough = phaseAt(13000 + 400, t).edge // next inhale begins at zero openness
-        assertEquals(true, fromPeak < fromTrough)
+        val intoExhale = phaseAt(6000 + 400, t).edge // leaving the peak
+        val intoInhale = phaseAt(13000 + 400, t).edge // leaving the trough, a cycle later
+        assertEquals(intoExhale, intoInhale, 1e-3f)
     }
 
     @Test
@@ -110,9 +109,8 @@ class SessionTest {
         // a 600 ms hold: ramp capped at 200 ms, so it still reaches full level in the middle
         val short = Timing(inhaleMs = 4000, holdInMs = 600, exhaleMs = 4000, holdOutMs = 0)
         assertEquals(1f, phaseAt(4000 + 200, short).edge, 1e-3f)
-        // a hold sits at the top of the breath, so its dip stops at the floor
         assertEquals(EDGE_FLOOR_AT_PEAK, phaseAt(4000, short).edge, 0.02f)
-        // and a phase far shorter than the ramp still peaks rather than staying silent
+        // and a phase far shorter than the ramp still peaks rather than staying at the floor
         val tiny = Timing(inhaleMs = 4000, holdInMs = 300, exhaleMs = 4000, holdOutMs = 0)
         assertEquals(1f, phaseAt(4000 + 150, tiny).edge, 1e-3f)
     }
