@@ -91,7 +91,9 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 Column(Modifier.weight(1f)) {
                     Text(reminder.name, style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        reminder.summary(context),
+                        reminder.summary(context) +
+                            (if (reminder.alarm) " · alarm" else "") +
+                            (if (reminder.onlyIfBehind) " · only when behind" else ""),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -196,6 +198,30 @@ private fun ReminderDialog(
                         )
                     }
                 }
+                ToggleRow("Ring until dismissed", draft.alarm) { draft = draft.copy(alarm = it) }
+                Text(
+                    if (draft.alarm) {
+                        "The alarm tone, over and over, heard through a silenced ringer. " +
+                            "Dismiss the notification to stop it."
+                    } else {
+                        "One notification, at the volume everything else arrives at."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                ToggleRow("Only when behind on a goal", draft.onlyIfBehind) {
+                    draft = draft.copy(onlyIfBehind = it)
+                }
+                Text(
+                    if (draft.onlyIfBehind) {
+                        "Stays quiet once every goal is reached. With no goals set there is " +
+                            "nothing to be ahead of, so it comes as usual."
+                    } else {
+                        "Comes whether or not you have already practised."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 if (draft.repeat != Repeat.DAILY) {
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),

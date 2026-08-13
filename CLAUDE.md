@@ -16,7 +16,11 @@ Functionality includes:
 - Alarm to remind you to take the exersises. Several alarms can be configured.
 
   # Licensing
-  The code is MIT licensed — see LICENSE.
+  The code is GPL-3.0-or-later — see LICENSE. Copyright (c) 2026 Wim Lemkens.
+
+  Every dependency has to stay GPL-compatible: the AndroidX and Kotlin stack is Apache-2.0,
+  which is fine one-way into GPLv3. Adding anything under a proprietary or GPL-incompatible
+  licence would make the combined app undistributable, so check before pulling one in.
 
   The bundled audio is **not** covered by that grant. `app/src/main/res/raw/*.mp3` are cuts
   of files in `media/` from the `freesound_community` Pixabay account, released under
@@ -36,3 +40,7 @@ Functionality includes:
   The base sound is waves coming ashore. During the breath in, the pitch goes up, during breathing out, the pitch goes down.
 
   # TODO
+  - Milestones: 3 days all goals reached, a week, a month, 100 days, half a year, a year, 500 days, every year
+  - nicer transition between breathing out and breathing in
+  - whale sound
+  - metronom sound as alternative to the gong between phases

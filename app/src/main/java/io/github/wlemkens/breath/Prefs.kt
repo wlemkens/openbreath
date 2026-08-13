@@ -319,6 +319,13 @@ internal fun List<Entry>.streak(goal: Goal, now: ZonedDateTime): Int {
     return run
 }
 
+/**
+ * Whether every goal stands reached as things are now. Having no goals at all is not "done" —
+ * a reminder that skips itself because nothing was ever asked for would simply never arrive.
+ */
+internal fun List<Goal>.allReached(history: List<Entry>, now: ZonedDateTime): Boolean =
+    isNotEmpty() && all { it.reached(history.towards(it, periodStartMs(it.period, now))) }
+
 /** Practising at all, once a day, is a streak worth keeping whether or not a goal says so. */
 internal val EVERY_DAY = Goal(id = 0, metric = GoalMetric.SITTINGS, period = GoalPeriod.DAY, target = 1)
 
@@ -344,6 +351,10 @@ data class Reminder(
     val repeat: Repeat = Repeat.DAILY,
     /** ISO days of the week, 1 = Monday. More than one is allowed. Ignored by [Repeat.DAILY]. */
     val days: Set<Int> = setOf(1),
+    /** Rings the alarm tone over and over until dismissed, rather than sounding once. */
+    val alarm: Boolean = false,
+    /** Stays quiet when every goal is already reached — see [allReached]. */
+    val onlyIfBehind: Boolean = false,
     val enabled: Boolean = true,
 )
 

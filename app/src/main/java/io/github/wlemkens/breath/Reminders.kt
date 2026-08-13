@@ -8,6 +8,8 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
+import android.media.RingtoneManager
 import android.os.Build
 import android.provider.Settings
 import kotlinx.coroutines.CoroutineScope
@@ -19,6 +21,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.temporal.TemporalAdjusters
 import java.time.temporal.WeekFields
 
@@ -81,6 +84,7 @@ internal fun Repeat.weekHint(today: LocalDate): String = when (this) {
 private const val ACTION_REMIND = "io.github.wlemkens.breath.REMIND"
 private const val EXTRA_ID = "id"
 private const val CHANNEL = "reminders"
+private const val CHANNEL_ALARM = "alarms"
 
 private fun Context.alarms(): AlarmManager? = getSystemService(AlarmManager::class.java)
 
@@ -138,7 +142,11 @@ class ReminderReceiver : BroadcastReceiver() {
                 val stored = context.remindersFlow().first()
                 if (intent.action == ACTION_REMIND) {
                     val reminder = stored.firstOrNull { it.id == id && it.enabled } ?: return@launch
-                    context.ring(reminder)
+                    val done = reminder.onlyIfBehind &&
+                        context.goalsFlow().first()
+                            .allReached(context.historyFlow().first(), ZonedDateTime.now())
+                    if (!done) context.ring(reminder)
+                    // rescheduled either way: a morning it stayed quiet is not the end of it
                     context.scheduleReminder(reminder)
                 } else {
                     context.applyReminders(stored)
@@ -150,12 +158,36 @@ class ReminderReceiver : BroadcastReceiver() {
     }
 }
 
+/**
+ * The alarm channel: the phone's own alarm tone, on the alarm stream so it is heard through a
+ * silenced ringer. A channel is fixed once created, so its settings are what a user who never
+ * touches them gets — and what they change is theirs to keep.
+ */
+private fun alarmChannel() =
+    NotificationChannel(CHANNEL_ALARM, "Alarms", NotificationManager.IMPORTANCE_HIGH).apply {
+        setSound(
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build(),
+        )
+        enableVibration(true)
+        // honoured only where the app has been given notification policy access, quietly ignored
+        // otherwise — the same access the silence-during-a-session setting asks for
+        setBypassDnd(true)
+    }
+
 private fun Context.ring(reminder: Reminder) {
     val manager = getSystemService(NotificationManager::class.java) ?: return
     // creating it every time is cheap and idempotent, and saves tracking whether this install
     // has been through a run since the channel was added
     manager.createNotificationChannel(
-        NotificationChannel(CHANNEL, "Reminders", NotificationManager.IMPORTANCE_DEFAULT)
+        if (reminder.alarm) {
+            alarmChannel()
+        } else {
+            NotificationChannel(CHANNEL, "Reminders", NotificationManager.IMPORTANCE_DEFAULT)
+        }
     )
     val open = PendingIntent.getActivity(
         this,
@@ -163,13 +195,20 @@ private fun Context.ring(reminder: Reminder) {
         Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
-    val notification = Notification.Builder(this, CHANNEL)
+    val notification = Notification.Builder(this, if (reminder.alarm) CHANNEL_ALARM else CHANNEL)
         .setSmallIcon(R.drawable.ic_notification)
         .setContentTitle(reminder.name)
-        .setContentText("Time to breathe")
+        .setContentText(if (reminder.alarm) "Time to breathe — tap to stop" else "Time to breathe")
         .setContentIntent(open)
+        .setCategory(if (reminder.alarm) Notification.CATEGORY_ALARM else Notification.CATEGORY_REMINDER)
+        // dismissible on purpose: an ongoing alarm you cannot swipe away is one you cannot stop
         .setAutoCancel(true)
         .build()
+    if (reminder.alarm) {
+        // repeats the tone until the notification is dismissed or opened. This one flag is the
+        // whole difference between a reminder you can sleep through and one you cannot
+        notification.flags = notification.flags or Notification.FLAG_INSISTENT
+    }
     // notifications can be revoked at any time; that is not an error worth crashing a broadcast
     runCatching { manager.notify(reminder.id, notification) }
 }

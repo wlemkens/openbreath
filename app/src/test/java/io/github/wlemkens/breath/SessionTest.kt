@@ -277,6 +277,24 @@ class SessionTest {
     }
 
     @Test
+    fun `a reminder that waits for goals only stays quiet once every one is reached`() {
+        val zone = ZoneId.of("Europe/Brussels")
+        val noon = ZonedDateTime.of(2026, 8, 12, 12, 0, 0, 0, zone)
+        val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
+        val today = periodStartMs(GoalPeriod.DAY, noon)
+        val log = listOf(entryFor(today + 1, 300_000L, preset)) // one sitting, five minutes
+
+        val oneSitting = Goal(id = 1, metric = GoalMetric.SITTINGS, target = 1)
+        val tenMinutes = Goal(id = 2, metric = GoalMetric.MINUTES, target = 10)
+        assertTrue(listOf(oneSitting).allReached(log, noon))
+        // one goal short is still behind, however well the others are going
+        assertFalse(listOf(oneSitting, tenMinutes).allReached(log, noon))
+        // and no goals at all is not "done" — a reminder that skipped itself for want of
+        // anything to measure would simply never arrive
+        assertFalse(emptyList<Goal>().allReached(log, noon))
+    }
+
+    @Test
     fun `a goal keeps a target its own metric can mean`() {
         // 300 breaths is a fair week; 300 minutes is not a target, it is a typo
         assertEquals(

@@ -27,7 +27,8 @@ An Android app for heart coherence breathing meditations.
   your browser. Nothing is charged from the app, and it is never told whether you did.
 - A link to the store listing, for rating it.
 - Reminders: as many as you like, each with its own name and time — daily, or on the days you
-  pick, every week or in the odd or even weeks of the year. Nothing is asked of you until you
+  pick, every week or in the odd or even weeks of the year. Each one is either a quiet
+  notification or an alarm that rings until you dismiss it. Nothing is asked of you until you
   make the first one.
 
 ## Installing on a device
@@ -144,7 +145,12 @@ gitignored). Until then, debug builds are the way onto a device.
 
 ## Licence
 
-Code is MIT — see [LICENSE](LICENSE).
+Copyright (c) 2026 Wim Lemkens.
+
+Breath is free software: you can redistribute it and/or modify it under the terms of the **GNU
+General Public License**, either version 3 of the License, or (at your option) any later version —
+see [LICENSE](LICENSE). It is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 The bundled audio is **not** covered by that grant. `app/src/main/res/raw/*.mp3` are cuts of files
 from the [freesound_community](https://pixabay.com/users/freesound_community-46691455/) Pixabay
