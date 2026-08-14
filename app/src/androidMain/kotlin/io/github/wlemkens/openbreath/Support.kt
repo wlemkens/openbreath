@@ -31,7 +31,7 @@ private val SUPPORT = listOf(
 )
 
 /** The amounts on the buttons. Anything else goes through PayPal's own field. */
-private val AMOUNTS = listOf(4, 15, 25)
+private val AMOUNTS = listOf(4, 15, 26)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
