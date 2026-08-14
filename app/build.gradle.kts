@@ -1,10 +1,12 @@
 import java.util.Properties
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.multiplatform")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
+    id("org.jetbrains.compose")
 }
 
 /**
@@ -16,6 +18,47 @@ plugins {
 val keystoreProperties = Properties().apply {
     val file = rootProject.file("keystore.properties")
     if (file.exists()) file.inputStream().use { load(it) }
+}
+
+kotlin {
+    androidTarget {
+        compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+    }
+
+    /**
+     * The device and the simulator, which are both arm64 but not the same arm64. No iosX64:
+     * Compose Multiplatform stopped publishing it at 1.11, so the Intel-Mac simulator is off
+     * the table — adding the target back would only fail to resolve. Configuring these costs
+     * nothing on Linux; building them needs Xcode, so the link tasks only run on the Mac.
+     */
+    listOf(iosArm64(), iosSimulatorArm64()).forEach { target ->
+        target.binaries.framework {
+            baseName = "OpenBreath"
+            isStatic = true
+        }
+    }
+
+    sourceSets {
+        commonMain.dependencies {
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
+            implementation(compose.ui)
+            implementation(compose.components.resources)
+            // JetBrains' multiplatform build of androidx.lifecycle, versioned in step with it:
+            // 2.10+ still wants compileSdk 37 / AGP 9, so the ceiling that held before the port
+            // holds after it. 2.9.6 has LifecycleEventEffect and builds on 36.
+            implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.9.6")
+            implementation("androidx.datastore:datastore-preferences:1.2.1")
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+        }
+        androidMain.dependencies {
+            implementation("androidx.activity:activity-compose:1.13.0")
+        }
+        val androidUnitTest by getting {
+            dependencies { implementation("junit:junit:4.13.2") }
+        }
+    }
 }
 
 android {
@@ -30,14 +73,10 @@ android {
         versionName = "1.0"
     }
 
-    buildFeatures { compose = true }
-
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-
-    kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
 
     signingConfigs {
         if (keystoreProperties.isNotEmpty()) {
@@ -56,16 +95,4 @@ android {
             isMinifyEnabled = false
         }
     }
-}
-
-dependencies {
-    implementation(platform("androidx.compose:compose-bom:2026.06.01"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.activity:activity-compose:1.13.0")
-    // 2.10+ requires compileSdk 37 / AGP 9; 2.9.4 has LifecycleEventEffect and builds on 36
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
-    implementation("androidx.datastore:datastore-preferences:1.2.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-    testImplementation("junit:junit:4.13.2")
 }

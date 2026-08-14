@@ -64,7 +64,7 @@ Functionality includes:
 
   Presets and settings can be re-entered in a minute. A year of sittings cannot, so the log,
   the goals and the celebrated-milestone mark outrank every other consideration in this file.
-  `app/src/test/java/.../StorageTest.kt` holds strings that older versions really wrote and
+  `app/src/androidUnitTest/kotlin/.../StorageTest.kt` holds strings that older versions really wrote and
   decodes them with today's code. Add to it whenever the stored shape changes, and never edit
   an existing string to make a red test pass — the phone in someone's pocket still holds it.
 

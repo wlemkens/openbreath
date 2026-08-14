@@ -78,7 +78,7 @@ class IconGen {
             if (alpha > 0.02f) body.append(dot(cx, cy, size, color, alpha))
         }
 
-        File("src/main/res/drawable/ic_launcher_foreground.xml").writeText(
+        File("src/androidMain/res/drawable/ic_launcher_foreground.xml").writeText(
             HEADER + body + FOOTER
         )
     }
