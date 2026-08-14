@@ -78,19 +78,17 @@ Functionality includes:
   Adding a field with a default is always safe; `ignoreUnknownKeys` and per-field defaults do
   the rest. Removing or renaming one never is.
 
+  One gap is left open on purpose: `android:allowBackup` is true, so Android may restore an
+  older copy of the log and goals onto a fresh install, and nothing in the app can detect it.
+  That was weighed against carrying a practice log to a new phone, and the carrying won. It is
+  a decision, not an oversight — the manifest says so too.
+
   ## Sounds during the phases
   During hte breathing phases, there are different sound options available.
 
   The base sound is waves coming ashore. During the breath in, the pitch goes up, during breathing out, the pitch goes down.
 
   # TODO
-  - Decide `android:allowBackup`. It defaults to true, so Android may restore an older copy of
-    the log and goals over a fresh install — the one way practice history can be lost that the
-    app itself cannot prevent. Turning it off protects against that but gives up restoring a
-    real user's history onto a new phone.
-  - Before publishing, re-read Play's Payments policy against the Support screen. It permits
-    the PayPal link today (see Monetisation above); policies move, and this one decides whether
-    the app can be listed at all.
   - Generate the release keystore (see README) so `bundleRelease` produces something Play will
     take. The Gradle wiring is in place and falls back to unsigned until the key exists.
-  - Rename to OpenBreath
+  

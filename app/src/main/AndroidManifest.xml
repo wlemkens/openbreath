@@ -16,7 +16,12 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Backup stays on, deliberately. It is how a practice log survives a new phone, which is
+         worth more than the one thing it costs: a restore can put an older copy of the log and
+         goals over a fresh install, and the app cannot tell that it happened. Decided knowing
+         that; do not turn it off to "protect" the history. -->
     <application
+        android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="OpenBreath"
         android:supportsRtl="true"
