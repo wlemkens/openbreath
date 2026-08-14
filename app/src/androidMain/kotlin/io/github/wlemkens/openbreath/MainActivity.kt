@@ -51,9 +51,6 @@ import kotlinx.coroutines.withContext
 
 private val Ink = Color(0xFF07090F)
 
-/** The far end of the cue's gradient. Fixed; only the bright end is the user's to pick. */
-internal val Deep = Color(0xFF1E4B78)
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

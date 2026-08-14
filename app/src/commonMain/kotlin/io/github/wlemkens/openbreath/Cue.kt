@@ -19,6 +19,9 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+/** The far end of the cue's gradient. Fixed; only the bright end is the user's to pick. */
+internal val Deep = Color(0xFF1E4B78)
+
 /** The breath cue: something that grows on the inhale and shrinks on the exhale. */
 @Composable
 fun Cue(style: CueStyle, openness: Float, glow: Color) {
