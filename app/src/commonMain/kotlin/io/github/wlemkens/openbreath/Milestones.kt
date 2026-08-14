@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -46,10 +45,10 @@ import kotlin.random.Random
  */
 @Composable
 fun MilestoneWatch(config: Config, goals: List<Goal>) {
-    val context = LocalContext.current
+    val store = LocalStore.current
     val scope = rememberCoroutineScope()
-    val history by remember { context.historyFlow() }.collectAsState(initial = null)
-    val celebrated by remember { context.celebratedFlow() }.collectAsState(initial = null)
+    val history by remember { store.historyFlow() }.collectAsState(initial = null)
+    val celebrated by remember { store.celebratedFlow() }.collectAsState(initial = null)
 
     val log = history ?: return
     val last = celebrated ?: return
@@ -58,7 +57,7 @@ fun MilestoneWatch(config: Config, goals: List<Goal>) {
 
     MilestoneDialog(due, Color(config.cueColor)) {
         // marked before the dialog closes, so a recomposition cannot show it a second time
-        scope.launch { context.saveCelebrated(due) }
+        scope.launch { store.saveCelebrated(due) }
     }
 }
 

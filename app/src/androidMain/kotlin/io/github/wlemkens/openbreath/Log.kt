@@ -28,7 +28,8 @@ import java.time.format.FormatStyle
 @Composable
 fun LogScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val history by remember { context.historyFlow() }.collectAsState(initial = emptyList())
+    val store = LocalStore.current
+    val history by remember { store.historyFlow() }.collectAsState(initial = emptyList())
     // the store keeps them in the order they were last written; a log reads newest first
     val byDay = remember(history) {
         history.sortedByDescending { it.at }.groupBy { it.at.zoned().toLocalDate() }

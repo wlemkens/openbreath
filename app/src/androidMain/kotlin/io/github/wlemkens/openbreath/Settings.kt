@@ -387,16 +387,6 @@ fun SettingsScreen(
     }
 }
 
-@Composable
-internal fun SectionLabel(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.padding(top = 20.dp, bottom = 4.dp),
-    )
-}
-
 /** Half-second granularity: finer than that is not something a breath can follow. */
 @Composable
 private fun SecondsSlider(label: String, ms: Int, minMs: Int, maxMs: Int, onChange: (Int) -> Unit) {
@@ -408,31 +398,6 @@ private fun SecondsSlider(label: String, ms: Int, minMs: Int, maxMs: Int, onChan
         readout = "%.1f s".format(ms / 1000f),
         onChange = { onChange(it.roundToInt() * 500) },
     )
-}
-
-@Composable
-internal fun LabelledSlider(
-    label: String,
-    value: Float,
-    range: ClosedFloatingPointRange<Float>,
-    steps: Int,
-    readout: String,
-    onChangeFinished: (() -> Unit)? = null,
-    onChange: (Float) -> Unit,
-) {
-    Column {
-        Row {
-            Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-            Text(readout, style = MaterialTheme.typography.bodyMedium)
-        }
-        Slider(
-            value = value,
-            onValueChange = onChange,
-            onValueChangeFinished = onChangeFinished,
-            valueRange = range,
-            steps = steps.coerceAtLeast(0),
-        )
-    }
 }
 
 /**

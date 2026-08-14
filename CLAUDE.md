@@ -89,6 +89,49 @@ Functionality includes:
   That was weighed against carrying a practice log to a new phone, and the carrying won. It is
   a decision, not an oversight — the manifest says so too.
 
+  ## The iOS port
+  The module is Kotlin Multiplatform with Compose Multiplatform, targeting `androidTarget()`
+  plus `iosArm64` and `iosSimulatorArm64`. There is no `iosX64`: Compose Multiplatform stopped
+  publishing it at 1.11, so the Intel-Mac simulator is gone. Sources live in `src/commonMain`,
+  `src/androidMain`, `src/iosMain` and `src/androidUnitTest` — the old `src/main/java` and
+  `src/test/java` are gone, and an editor left open on a moved file will happily recreate it.
+
+  Nothing iOS can be compiled on Linux: the Kotlin/Native link step needs Xcode. The check that
+  the port has not broken anything is therefore still the Android one —
+  `./gradlew :app:testDebugUnitTest :app:assembleDebug`.
+
+  commonMain holds the session engine, the cue, every stored type and the whole of the goal
+  arithmetic (`Model.kt`), all reads and writes (`Store.kt`), the two shared widgets, and the
+  goals, achievements and milestone screens. Dates are kotlinx-datetime, not `java.time`.
+
+  Two rules the port established, both worth keeping:
+
+  - **Storage takes its `DataStore`, it does not find one.** `Store` is constructed with a
+    `DataStore<Preferences>` and knows nothing about where the file is. Android still opens it
+    through the `preferencesDataStore("breath")` delegate, at exactly the path every released
+    version has written to. A `Store` that built its own path would read an empty log on every
+    phone that updated, and nothing would report an error.
+  - **Screens read `LocalStore`, not `LocalContext`.** The Context was only ever a way to reach
+    the store; where a screen still takes one it is for something else, and that is the signal
+    it cannot move yet.
+
+  Still Android-only, and why:
+
+  - **`Audio.kt`** — AudioTrack/SoundPool. The DSP is portable; only the sink swaps for
+    AVAudioEngine.
+  - **`Reminders.kt`** — AlarmManager and a BroadcastReceiver → UNUserNotificationCenter.
+  - **`Platform.kt`** — vibration → CoreHaptics, torch → AVCaptureDevice.
+  - **`Settings.kt`, `RemindersScreen.kt`** — the file picker, permission prompts and intents.
+  - **`Log.kt`** — only `clockTime`, which asks Android whether this user reads 14:00 or 2 PM.
+    That is a genuine platform question, so it wants an expect/actual, not a rewrite.
+
+  kotlinx-datetime carries no locale data, so the week's first day is `expect firstDayOfWeek()`
+  — Android reads the locale, iOS will read NSCalendar. It is the only calendar fact the
+  library would not answer.
+
+  Do-not-disturb has no iOS equivalent and is not getting one — no public API sets a Focus.
+  That feature is Android-only by nature, not by omission.
+
   ## Sounds during the phases
   During hte breathing phases, there are different sound options available.
 

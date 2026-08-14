@@ -48,8 +48,9 @@ import java.util.Locale
 @Composable
 fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val store = LocalStore.current
     val scope = rememberCoroutineScope()
-    val reminders by remember { context.remindersFlow() }.collectAsState(initial = emptyList())
+    val reminders by remember { store.remindersFlow() }.collectAsState(initial = emptyList())
     var editing by remember { mutableStateOf<Reminder?>(null) }
 
     // asked for at the moment the first reminder is made, rather than on a first run by someone
@@ -58,7 +59,7 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
 
     fun save(list: List<Reminder>) {
         context.applyReminders(list)
-        scope.launch { context.saveReminders(list) }
+        scope.launch { store.saveReminders(list) }
     }
 
     LazyColumn(

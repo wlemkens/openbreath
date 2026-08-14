@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -56,9 +57,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme(background = Ink, surface = Ink)) {
-                Surface(Modifier.fillMaxSize()) {
-                    Breath(Modifier.safeDrawingPadding())
+            // the one place a Context is turned into a Store; nothing below this asks for one
+            CompositionLocalProvider(LocalStore provides store()) {
+                MaterialTheme(colorScheme = darkColorScheme(background = Ink, surface = Ink)) {
+                    Surface(Modifier.fillMaxSize()) {
+                        Breath(Modifier.safeDrawingPadding())
+                    }
                 }
             }
         }
@@ -69,8 +73,9 @@ class MainActivity : ComponentActivity() {
 private fun Breath(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val config by remember { context.configFlow() }.collectAsState(initial = null)
-    val goals by remember { context.goalsFlow() }.collectAsState(initial = null)
+    val store = LocalStore.current
+    val config by remember { store.configFlow() }.collectAsState(initial = null)
+    val goals by remember { store.goalsFlow() }.collectAsState(initial = null)
     var showSettings by remember { mutableStateOf(false) }
     var showLog by remember { mutableStateOf(false) }
     var showReminders by remember { mutableStateOf(false) }
@@ -89,7 +94,7 @@ private fun Breath(modifier: Modifier = Modifier) {
     when {
         showSettings -> SettingsScreen(
             config = current,
-            onChange = { scope.launch { context.saveConfig(it) } },
+            onChange = { scope.launch { store.saveConfig(it) } },
             onBack = { showSettings = false },
             modifier = modifier,
         )
@@ -98,7 +103,7 @@ private fun Breath(modifier: Modifier = Modifier) {
 
         showGoals -> GoalsScreen(
             goals = saved,
-            onChange = { scope.launch { context.saveGoals(it) } },
+            onChange = { scope.launch { store.saveGoals(it) } },
             onBack = { showGoals = false },
             modifier = modifier,
         )
@@ -135,6 +140,7 @@ fun SessionScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val store = LocalStore.current
     val view = LocalView.current
     val preset = config.active
     val timing = preset.timing
@@ -254,7 +260,7 @@ fun SessionScreen(
             torch.off()
             // pausing and leaving the screen both cancel this coroutine, and a cancelled one
             // cannot suspend — without NonCancellable every sitting but a completed one is lost
-            withContext(NonCancellable) { context.logSession(startedAt, breathed, preset) }
+            withContext(NonCancellable) { store.logSession(startedAt, breathed, preset) }
         }
     }
 

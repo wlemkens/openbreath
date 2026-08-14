@@ -139,12 +139,15 @@ class ReminderReceiver : BroadcastReceiver() {
         val pending = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                val stored = context.remindersFlow().first()
+                // a receiver has no composition to read LocalStore from, so it opens its own
+                // handle on the same file — DataStore keeps a single instance per path anyway
+                val store = context.store()
+                val stored = store.remindersFlow().first()
                 if (intent.action == ACTION_REMIND) {
                     val reminder = stored.firstOrNull { it.id == id && it.enabled } ?: return@launch
                     val done = reminder.onlyIfBehind &&
-                        context.goalsFlow().first()
-                            .allReached(context.historyFlow().first(), Clock.System.now())
+                        store.goalsFlow().first()
+                            .allReached(store.historyFlow().first(), Clock.System.now())
                     if (!done) context.ring(reminder)
                     // rescheduled either way: a morning it stayed quiet is not the end of it
                     context.scheduleReminder(reminder)

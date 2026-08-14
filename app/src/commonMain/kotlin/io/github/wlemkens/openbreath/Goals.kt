@@ -26,7 +26,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlin.time.Clock
 import kotlin.math.roundToInt
@@ -38,8 +37,8 @@ fun GoalsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    val history by remember { context.historyFlow() }.collectAsState(initial = emptyList())
+    val store = LocalStore.current
+    val history by remember { store.historyFlow() }.collectAsState(initial = emptyList())
     var editing by remember { mutableStateOf<Goal?>(null) }
 
     fun save(edited: List<Goal>) =
