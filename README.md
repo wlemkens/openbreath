@@ -7,9 +7,10 @@ An Android app for heart coherence breathing meditations.
 - Presets for the usual patterns, and your own timings for the in, hold, out and hold phases.
 - A breath cue to follow with your eyes: a sphere that opens as you breathe in and closes as you
   breathe out, either as a glow or a point cloud, in a colour you pick.
-- Soundscapes per phase — waves that rise and fall with the breath, a marker at each phase change
-  (singing bowl, bell, metronome tick, or an mp3 of your own), or silence. The bowl and the tick
-  are pitched by the turn they mark, so going into a breath in does not sound like going out.
+- Soundscapes per phase — waves that rise and fall with the breath, or a soundwave whose
+  overtones arrive as you breathe in and dissolve as you breathe out; a marker at each phase change (singing
+  bowl, bell, metronome tick, or an mp3 of your own); or silence. The bowl and the tick are
+  pitched by the turn they mark, so going into a breath in does not sound like going out.
 - A singing bowl at the end of the session, so you don't have to check whether it is over.
 - Optional vibration at each phase change.
 - Optional flashlight that brightens as you breathe in and fades as you breathe out — the breath
@@ -156,7 +157,9 @@ General Public License**, either version 3 of the License, or (at your option) a
 see [LICENSE](LICENSE). It is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-The bundled audio is **not** covered by that grant. `app/src/main/res/raw/*.mp3` are cuts of files
-from the [freesound_community](https://pixabay.com/users/freesound_community-46691455/) Pixabay
-account, released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). CC0 asks for
-no attribution; the credit is here because it is the decent thing, not because it is owed.
+The bundled audio is **not** covered by that grant. `app/src/main/res/raw/*.mp3` are cuts of
+files from the
+[freesound_community](https://pixabay.com/users/freesound_community-46691455/) Pixabay account,
+released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). CC0 asks for no
+attribution; the credit is here because it is the decent thing, not because it
+is owed.

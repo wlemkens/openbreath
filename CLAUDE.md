@@ -35,13 +35,43 @@ Functionality includes:
   shipped in the APK. Confirm its terms separately before using it.
 
   # Details
+  ## Technical
+  - History, especcialy goals and progress should always be kept intact over updates.
+
+  Presets and settings can be re-entered in a minute. A year of sittings cannot, so the log,
+  the goals and the celebrated-milestone mark outrank every other consideration in this file.
+  `app/src/test/java/.../StorageTest.kt` holds strings that older versions really wrote and
+  decodes them with today's code. Add to it whenever the stored shape changes, and never edit
+  an existing string to make a red test pass — the phone in someone's pocket still holds it.
+
+  Three ways this has actually been broken, all of them silent:
+
+  - **Renaming a stored enum constant.** `SoundMode.WAVES` → `AMBIENT` and
+    `AmbientVoice.DRONE` → `SOUNDWAVE` both turned every stored value into the default,
+    because `coerceInputValues` cannot know what the old name meant. Renaming a constant that
+    reaches DataStore means writing a migration, or accepting the loss on purpose.
+  - **Moving a field to another key.** Goals lived in the `config` blob before they got their
+    own `goals` key, and everything stored under the old name was simply gone. Read the old
+    key, write the new one, and only then stop reading the old.
+  - **Building a list on a value that has not loaded yet.** `collectAsState(initial = emptyList())`
+    hands a screen "no goals" a frame before the real ones arrive, and saving from that state
+    writes the emptiness over the lot. Start such state at null and wait.
+
+  Adding a field with a default is always safe; `ignoreUnknownKeys` and per-field defaults do
+  the rest. Removing or renaming one never is.
+
   ## Sounds during the phases
   During hte breathing phases, there are different sound options available.
 
   The base sound is waves coming ashore. During the breath in, the pitch goes up, during breathing out, the pitch goes down.
 
   # TODO
-  - whale sound
-  - Brightness/timbre sweep: a tone that gets brighter/richer on inhale and darker/softer on exhale
-  - Harmonic content — add overtones on inhale that dissolve on exhale
-  
+  - standard and advanced mode for settings:
+    - standard:
+      - presets
+      - configurable phase lengths
+      - total number of minutes
+      - All of "During each session"
+      - Progress on screen: dots
+    - advanced:
+      - everything there is now

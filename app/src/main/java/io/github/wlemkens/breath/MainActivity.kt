@@ -203,13 +203,20 @@ fun SessionScreen(
         }
 
         val t0 = withFrameNanos { it }
-        fun wavesLevel(state: PhaseState) =
-            if (preset.soundOf(state.phase).mode == SoundMode.WAVES) state.edge else 0f
+        // a phase asks for one continuous voice or none; the other stays at zero rather than
+        // being switched off, so the boundary between two different voices is a crossfade
+        fun levelOf(voice: AmbientVoice, state: PhaseState) =
+            preset.soundOf(state.phase).let {
+                if (it.mode == SoundMode.AMBIENT && it.voice == voice) state.edge else 0f
+            }
 
-        prev.let {
-            synth.openness = it.openness
-            synth.phaseGain = wavesLevel(it)
+        fun follow(state: PhaseState) {
+            synth.openness = state.openness
+            synth.wavesGain = levelOf(AmbientVoice.WAVES, state)
+            synth.soundwaveGain = levelOf(AmbientVoice.SOUNDWAVE, state)
         }
+
+        follow(prev)
         synth.start()
         try {
             while (true) {
@@ -241,8 +248,7 @@ fun SessionScreen(
                 }
                 elapsed = e
                 breathed = e
-                synth.openness = state.openness
-                synth.phaseGain = wavesLevel(state)
+                follow(state)
                 if (config.flashlight) torch.follow(state)
             }
         } finally {

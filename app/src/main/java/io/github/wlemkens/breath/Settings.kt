@@ -62,6 +62,7 @@ fun SettingsScreen(
     }
 
     var renaming by remember { mutableStateOf(false) }
+    var advanced by remember { mutableStateOf(false) }
     var pendingPhase by remember { mutableStateOf<Phase?>(null) }
     val pickMp3 = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         val phase = pendingPhase
@@ -84,6 +85,22 @@ fun SettingsScreen(
                 TextButton(onClick = onBack) { Text("Done") }
             }
         }
+        item {
+            // not persisted: which half you were last looking at is not a preference, and
+            // opening on Standard is the right answer for anyone who did not come to tinker
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = !advanced,
+                    onClick = { advanced = false },
+                    label = { Text("Standard") },
+                )
+                FilterChip(
+                    selected = advanced,
+                    onClick = { advanced = true },
+                    label = { Text("Advanced") },
+                )
+            }
+        }
 
         item { SectionLabel("Preset") }
         item {
@@ -102,7 +119,7 @@ fun SettingsScreen(
                 }
             }
         }
-        item {
+        if (advanced) item {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -161,8 +178,8 @@ fun SettingsScreen(
             )
         }
 
-        item { SectionLabel("Sound per phase") }
-        for (phase in Phase.entries) {
+        if (advanced) item { SectionLabel("Sound per phase") }
+        if (advanced) for (phase in Phase.entries) {
             item(key = "sound-${phase.name}") {
                 val sound = preset.soundOf(phase)
                 Column(Modifier.padding(vertical = 4.dp)) {
@@ -174,13 +191,30 @@ fun SettingsScreen(
                         },
                         style = MaterialTheme.typography.bodyMedium,
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // four modes no longer fit a line on a narrow phone
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         SoundMode.entries.forEach { mode ->
                             FilterChip(
                                 selected = sound.mode == mode,
                                 onClick = { editPreset { it.withSound(phase) { s -> s.copy(mode = mode) } } },
                                 label = { Text(mode.label) },
                             )
+                        }
+                    }
+                    if (sound.mode == SoundMode.AMBIENT) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            AmbientVoice.entries.forEach { voice ->
+                                FilterChip(
+                                    selected = sound.voice == voice,
+                                    onClick = {
+                                        editPreset { it.withSound(phase) { s -> s.copy(voice = voice) } }
+                                    },
+                                    label = { Text(voice.label) },
+                                )
+                            }
                         }
                     }
                     if (sound.mode == SoundMode.MARKER) {
@@ -316,16 +350,18 @@ fun SettingsScreen(
                 }
             }
         }
-        item { CueColour(config.cueColor) { onChange(config.copy(cueColor = it)) } }
+        if (advanced) item { CueColour(config.cueColor) { onChange(config.copy(cueColor = it)) } }
 
         item { SectionLabel("Progress on screen") }
         item {
-            ToggleRow("Time remaining", config.showTime) { onChange(config.copy(showTime = it)) }
-        }
-        item {
             ToggleRow("Dots", config.showDots) { onChange(config.copy(showDots = it)) }
         }
-        item {
+        // a clock and a tally are the two things a meditation is better off not counting for
+        // you, so they are here for whoever wants them rather than in front of everyone
+        if (advanced) item {
+            ToggleRow("Time remaining", config.showTime) { onChange(config.copy(showTime = it)) }
+        }
+        if (advanced) item {
             ToggleRow("Breath count", config.showBreaths) { onChange(config.copy(showBreaths = it)) }
         }
         item { HorizontalDivider(Modifier.padding(vertical = 24.dp)) }

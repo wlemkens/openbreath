@@ -20,12 +20,18 @@ import java.time.temporal.WeekFields
 import java.util.Locale
 
 enum class SoundMode(val label: String) {
-    /** Continuous waves for the whole phase, cutoff riding the breath. */
-    WAVES("Waves"),
+    /** A sound for the whole phase, riding the breath. Which one is [PhaseSound.voice]. */
+    AMBIENT("Ambient"),
 
-    /** One sound at the moment the phase ends. */
+    /** One sound at the moment the phase ends. Which one is [PhaseSound.tone]. */
     MARKER("Marker"),
     SILENT("Silent"),
+}
+
+/** The continuous sounds. A group under [SoundMode.AMBIENT], as the tones are under MARKER. */
+enum class AmbientVoice(val label: String) {
+    WAVES("Waves"),
+    SOUNDWAVE("Soundwave"),
 }
 
 /** The built-in marker sounds, used when the user hasn't pointed a phase at their own mp3. */
@@ -50,7 +56,8 @@ enum class CueStyle(val label: String) {
 
 @Serializable
 data class PhaseSound(
-    val mode: SoundMode = SoundMode.WAVES,
+    val mode: SoundMode = SoundMode.AMBIENT,
+    val voice: AmbientVoice = AmbientVoice.WAVES,
     /** content:// URI of the user's own mp3. Null falls back to a synthesized [tone]. */
     val markerUri: String? = null,
     val tone: MarkerTone = MarkerTone.BELL,
@@ -146,7 +153,7 @@ private val CONFIG = stringPreferencesKey("config")
 // coerceInputValues so that retiring an enum constant costs that one field its default rather than
 // failing the whole decode — the fallback below is all-or-nothing, and losing every saved preset
 // over a renamed cue style is not a trade worth making
-private val json = Json {
+internal val json = Json {
     ignoreUnknownKeys = true; encodeDefaults = true; coerceInputValues = true
 }
 
@@ -210,7 +217,7 @@ private const val HISTORY_MAX = 2000
 
 private val HISTORY = stringPreferencesKey("history")
 
-private fun decodeHistory(stored: String?): List<Entry> =
+internal fun decodeHistory(stored: String?): List<Entry> =
     stored?.let { runCatching { json.decodeFromString<List<Entry>>(it) }.getOrNull() } ?: emptyList()
 
 fun Context.historyFlow(): Flow<List<Entry>> = store.data.map { decodeHistory(it[HISTORY]) }
@@ -428,7 +435,7 @@ data class Reminder(
 // and a whole-Config write from one would roll back what the other had just saved
 private val GOALS = stringPreferencesKey("goals")
 
-private fun decodeGoals(stored: String?): List<Goal> =
+internal fun decodeGoals(stored: String?): List<Goal> =
     stored?.let { runCatching { json.decodeFromString<List<Goal>>(it) }.getOrNull() } ?: emptyList()
 
 fun Context.goalsFlow(): Flow<List<Goal>> = store.data.map { decodeGoals(it[GOALS]).map { g -> g.sane() } }
