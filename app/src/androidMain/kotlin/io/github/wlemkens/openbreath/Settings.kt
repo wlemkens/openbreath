@@ -402,15 +402,18 @@ fun SettingsScreen(
         if (advanced) item {
             ToggleRow("Breath count", config.showBreaths) { onChange(config.copy(showBreaths = it)) }
         }
-        item { SectionLabel("Backup") }
-        item {
+        // Advanced: moving a log between phones is a thing you go looking for, and Import is
+        // the one control here that can overwrite what you already have. Neither belongs in
+        // front of someone who opened Settings to lengthen their exhale.
+        if (advanced) item { SectionLabel("Backup") }
+        if (advanced) item {
             Text(
                 "Your practice log, presets, goals and reminders in one file. The only way to " +
                     "carry them to another phone, and yours to keep.",
                 style = MaterialTheme.typography.bodySmall,
             )
         }
-        item {
+        if (advanced) item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { exportBackup.launch(backupFileName()) }) { Text("Export") }
                 // application/json alone hides backups on the phones whose file picker types
