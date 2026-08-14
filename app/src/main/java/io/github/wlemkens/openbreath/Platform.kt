@@ -1,4 +1,4 @@
-package io.github.wlemkens.breath
+package io.github.wlemkens.openbreath
 
 import android.app.NotificationManager
 import android.content.Context

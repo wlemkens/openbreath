@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "breath"
+rootProject.name = "openbreath"
 include(":app")

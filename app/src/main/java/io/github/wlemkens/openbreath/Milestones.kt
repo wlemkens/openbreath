@@ -1,4 +1,4 @@
-package io.github.wlemkens.breath
+package io.github.wlemkens.openbreath
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat

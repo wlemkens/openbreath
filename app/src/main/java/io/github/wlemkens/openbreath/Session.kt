@@ -1,4 +1,4 @@
-package io.github.wlemkens.breath
+package io.github.wlemkens.openbreath
 
 import kotlin.math.PI
 import kotlin.math.ceil

@@ -1,4 +1,4 @@
-package io.github.wlemkens.breath
+package io.github.wlemkens.openbreath
 
 import android.app.AlarmManager
 import android.app.Notification
@@ -81,7 +81,7 @@ internal fun Repeat.weekHint(today: LocalDate): String = when (this) {
     else -> ""
 }
 
-private const val ACTION_REMIND = "io.github.wlemkens.breath.REMIND"
+private const val ACTION_REMIND = "io.github.wlemkens.openbreath.REMIND"
 private const val EXTRA_ID = "id"
 private const val CHANNEL = "reminders"
 private const val CHANNEL_ALARM = "alarms"

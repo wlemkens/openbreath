@@ -17,5 +17,7 @@ media/*
 # rotated for an already-published app — it must never be committed in the first place.
 *.jks
 *.keystore
+*.p12
+*.pfx
 keystore.properties
 signing.properties

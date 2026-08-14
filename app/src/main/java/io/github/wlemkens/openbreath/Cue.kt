@@ -1,4 +1,4 @@
-package io.github.wlemkens.breath
+package io.github.wlemkens.openbreath
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize

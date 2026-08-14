@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -5,12 +7,23 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+/**
+ * Release signing, kept out of the repository: see keystore.properties.example for the four
+ * values and README for how to make the keystore. Absent — which it is on any machine but the
+ * one that holds the key — the release build stays unsigned rather than failing, so everything
+ * else about it can still be built and checked.
+ */
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
 android {
-    namespace = "io.github.wlemkens.breath"
+    namespace = "io.github.wlemkens.openbreath"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "io.github.wlemkens.breath"
+        applicationId = "io.github.wlemkens.openbreath"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -26,8 +39,20 @@ android {
 
     kotlin { compilerOptions { jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17) } }
 
+    signingConfigs {
+        if (keystoreProperties.isNotEmpty()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = false
         }
     }

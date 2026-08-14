@@ -1,4 +1,4 @@
-package io.github.wlemkens.breath
+package io.github.wlemkens.openbreath
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue

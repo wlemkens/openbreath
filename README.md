@@ -1,4 +1,4 @@
-# Breath
+# OpenBreath
 
 An Android app for heart coherence breathing meditations.
 
@@ -64,7 +64,7 @@ adb devices          # should list your phone as "device", not "unauthorized"
 ./gradlew installDebug
 ```
 
-The app appears in the launcher as **Breath**.
+The app appears in the launcher as **OpenBreath**.
 
 ### Over Wi-Fi
 
@@ -86,7 +86,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
 `-r` reinstalls over an existing copy and keeps its data. It fails if the installed app was signed
-with a different key — uninstall first (`adb uninstall io.github.wlemkens.breath`), which also wipes your
+with a different key — uninstall first (`adb uninstall io.github.wlemkens.openbreath`), which also wipes your
 presets.
 
 ### More than one device attached
@@ -116,7 +116,7 @@ The emulator picks the discrete GPU for Vulkan but the integrated one for OpenGL
 
 ```sh
 __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia \
-  $ANDROID_HOME/emulator/emulator -avd breath &
+  $ANDROID_HOME/emulator/emulator -avd openbreath &
 ```
 
 `Graphics Adapter Vendor` in the startup log should then name the same vendor as
@@ -134,7 +134,7 @@ image is the honest default:
 
 ```sh
 sdkmanager "system-images;android-36;google_apis;x86_64"
-avdmanager create avd -n breath -k "system-images;android-36;google_apis;x86_64"
+avdmanager create avd -n openbreath -k "system-images;android-36;google_apis;x86_64"
 ```
 
 Both live in `$ANDROID_HOME/cmdline-tools/latest/bin`. Take the `google_apis` image rather than the
@@ -143,16 +143,82 @@ Settings screens you need for notification-policy access.
 
 ## Release builds
 
-`./gradlew assembleRelease` produces an **unsigned** APK, which no device will install: there is no
-`signingConfig` in [app/build.gradle.kts](app/build.gradle.kts) yet. Adding one means generating a
-keystore and referencing it from a `keystore.properties` that stays out of git (both are already
-gitignored). Until then, debug builds are the way onto a device.
+Every APK must be signed before a device will install it. Debug builds are signed automatically
+with a throwaway key Gradle keeps in `~/.android/debug.keystore`; release builds need one of your
+own. The wiring is already in [app/build.gradle.kts](app/build.gradle.kts) — it reads
+`keystore.properties` if that file exists, and quietly builds unsigned if it doesn't, so anyone
+without the key can still build and check everything else.
+
+### Generating the key
+
+Once, and then never again — see the warning below.
+
+```sh
+keytool -genkeypair -v \
+  -keystore breath-upload.p12 -storetype PKCS12 \
+  -keyalg RSA -keysize 4096 -validity 10000 \
+  -alias upload
+```
+
+It asks for a store password, then your name and organisation (any of which may be left blank),
+then confirmation. Let it prompt rather than passing `-storepass` on the command line, which
+would leave the password in your shell history. `-validity 10000` is about 27 years: Play
+requires a key valid past 2033, and an expired key cannot sign updates.
+
+Then copy [keystore.properties.example](keystore.properties.example) to `keystore.properties` and
+fill in the four values:
+
+```properties
+storeFile=breath-upload.p12
+storePassword=…
+keyAlias=upload
+keyPassword=…   # the same value: PKCS12 has only one password
+```
+
+PKCS12 keystores cannot hold a key password different from the store password — keytool warns
+and ignores the second one — so both properties take the same value. Gradle still wants both.
+
+`storeFile` is relative to the project root, and an absolute path works if you would rather keep
+the keystore outside the repository altogether. `keystore.properties` and every keystore extension
+(`*.p12`, `*.jks`, `*.keystore`, `*.pfx`) are gitignored, and must stay that way — a release key
+that reaches a remote is compromised, and cannot be rotated for an app that has already been
+published.
+
+### Building
+
+```sh
+./gradlew assembleRelease   # app/build/outputs/apk/release/app-release.apk
+./gradlew bundleRelease     # app/build/outputs/bundle/release/app-release.aab — what Play wants
+```
+
+Check what came out:
+
+```sh
+$ANDROID_HOME/build-tools/*/apksigner verify --print-certs -v app/build/outputs/apk/release/app-release.apk
+```
+
+If the filename still says `app-release-unsigned.apk`, `keystore.properties` was not found.
+
+### Two things that bite
+
+**The key is the app's identity, permanently.** Play refuses an update signed by a different key
+from the one on the listing, and so does a phone: installing a release build over the debug one
+fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE` until the old one is uninstalled — which takes
+your practice log with it. Back the keystore up somewhere you will still have in ten years.
+
+That is less final than it sounds for a new app, because new apps must enrol in **Play App
+Signing**: Google holds the actual signing key and the one you just made is only an *upload* key,
+which support can reset if you lose it. Losing an app signing key you manage yourself ends the
+listing.
+
+**`versionCode` must increase with every upload.** It is `1` in
+[app/build.gradle.kts](app/build.gradle.kts); Play rejects a repeat.
 
 ## Licence
 
 Copyright (c) 2026 Wim Lemkens.
 
-Breath is free software: you can redistribute it and/or modify it under the terms of the **GNU
+OpenBreath is free software: you can redistribute it and/or modify it under the terms of the **GNU
 General Public License**, either version 3 of the License, or (at your option) any later version —
 see [LICENSE](LICENSE). It is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

@@ -35,6 +35,24 @@ Functionality includes:
   shipped in the APK. Confirm its terms separately before using it.
 
   # Details
+  ## Monetisation
+  - The app must never give anything in return for a payment. Not a feature, not a theme, not
+    a badge, not a thank-you that only donors see. OpenBreath is free and stays free, and the
+    Support screen asks without offering.
+
+  This is also the whole of what keeps the in-app PayPal link legal on Play. Its Payments
+  policy treats a tip as a peer-to-peer payment needing no Play Billing *only* while 100% goes
+  to the developer and the payment "does not grant access to any digital content or services
+  (including stickers, badges, special emojis etc.)"
+  — https://support.google.com/googleplay/android-developer/answer/10281818, and
+  https://support.google.com/googleplay/android-developer/answer/9858738 in the policy centre.
+
+  So it is a standing check, not a one-off: any feature that rewards, unlocks, thanks or ranks
+  by payment breaks it, and any wording that hints at one invites the question. Whenever the
+  Support screen, the store listing, or anything resembling a perk is touched, say out loud
+  whether it still holds — and if a paid tier is ever genuinely wanted, that is Play Billing,
+  not a link.
+
   ## Technical
   - History, especcialy goals and progress should always be kept intact over updates.
 
@@ -66,12 +84,13 @@ Functionality includes:
   The base sound is waves coming ashore. During the breath in, the pitch goes up, during breathing out, the pitch goes down.
 
   # TODO
-  - standard and advanced mode for settings:
-    - standard:
-      - presets
-      - configurable phase lengths
-      - total number of minutes
-      - All of "During each session"
-      - Progress on screen: dots
-    - advanced:
-      - everything there is now
+  - Decide `android:allowBackup`. It defaults to true, so Android may restore an older copy of
+    the log and goals over a fresh install — the one way practice history can be lost that the
+    app itself cannot prevent. Turning it off protects against that but gives up restoring a
+    real user's history onto a new phone.
+  - Before publishing, re-read Play's Payments policy against the Support screen. It permits
+    the PayPal link today (see Monetisation above); policies move, and this one decides whether
+    the app can be listed at all.
+  - Generate the release keystore (see README) so `bundleRelease` produces something Play will
+    take. The Gradle wiring is in place and falls back to unsigned until the key exists.
+  - Rename to OpenBreath

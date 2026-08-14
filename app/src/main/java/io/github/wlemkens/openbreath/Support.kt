@@ -1,4 +1,4 @@
-package io.github.wlemkens.breath
+package io.github.wlemkens.openbreath
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,7 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 private val SUPPORT = listOf(
-    "Breath is free, and it stays free — no trial, no unlock, no subscription.",
+    "OpenBreath is free, and it stays free — no trial, no unlock, no subscription.",
     "Plenty of apps like this one charge before you have tried them, or ask for a yearly " +
         "subscription. For something that sits quietly and counts your breathing, that seems " +
         "a lot to ask.",

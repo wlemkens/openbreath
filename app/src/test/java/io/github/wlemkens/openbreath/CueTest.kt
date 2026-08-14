@@ -1,4 +1,4 @@
-package io.github.wlemkens.breath
+package io.github.wlemkens.openbreath
 
 import kotlin.math.abs
 import kotlin.math.sqrt

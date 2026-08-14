@@ -1,4 +1,4 @@
-package io.github.wlemkens.breath
+package io.github.wlemkens.openbreath
 
 import android.content.Context
 import android.media.AudioAttributes
@@ -18,7 +18,7 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 private const val SR = 44100
-private const val TAG = "Breath"
+private const val TAG = "OpenBreath"
 
 /**
  * Waves coming ashore: white noise squeezed into a band by two one-pole filters, the upper
