@@ -89,6 +89,26 @@ Functionality includes:
   That was weighed against carrying a practice log to a new phone, and the carrying won. It is
   a decision, not an oversight — the manifest says so too.
 
+  ### Export and import
+  `Backup.kt` writes the log, config, goals, celebrated mark and reminders to one JSON file the
+  user keeps. It is the only way anything leaves the phone, and the only route to an iPhone,
+  since `allowBackup` carries a log to a new Android handset and nowhere else. It also answers
+  the gap above: a restore that quietly puts back an older copy is survivable if there is a
+  file of your own.
+
+  An exported file is a stored shape, and every rule in this section applies to it. A backup
+  saved today must keep opening forever — `StorageTest` holds a literal exported file for the
+  same reason it holds the DataStore strings.
+
+  **The log merges, everything else replaces.** That asymmetry is the design, not an
+  oversight. Sittings union on `Entry.at` and the result is order-independent, so importing an
+  old export onto a phone that has since been practised on keeps both sets and the log can only
+  grow. `celebrated` takes the larger, or an already-congratulated milestone is announced
+  twice. Presets, goals and reminders are a minute's work to retype, so the file wins.
+
+  Import is one `edit` for the lot. A half-applied import that took the settings and lost the
+  log is the worst outcome the app can produce, so it is all of it or none.
+
   ## The iOS port
   The module is Kotlin Multiplatform with Compose Multiplatform, targeting `androidTarget()`
   plus `iosArm64` and `iosSimulatorArm64`. There is no `iosX64`: Compose Multiplatform stopped

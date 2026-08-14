@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -53,6 +55,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val store = LocalStore.current
+    val scope = rememberCoroutineScope()
     val preset = config.active
     val dnd = remember { DndGuard(context) }
     val torch = remember { Torch(context) }
@@ -73,6 +77,40 @@ fun SettingsScreen(
             context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         editPreset { it.withSound(phase) { s -> s.copy(markerUri = uri.toString(), mode = SoundMode.MARKER) } }
+    }
+
+    // what the import found, held until it has been agreed to: an import overwrites settings
+    // and can never be undone from inside the app, so nothing is applied on the file picker's
+    // say-so alone
+    var pendingImport by remember { mutableStateOf<Backup?>(null) }
+    var backupMessage by remember { mutableStateOf<String?>(null) }
+
+    val exportBackup = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: Uri? ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            backupMessage = runCatching {
+                val backup = store.exportBackup(System.currentTimeMillis())
+                context.contentResolver.openOutputStream(uri)?.use {
+                    it.write(encodeBackup(backup).toByteArray())
+                } ?: error("could not open the file for writing")
+                "Saved ${backup.summary}."
+            }.getOrElse { "Could not write that file. Nothing has changed." }
+        }
+    }
+
+    val importBackup = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val text = runCatching {
+            context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
+        }.getOrNull()
+        // telling "wrong file" apart from "empty log" matters: one is a mistake to correct, the
+        // other is a fact about the file, and they want different words
+        pendingImport = decodeBackup(text)
+        if (pendingImport == null) backupMessage = "That is not an OpenBreath backup."
     }
 
     LazyColumn(
@@ -364,7 +402,60 @@ fun SettingsScreen(
         if (advanced) item {
             ToggleRow("Breath count", config.showBreaths) { onChange(config.copy(showBreaths = it)) }
         }
+        item { SectionLabel("Backup") }
+        item {
+            Text(
+                "Your practice log, presets, goals and reminders in one file. The only way to " +
+                    "carry them to another phone, and yours to keep.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { exportBackup.launch(backupFileName()) }) { Text("Export") }
+                // application/json alone hides backups on the phones whose file picker types
+                // them octet-stream, which is most of them once a file has been off the device
+                TextButton(onClick = {
+                    importBackup.launch(arrayOf("application/json", "text/plain", "*/*"))
+                }) { Text("Import") }
+            }
+        }
         item { HorizontalDivider(Modifier.padding(vertical = 24.dp)) }
+    }
+
+    pendingImport?.let { backup ->
+        AlertDialog(
+            onDismissRequest = { pendingImport = null },
+            title = { Text("Import this backup?") },
+            text = {
+                Text(
+                    "It holds ${backup.summary}.\n\nSittings are added to the ones already " +
+                        "here — none are lost, whichever phone they were breathed on. Presets, " +
+                        "goals and reminders are replaced by the ones in the file."
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    pendingImport = null
+                    scope.launch {
+                        backupMessage = runCatching {
+                            store.importBackup(backup)
+                            "Imported."
+                        }.getOrElse { "Could not read that backup. Nothing has changed." }
+                    }
+                }) { Text("Import") }
+            },
+            dismissButton = { TextButton(onClick = { pendingImport = null }) { Text("Cancel") } },
+        )
+    }
+
+    backupMessage?.let { message ->
+        AlertDialog(
+            onDismissRequest = { backupMessage = null },
+            title = { Text("Backup") },
+            text = { Text(message) },
+            confirmButton = { TextButton(onClick = { backupMessage = null }) { Text("OK") } },
+        )
     }
 
     if (renaming) {

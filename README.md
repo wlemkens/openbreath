@@ -27,6 +27,9 @@ An Android app for heart coherence breathing meditations.
 - Milestones at 3 days, a week, a month, 100 days, half a year, a year, 500 days and every year
   after — a run of days with everything you set yourself done. Each one says so once, with the
   breath cue breathing at you.
+- Backup: your log, presets, goals and reminders written to one JSON file you keep, and read
+  back on any phone. Sittings are merged rather than overwritten — importing an old export onto
+  a phone you have kept practising on keeps both sets, so a log can only ever grow.
 - A feedback form, opened in your browser. The app sends nothing on its own.
 - A support page. The app is free and stays free; if you want to send something, PayPal opens in
   your browser. Nothing is charged from the app, and it is never told whether you did.

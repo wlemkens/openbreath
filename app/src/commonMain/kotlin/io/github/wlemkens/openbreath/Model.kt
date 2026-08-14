@@ -210,7 +210,7 @@ const val LOGGED_MIN_MS = 20_000L
 
 // ponytail: one JSON blob rewritten per sitting, capped. Years of daily practice fit; move to a
 // row store if it ever has to hold tens of thousands.
-private const val HISTORY_MAX = 2000
+internal const val HISTORY_MAX = 2000
 
 internal fun decodeHistory(stored: String?): List<Entry> =
     stored?.let { runCatching { json.decodeFromString<List<Entry>>(it) }.getOrNull() } ?: emptyList()

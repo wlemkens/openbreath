@@ -65,6 +65,114 @@ class StorageTest {
         assertTrue(decodeHistory(null).isEmpty())
     }
 
+    /**
+     * A real exported file, the first shape it had. A backup someone saved today has to keep
+     * opening in every version that follows — it is the only copy of their log that is not on
+     * the phone, and the whole reason the feature exists.
+     */
+    private val backupV1 =
+        """{"version":1,"exportedAt":1786345207163,"config":{"presets":[{"name":"Coherence 5.5",""" +
+            """"inhaleMs":5500,"holdInMs":0,"exhaleMs":5500,"holdOutMs":0}],"activeIndex":0},""" +
+            """"history":[{"at":1786345207163,"durationMs":300160,"preset":"Coherence 5.5"}],""" +
+            """"goals":[{"id":1,"metric":"SITTINGS","period":"DAY","target":1}],"celebrated":7,""" +
+            """"reminders":[{"id":1,"name":"Breathe","hour":8,"minute":0}]}"""
+
+    @Test
+    fun `a backup file written by an older version still opens`() {
+        val backup = decodeBackup(backupV1)!!
+        assertEquals(1, backup.version)
+        assertEquals(1, backup.history.size)
+        assertEquals(1786345207163L, backup.history[0].at)
+        assertEquals("Coherence 5.5", backup.config.active.name)
+        assertEquals(1, backup.goals.size)
+        assertEquals(7, backup.celebrated)
+        assertEquals("Breathe", backup.reminders[0].name)
+    }
+
+    @Test
+    fun `a backup survives the round trip`() {
+        val original = Backup(
+            exportedAt = 1786345207163L,
+            config = Config(durationMs = 600_000L),
+            history = listOf(Entry(1L, 300_000L, "Coherence 5.5", cycles = 27)),
+            goals = listOf(Goal(id = 1, metric = GoalMetric.MINUTES, target = 10)),
+            celebrated = 30,
+            reminders = listOf(Reminder(id = 1)),
+        )
+        assertEquals(original, decodeBackup(encodeBackup(original)))
+    }
+
+    @Test
+    fun `anything that is not a backup is refused rather than mistaken for an empty one`() {
+        // the caller has to be able to say "wrong file" instead of silently importing nothing
+        assertEquals(null, decodeBackup("not json at all"))
+        assertEquals(null, decodeBackup(null))
+        assertEquals(null, decodeBackup(""))
+    }
+
+    @Test
+    fun `a backup says what is in it without writing "1 sittings"`() {
+        val one = Backup(
+            config = Config(presets = listOf(Preset())),
+            history = listOf(Entry(1L, 300_000L, "x")),
+            goals = listOf(Goal(id = 1)),
+            reminders = listOf(Reminder(id = 1)),
+        )
+        assertEquals("1 sitting, 1 preset, 1 goal and 1 reminder", one.summary)
+        // and nothing at all reads as nothing, not as an error
+        assertEquals("0 sittings, 0 presets, 0 goals and 0 reminders",
+            Backup(config = Config(presets = emptyList())).summary)
+    }
+
+    @Test
+    fun `importing merges the log both ways and never drops a sitting`() {
+        fun sitting(at: Long) = Entry(at, 300_000L, "Coherence 5.5", cycles = 27)
+        val onThisPhone = Backup(history = listOf(sitting(2), sitting(3)), celebrated = 30)
+        val fromTheFile = Backup(history = listOf(sitting(1), sitting(2)), celebrated = 7)
+
+        val merged = fromTheFile.mergedInto(onThisPhone)
+        // the union of both, in order, with the sitting they share counted once
+        assertEquals(listOf(1L, 2L, 3L), merged.history.map { it.at })
+        // and the milestone already celebrated is not announced a second time
+        assertEquals(30, merged.celebrated)
+
+        // the other way round is the same log: which phone you import onto cannot matter
+        assertEquals(
+            merged.history.map { it.at },
+            onThisPhone.mergedInto(fromTheFile).history.map { it.at },
+        )
+    }
+
+    @Test
+    fun `importing replaces what can be typed again in a minute`() {
+        val onThisPhone = Backup(
+            config = Config(durationMs = 60_000L),
+            goals = listOf(Goal(id = 9, target = 5)),
+            reminders = listOf(Reminder(id = 9)),
+        )
+        val fromTheFile = Backup(
+            config = Config(durationMs = 600_000L),
+            goals = listOf(Goal(id = 1, target = 10)),
+            reminders = listOf(Reminder(id = 1, name = "Sit")),
+        )
+        val merged = fromTheFile.mergedInto(onThisPhone)
+        assertEquals(600_000L, merged.config.durationMs)
+        assertEquals(listOf(1), merged.goals.map { it.id })
+        assertEquals(listOf("Sit"), merged.reminders.map { it.name })
+    }
+
+    @Test
+    fun `a merged log is capped without losing the newest sittings`() {
+        fun sitting(at: Long) = Entry(at, 300_000L, "Coherence 5.5")
+        val onThisPhone = Backup(history = (1L..HISTORY_MAX).map { sitting(it) })
+        val fromTheFile = Backup(history = (1L..500L).map { sitting(it + HISTORY_MAX) })
+
+        val merged = fromTheFile.mergedInto(onThisPhone)
+        assertEquals(HISTORY_MAX, merged.history.size)
+        // the cap drops the oldest, never the most recent
+        assertEquals(HISTORY_MAX + 500L, merged.history.last().at)
+    }
+
     @Test
     fun `a config naming things this version has never heard of still keeps its presets`() {
         // "WAVES" was renamed to AMBIENT and "DRONE" to SOUNDWAVE. A stored preset that names

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /**
@@ -68,6 +69,40 @@ class Store(private val data: DataStore<Preferences>) {
     suspend fun saveReminders(reminders: List<Reminder>) {
         val encoded = json.encodeToString(reminders)
         data.edit { it[REMINDERS] = encoded }
+    }
+
+    /** Everything, for writing out to a file the user keeps. */
+    suspend fun exportBackup(exportedAt: Long): Backup {
+        val prefs = data.data.first()
+        return Backup(
+            exportedAt = exportedAt,
+            config = (prefs[CONFIG]?.let { runCatching { json.decodeFromString<Config>(it) }.getOrNull() }
+                ?: Config()).sane(),
+            history = decodeHistory(prefs[HISTORY]),
+            goals = decodeGoals(prefs[GOALS]).map { it.sane() },
+            celebrated = prefs[CELEBRATED] ?: 0,
+            reminders = decodeReminders(prefs[REMINDERS]),
+        )
+    }
+
+    /**
+     * A backup applied on top of what is here — see [mergedInto] for what merges and what is
+     * replaced. One `edit` for the lot: a half-applied import that took the settings but lost
+     * the log would be the worst outcome available, so it is all of it or none.
+     */
+    suspend fun importBackup(backup: Backup) {
+        data.edit { prefs ->
+            val current = Backup(
+                history = decodeHistory(prefs[HISTORY]),
+                celebrated = prefs[CELEBRATED] ?: 0,
+            )
+            val merged = backup.mergedInto(current)
+            prefs[CONFIG] = json.encodeToString(merged.config.sane())
+            prefs[HISTORY] = json.encodeToString(merged.history)
+            prefs[GOALS] = json.encodeToString(merged.goals.map { it.sane() })
+            prefs[CELEBRATED] = merged.celebrated
+            prefs[REMINDERS] = json.encodeToString(merged.reminders)
+        }
     }
 
     private companion object {
