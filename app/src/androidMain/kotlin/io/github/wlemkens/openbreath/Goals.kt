@@ -28,7 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import java.time.ZonedDateTime
+import kotlin.time.Clock
 import kotlin.math.roundToInt
 
 @Composable
@@ -105,7 +105,7 @@ fun GoalsScreen(
 fun GoalProgress(goal: Goal, history: List<Entry>, modifier: Modifier = Modifier) {
     // read on every recomposition rather than remembered: the period it counts rolls over while
     // the screen is open, at midnight if nothing else
-    val done = history.towards(goal, periodStartMs(goal.period, ZonedDateTime.now()))
+    val done = history.towards(goal, periodStartMs(goal.period, Clock.System.now()))
     val reached = goal.reached(done)
     Column(modifier.fillMaxWidth()) {
         Text(

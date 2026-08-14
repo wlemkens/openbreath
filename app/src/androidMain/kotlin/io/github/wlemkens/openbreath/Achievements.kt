@@ -19,7 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import java.time.ZonedDateTime
+import kotlin.time.Clock
 
 /**
  * What the log adds up to. Every figure here is read back out of the sittings, so a goal set
@@ -29,7 +29,7 @@ import java.time.ZonedDateTime
 fun AchievementsScreen(goals: List<Goal>, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val history by remember { context.historyFlow() }.collectAsState(initial = emptyList())
-    val now = ZonedDateTime.now()
+    val now = Clock.System.now()
 
     LazyColumn(
         modifier.fillMaxSize().padding(horizontal = 20.dp),

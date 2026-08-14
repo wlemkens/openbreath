@@ -6,8 +6,9 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertThrows
 import org.junit.Test
-import java.time.ZoneId
-import java.time.ZonedDateTime
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 
 class SessionTest {
     // 4s in, 2s hold, 6s out, 1s hold = 13s cycle
@@ -234,10 +235,10 @@ class SessionTest {
 
     @Test
     fun `a goal counts only the sittings inside its own period, in its own unit`() {
-        val zone = ZoneId.of("Europe/Brussels")
-        val noon = ZonedDateTime.of(2026, 8, 12, 12, 0, 0, 0, zone)
-        val startOfDay = periodStartMs(GoalPeriod.DAY, noon)
-        val startOfWeek = periodStartMs(GoalPeriod.WEEK, noon)
+        val zone = TimeZone.of("Europe/Brussels")
+        val noon = LocalDateTime(2026, 8, 12, 12, 0).toInstant(zone)
+        val startOfDay = periodStartMs(GoalPeriod.DAY, noon, zone)
+        val startOfWeek = periodStartMs(GoalPeriod.WEEK, noon, zone)
 
         val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
         val log = listOf(
@@ -260,68 +261,68 @@ class SessionTest {
 
     @Test
     fun `a streak counts back from now, and today's blank page does not break it`() {
-        val zone = ZoneId.of("Europe/Brussels")
-        val wednesdayNoon = ZonedDateTime.of(2026, 8, 12, 12, 0, 0, 0, zone)
+        val zone = TimeZone.of("Europe/Brussels")
+        val wednesdayNoon = LocalDateTime(2026, 8, 12, 12, 0).toInstant(zone)
         val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
         fun on(day: Int, hour: Int = 9) =
-            entryFor(ZonedDateTime.of(2026, 8, day, hour, 0, 0, 0, zone).toInstant().toEpochMilli(), 300_000L, preset)
+            entryFor(LocalDateTime(2026, 8, day, hour, 0).toInstant(zone).toEpochMilliseconds(), 300_000L, preset)
 
         // Monday and Tuesday sat, Wednesday not yet
         val upToYesterday = listOf(on(10), on(11))
-        assertEquals(2, upToYesterday.streak(EVERY_DAY, wednesdayNoon))
+        assertEquals(2, upToYesterday.streak(EVERY_DAY, wednesdayNoon, zone))
         // sitting today extends it rather than starting again
-        assertEquals(3, (upToYesterday + on(12)).streak(EVERY_DAY, wednesdayNoon))
+        assertEquals(3, (upToYesterday + on(12)).streak(EVERY_DAY, wednesdayNoon, zone))
         // but a whole day missed ends it: Tuesday empty leaves only today
-        assertEquals(1, listOf(on(10), on(12)).streak(EVERY_DAY, wednesdayNoon))
+        assertEquals(1, listOf(on(10), on(12)).streak(EVERY_DAY, wednesdayNoon, zone))
         // and nothing since Sunday means the run is over, not merely paused
-        assertEquals(0, listOf(on(9)).streak(EVERY_DAY, wednesdayNoon))
+        assertEquals(0, listOf(on(9)).streak(EVERY_DAY, wednesdayNoon, zone))
     }
 
     @Test
     fun `a streak is of the goal being reached, not of sitting at all`() {
-        val zone = ZoneId.of("Europe/Brussels")
-        val wednesdayNoon = ZonedDateTime.of(2026, 8, 12, 12, 0, 0, 0, zone)
+        val zone = TimeZone.of("Europe/Brussels")
+        val wednesdayNoon = LocalDateTime(2026, 8, 12, 12, 0).toInstant(zone)
         val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
         fun on(day: Int, hour: Int, ms: Long) =
-            entryFor(ZonedDateTime.of(2026, 8, day, hour, 0, 0, 0, zone).toInstant().toEpochMilli(), ms, preset)
+            entryFor(LocalDateTime(2026, 8, day, hour, 0).toInstant(zone).toEpochMilliseconds(), ms, preset)
 
         val tenADay = Goal(id = 1, metric = GoalMetric.MINUTES, period = GoalPeriod.DAY, target = 10)
         // Monday reached in two sittings; Tuesday sat, but only for six minutes
         val log = listOf(on(10, 9, 300_000L), on(10, 18, 360_000L), on(11, 9, 360_000L))
-        assertEquals(0, log.streak(tenADay, wednesdayNoon))
+        assertEquals(0, log.streak(tenADay, wednesdayNoon, zone))
         // the same days do carry a streak of merely turning up
-        assertEquals(2, log.streak(EVERY_DAY, wednesdayNoon))
+        assertEquals(2, log.streak(EVERY_DAY, wednesdayNoon, zone))
 
         // a weekly goal counts weeks: this one is reached in the week of the 10th alone
         val weekly = Goal(id = 2, metric = GoalMetric.MINUTES, period = GoalPeriod.WEEK, target = 15)
-        assertEquals(1, log.streak(weekly, wednesdayNoon))
+        assertEquals(1, log.streak(weekly, wednesdayNoon, zone))
     }
 
     @Test
     fun `a reminder that waits for goals only stays quiet once every one is reached`() {
-        val zone = ZoneId.of("Europe/Brussels")
-        val noon = ZonedDateTime.of(2026, 8, 12, 12, 0, 0, 0, zone)
+        val zone = TimeZone.of("Europe/Brussels")
+        val noon = LocalDateTime(2026, 8, 12, 12, 0).toInstant(zone)
         val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
-        val today = periodStartMs(GoalPeriod.DAY, noon)
+        val today = periodStartMs(GoalPeriod.DAY, noon, zone)
         val log = listOf(entryFor(today + 1, 300_000L, preset)) // one sitting, five minutes
 
         val oneSitting = Goal(id = 1, metric = GoalMetric.SITTINGS, target = 1)
         val tenMinutes = Goal(id = 2, metric = GoalMetric.MINUTES, target = 10)
-        assertTrue(listOf(oneSitting).allReached(log, noon))
+        assertTrue(listOf(oneSitting).allReached(log, noon, zone))
         // one goal short is still behind, however well the others are going
-        assertFalse(listOf(oneSitting, tenMinutes).allReached(log, noon))
+        assertFalse(listOf(oneSitting, tenMinutes).allReached(log, noon, zone))
         // and no goals at all is not "done" — a reminder that skipped itself for want of
         // anything to measure would simply never arrive
-        assertFalse(emptyList<Goal>().allReached(log, noon))
+        assertFalse(emptyList<Goal>().allReached(log, noon, zone))
     }
 
     @Test
     fun `a milestone run counts days where every daily goal was met`() {
-        val zone = ZoneId.of("Europe/Brussels")
-        val wednesdayNoon = ZonedDateTime.of(2026, 8, 12, 12, 0, 0, 0, zone)
+        val zone = TimeZone.of("Europe/Brussels")
+        val wednesdayNoon = LocalDateTime(2026, 8, 12, 12, 0).toInstant(zone)
         val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
         fun on(day: Int, hour: Int, ms: Long) =
-            entryFor(ZonedDateTime.of(2026, 8, day, hour, 0, 0, 0, zone).toInstant().toEpochMilli(), ms, preset)
+            entryFor(LocalDateTime(2026, 8, day, hour, 0).toInstant(zone).toEpochMilliseconds(), ms, preset)
 
         val tenMinutes = Goal(id = 1, metric = GoalMetric.MINUTES, target = 10)
         val weekly = Goal(id = 2, metric = GoalMetric.MINUTES, period = GoalPeriod.WEEK, target = 300)
@@ -329,14 +330,14 @@ class SessionTest {
         val log = listOf(on(10, 9, 600_000L), on(11, 9, 600_000L), on(12, 9, 300_000L))
 
         // today falling short does not end the run: the day is not over
-        assertEquals(2, log.allReachedStreak(listOf(tenMinutes), wednesdayNoon))
+        assertEquals(2, log.allReachedStreak(listOf(tenMinutes), wednesdayNoon, zone))
         // a weekly goal nowhere near met would make every day fail, so it is left out entirely
-        assertEquals(2, log.allReachedStreak(listOf(tenMinutes, weekly), wednesdayNoon))
+        assertEquals(2, log.allReachedStreak(listOf(tenMinutes, weekly), wednesdayNoon, zone))
         // with no daily goals the bar is simply having practised, so Wednesday counts too
-        assertEquals(3, log.allReachedStreak(listOf(weekly), wednesdayNoon))
+        assertEquals(3, log.allReachedStreak(listOf(weekly), wednesdayNoon, zone))
         // and a day missed in the middle ends it
         assertEquals(1, listOf(on(10, 9, 600_000L), on(12, 9, 600_000L))
-            .allReachedStreak(listOf(tenMinutes), wednesdayNoon))
+            .allReachedStreak(listOf(tenMinutes), wednesdayNoon, zone))
     }
 
     @Test

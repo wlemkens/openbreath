@@ -1,7 +1,16 @@
 package io.github.wlemkens.openbreath
 
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.minus
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlin.time.Instant
 
 /**
  * Everything the app stores, and the pure logic over it. Split out of Prefs.kt for the iOS
@@ -267,6 +276,94 @@ internal fun List<Entry>.tally(metric: GoalMetric): Int = when (metric) {
 /** What the sittings since [since] add up to, in [goal]'s own unit. */
 internal fun List<Entry>.towards(goal: Goal, since: Long): Int =
     filter { it.at >= since }.tally(goal.metric)
+
+/**
+ * Which day this reader's own calendar starts a week on. The one piece of `java.time` that
+ * kotlinx-datetime deliberately does not carry: it holds no locale data at all, so a week
+ * boundary has to be asked of the platform. Android reads it from the locale, iOS from
+ * NSCalendar — and both are user-settable independently of language, which is the point.
+ */
+expect fun firstDayOfWeek(): DayOfWeek
+
+/**
+ * The date the period containing [date] began. A week starts where the reader's own calendar
+ * starts it, the same as the day chips on a reminder.
+ */
+internal fun periodStartDate(period: GoalPeriod, date: LocalDate): LocalDate = when (period) {
+    GoalPeriod.DAY -> date
+    // previousOrSame(firstDayOfWeek), spelled out: how far back the week boundary is, which is
+    // zero when today already is it
+    GoalPeriod.WEEK ->
+        date.minus((date.dayOfWeek.isoDayNumber - firstDayOfWeek().isoDayNumber + 7) % 7, DateTimeUnit.DAY)
+}
+
+/** The instant the current goal period began. */
+internal fun periodStartMs(period: GoalPeriod, now: Instant, zone: TimeZone = TimeZone.currentSystemDefault()): Long =
+    periodStartDate(period, now.toLocalDateTime(zone).date).atStartOfDayIn(zone).toEpochMilliseconds()
+
+/**
+ * How many periods in a row [goal] has been reached, counting back from now. The period in
+ * progress cannot break a streak — a day you have not finished yet is not a day you failed —
+ * so a run stands until a whole day or week goes by without reaching it.
+ */
+internal fun List<Entry>.streak(
+    goal: Goal,
+    now: Instant,
+    zone: TimeZone = TimeZone.currentSystemDefault(),
+): Int {
+    val reached = groupBy {
+        periodStartDate(goal.period, Instant.fromEpochMilliseconds(it.at).toLocalDateTime(zone).date)
+    }.filterValues { it.tally(goal.metric) >= goal.target }.keys
+    val step = if (goal.period == GoalPeriod.DAY) DateTimeUnit.DAY else DateTimeUnit.WEEK
+
+    var at = periodStartDate(goal.period, now.toLocalDateTime(zone).date)
+    if (at !in reached) at = at.minus(1, step)
+    var run = 0
+    while (at in reached) {
+        run++
+        at = at.minus(1, step)
+    }
+    return run
+}
+
+/**
+ * Whether every goal stands reached as things are now. Having no goals at all is not "done" —
+ * a reminder that skips itself because nothing was ever asked for would simply never arrive.
+ */
+internal fun List<Goal>.allReached(
+    history: List<Entry>,
+    now: Instant,
+    zone: TimeZone = TimeZone.currentSystemDefault(),
+): Boolean =
+    isNotEmpty() && all { it.reached(history.towards(it, periodStartMs(it.period, now, zone))) }
+
+/**
+ * Days in a row on which everything asked for that day was done. Weekly goals are left out:
+ * one is unmet for most of its own week, so counting it would make a daily streak impossible.
+ * With no daily goals set the bar is simply having practised, which is the figure the
+ * achievements screen already calls "days in a row".
+ */
+internal fun List<Entry>.allReachedStreak(
+    goals: List<Goal>,
+    now: Instant,
+    zone: TimeZone = TimeZone.currentSystemDefault(),
+): Int {
+    val daily = goals.filter { it.period == GoalPeriod.DAY }.ifEmpty { listOf(EVERY_DAY) }
+    val byDay = groupBy { Instant.fromEpochMilliseconds(it.at).toLocalDateTime(zone).date }
+    fun met(day: LocalDate) =
+        byDay[day].orEmpty().let { entries -> daily.all { entries.tally(it.metric) >= it.target } }
+
+    // today counts if it is already done, and cannot break the run if it is not: the day is
+    // not over yet
+    var at = now.toLocalDateTime(zone).date
+    if (!met(at)) at = at.minus(1, DateTimeUnit.DAY)
+    var run = 0
+    while (met(at)) {
+        run++
+        at = at.minus(1, DateTimeUnit.DAY)
+    }
+    return run
+}
 
 /** The lengths worth marking. Past the last of them, every anniversary. */
 private val MILESTONE_DAYS = listOf(3, 7, 30, 100, 182, 365, 500)

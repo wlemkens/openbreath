@@ -21,6 +21,11 @@ val keystoreProperties = Properties().apply {
 }
 
 kotlin {
+    // kotlinx-datetime 0.8 hands back the stdlib's kotlin.time.Instant, which Kotlin 2.2 still
+    // marks experimental. Opting in once here rather than annotating every file that reads a
+    // clock; the type is stable in practice and stops being experimental in 2.3.
+    compilerOptions { optIn.add("kotlin.time.ExperimentalTime") }
+
     androidTarget {
         compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
     }
@@ -51,6 +56,7 @@ kotlin {
             implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.9.6")
             implementation("androidx.datastore:datastore-preferences:1.2.1")
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+            implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.8.0")
         }
         androidMain.dependencies {
             implementation("androidx.activity:activity-compose:1.13.0")

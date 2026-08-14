@@ -21,7 +21,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.ZonedDateTime
+import kotlin.time.Clock
 import java.time.temporal.TemporalAdjusters
 import java.time.temporal.WeekFields
 
@@ -144,7 +144,7 @@ class ReminderReceiver : BroadcastReceiver() {
                     val reminder = stored.firstOrNull { it.id == id && it.enabled } ?: return@launch
                     val done = reminder.onlyIfBehind &&
                         context.goalsFlow().first()
-                            .allReached(context.historyFlow().first(), ZonedDateTime.now())
+                            .allReached(context.historyFlow().first(), Clock.System.now())
                     if (!done) context.ring(reminder)
                     // rescheduled either way: a morning it stayed quiet is not the end of it
                     context.scheduleReminder(reminder)

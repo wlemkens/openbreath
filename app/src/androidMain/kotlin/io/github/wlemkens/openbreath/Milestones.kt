@@ -27,7 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import java.time.ZonedDateTime
+import kotlin.time.Clock
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -53,7 +53,7 @@ fun MilestoneWatch(config: Config, goals: List<Goal>) {
 
     val log = history ?: return
     val last = celebrated ?: return
-    val days = remember(log, goals) { log.allReachedStreak(goals, ZonedDateTime.now()) }
+    val days = remember(log, goals) { log.allReachedStreak(goals, Clock.System.now()) }
     val due = dueMilestone(days, last) ?: return
 
     MilestoneDialog(due, Color(config.cueColor)) {
