@@ -19,6 +19,12 @@ Functionality includes:
   # Licensing
   The code is GPL-3.0-or-later — see LICENSE. Copyright (c) 2026 Wim Lemkens.
 
+  `LICENSE-EXCEPTION` adds one permission under GPLv3 §7: conveying through an app store
+  whose terms bind recipients in ways the GPL forbids. Without it the App Store build is a
+  licence breach — that is what VLC was pulled over — and only the copyright holder can
+  grant it. It is written for any store, not for Apple by name, and it gives away nothing
+  about the source. Leave it in place; an iOS release depends on it.
+
   Every dependency has to stay GPL-compatible: the AndroidX and Kotlin stack is Apache-2.0,
   which is fine one-way into GPLv3. Adding anything under a proprietary or GPL-incompatible
   licence would make the combined app undistributable, so check before pulling one in.

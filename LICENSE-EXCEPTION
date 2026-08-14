@@ -1,0 +1,48 @@
+OpenBreath — App Store Distribution Exception
+Copyright (c) 2026 Wim Lemkens
+
+Additional permission under GNU GPL version 3 section 7.
+
+OpenBreath is licensed under the GNU General Public License, version 3 or (at your
+option) any later version — see LICENSE. As the sole copyright holder, I grant the
+following additional permission.
+
+  As a special exception, you are given permission to convey the Program, or a work
+  based on the Program, through an application distribution platform operated by a
+  third party (an "app store"), even where that platform's terms of service impose
+  on recipients limitations inconsistent with the terms of the GNU General Public
+  License. Such limitations include, without limitation: restrictions on the number
+  of devices or user accounts on which a copy may be installed or run; restrictions
+  on copying, conveying or further distributing a copy obtained from the platform;
+  and technological measures applied by the platform that control the installation
+  or execution of a copy.
+
+  This permission applies solely to the act of conveying through such a platform. It
+  does not restrict any right the GNU General Public License grants you, and it does
+  not authorise the copyright holder or anyone else to withhold the complete
+  corresponding source code, which remains available under the GNU General Public
+  License version 3 or later on the same terms as before.
+
+If you modify the Program, you may extend this exception to your version of it, but
+you are not obliged to do so. If you do not wish to do so, delete this exception
+statement from your version.
+
+You may also remove this additional permission from any copy you convey, as provided
+by section 7 of the GNU General Public License.
+
+Why this exists
+---------------
+
+The App Store's terms bind the people who download an app in ways the GPL says a
+recipient must not be bound — a copy tied to a limited number of devices, and
+technical measures controlling how it is installed. Distributing GPLv3 software
+there without this permission puts the distributor in breach, which is what got VLC
+pulled from the store. Only the copyright holder can lift that, and this file is
+that lifting.
+
+It is deliberately written for any app store rather than for Apple alone: the same
+conflict arises anywhere a platform's terms restrict what the GPL leaves free, and
+naming one vendor would mean writing this again for the next one.
+
+It grants no rights over the source. Anyone who receives a copy from an app store
+still receives it under the GPL and can still ask for and redistribute the source.

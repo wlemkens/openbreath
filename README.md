@@ -223,6 +223,12 @@ General Public License**, either version 3 of the License, or (at your option) a
 see [LICENSE](LICENSE). It is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
+One additional permission applies, under section 7 of that licence — see
+[LICENSE-EXCEPTION](LICENSE-EXCEPTION). It allows conveying OpenBreath through an app store
+whose terms restrict recipients in ways the GPL forbids, which is what makes distribution on
+the App Store possible at all. It grants nothing over the source: a copy from a store is still
+a GPL copy, and the source is still yours to ask for and pass on.
+
 The bundled audio is **not** covered by that grant. `app/src/main/res/raw/*.mp3` are cuts of
 files from the
 [freesound_community](https://pixabay.com/users/freesound_community-46691455/) Pixabay account,
