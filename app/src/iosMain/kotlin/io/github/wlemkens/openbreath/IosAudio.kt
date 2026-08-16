@@ -12,6 +12,7 @@ import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFAudio.sampleRate
 import platform.AVFAudio.setActive
+import platform.Foundation.NSLog
 
 /**
  * .playback, so a meditation still sounds with the ringer switch silenced. A breathing app that
@@ -57,9 +58,13 @@ internal fun outputSampleRate(engine: AVAudioEngine): Int {
     }
 
     // Said out loud, because the failure this replaces was inaudible to every test and visible
-    // only as a wrong pitch. One line per engine, in the log, is what turns "the rate looked
-    // plausible" into something anyone can check on any run.
-    println("OpenBreath: audio at $chosen Hz (node $fromNode, session $fromSession)")
+    // only as a wrong pitch. One line per engine is what turns "the rate looked plausible" into
+    // something anyone can check on any run.
+    //
+    // NSLog and not println: a Kotlin/Native println goes to stdout, and the stdout of an app
+    // launched by simctl goes nowhere anyone can read. Only the unified log is collectable, and
+    // NSLog is what reaches it.
+    NSLog("OpenBreath: audio at %d Hz (node %f, session %f)", chosen, fromNode, fromSession)
     return chosen
 }
 
