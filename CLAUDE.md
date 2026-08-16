@@ -113,12 +113,40 @@ Functionality includes:
   The module is Kotlin Multiplatform with Compose Multiplatform, targeting `androidTarget()`
   plus `iosArm64` and `iosSimulatorArm64`. There is no `iosX64`: Compose Multiplatform stopped
   publishing it at 1.11, so the Intel-Mac simulator is gone. Sources live in `src/commonMain`,
-  `src/androidMain`, `src/iosMain` and `src/androidUnitTest` — the old `src/main/java` and
-  `src/test/java` are gone, and an editor left open on a moved file will happily recreate it.
+  `src/androidMain`, `src/iosMain`, `src/commonTest` and `src/androidUnitTest` — the old
+  `src/main/java` and `src/test/java` are gone, and an editor left open on a moved file will
+  happily recreate it.
 
-  Nothing iOS can be compiled on Linux: the Kotlin/Native link step needs Xcode. The check that
-  the port has not broken anything is therefore still the Android one —
-  `./gradlew :app:testDebugUnitTest :app:assembleDebug`.
+  **Kotlin must stay at 2.3.20 or above, and that is an iOS constraint alone.** Every Compose
+  Multiplatform 1.11.1 klib — runtime, ui, foundation, animation — is ABI 2.3.0, built by the
+  2.3.20 compiler, and a Kotlin below that refuses to read them. Android is unaffected because it
+  consumes the `.aar`, where JVM bytecode carries no such gate, which is exactly why the mismatch
+  sat in the build file unnoticed for as long as the iOS targets were declared but never once
+  compiled. Downgrading Kotlin, or upgrading Compose past what the Kotlin version can read, breaks
+  the phone build and nothing else — so it fails only in the job most likely to be skipped.
+
+  Compiling for iOS does **not** need Xcode: Kotlin/Native ships a prebuilt
+  `kotlin-native-prebuilt-macos-*` distribution, so `compileKotlinIosArm64` and
+  `compileTestKotlinIosArm64` run on a Mac with only the Command Line Tools — an Intel one
+  included. Only *linking* a framework and running a simulator need Xcode. Type-check iOS code
+  locally with those two tasks; do not wait for CI to find a typo.
+
+  The check that the port has not broken anything:
+
+      ./gradlew :app:testDebugUnitTest :app:assembleDebug \
+                :app:compileKotlinIosArm64 :app:compileTestKotlinIosArm64
+
+  The Android half alone is not enough any more. `compileTestKotlinIosArm64` is what catches
+  shared code reaching into `androidMain` — `commonTest` compiled against Android resolves such a
+  call happily and says nothing.
+
+  Two Kotlin/Native rules that only bite in `commonTest`, both of which cost a red build here:
+
+  - **A backtick test name cannot contain a comma.** They become Objective-C symbols. `"` is
+    likewise flagged, for Windows. Eight names had to be rewritten when the tests moved.
+  - **`kotlin.test` takes its message last, where JUnit took it first.** `assertEquals(msg, a, b)`
+    silently becomes `assertEquals(expected = msg, …)`. Grep for the multi-line calls too — an
+    `assertEquals(` alone on its line hides the string on the next one.
 
   commonMain holds the session engine, the cue, every stored type and the whole of the goal
   arithmetic (`Model.kt`), all reads and writes (`Store.kt`), the two shared widgets, and the
