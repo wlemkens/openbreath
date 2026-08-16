@@ -10,7 +10,51 @@ import platform.AVFAudio.AVAudioPCMFormatFloat32
 import platform.AVFAudio.AVAudioPlayerNode
 import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
+import platform.AVFAudio.sampleRate
 import platform.AVFAudio.setActive
+
+/**
+ * .playback, so a meditation still sounds with the ringer switch silenced. A breathing app that
+ * goes mute because the phone is on silent has failed at the one moment it was most wanted.
+ *
+ * Shared by both engines and safe to call twice: the markers may sound in a preset whose phases
+ * ask for no ambient bed at all, so neither can rely on the other having gone first.
+ */
+@OptIn(ExperimentalForeignApi::class)
+internal fun configureAudioSession() {
+    val session = AVAudioSession.sharedInstance()
+    session.setCategory(AVAudioSessionCategoryPlayback, null)
+    session.setActive(true, null)
+}
+
+/**
+ * What the hardware is actually running at.
+ *
+ * **The session has to be active before asking.** An engine's output node answers 0 Hz until it
+ * is, which the simulator log shows plainly:
+ *
+ *     Engine@0x...: associating with audio session (0x0), error -10879
+ *     rio@0x... format = 2 ch, 0 Hz, Float32, deinterleaved
+ *
+ * A 0 coerced up to some floor is the worst of the available outcomes: the DSP would render at a
+ * rate the engine is not playing at, and the result is not silence or a crash but a soundscape
+ * pitched wrong — the kind of bug that survives a test suite and gets noticed by an ear, weeks
+ * later. So the session is configured first, the node is asked, and the session's own rate is the
+ * fallback rather than a number picked to make the arithmetic safe.
+ */
+@OptIn(ExperimentalForeignApi::class)
+internal fun outputSampleRate(engine: AVAudioEngine): Int {
+    configureAudioSession()
+    val fromNode = engine.outputNode.outputFormatForBus(0u).sampleRate
+    if (fromNode > 0.0) return fromNode.toInt()
+
+    val fromSession = AVAudioSession.sharedInstance().sampleRate
+    if (fromSession > 0.0) return fromSession.toInt()
+
+    // neither would answer, which should not happen on a device; 44100 because that is what the
+    // constants were tuned at, so a wrong guess is at least the one they were written for
+    return 44100
+}
 
 /**
  * The sink for [WaveDsp] on iOS: an engine, a player node, and buffers kept fed.
@@ -28,27 +72,13 @@ import platform.AVFAudio.setActive
  * output node is running at, which is commonly 48000 where Android asked for 44100, and every
  * filter corner in the DSP is derived from it.
  */
-/**
- * .playback, so a meditation still sounds with the ringer switch silenced. A breathing app that
- * goes mute because the phone is on silent has failed at the one moment it was most wanted.
- *
- * Shared by both engines and safe to call twice: the markers may sound in a preset whose phases
- * ask for no ambient bed at all, so neither can rely on the other having gone first.
- */
-@OptIn(ExperimentalForeignApi::class)
-internal fun configureAudioSession() {
-    val session = AVAudioSession.sharedInstance()
-    session.setCategory(AVAudioSessionCategoryPlayback, null)
-    session.setActive(true, null)
-}
-
 @OptIn(ExperimentalForeignApi::class)
 class IosWaveSynth {
     private val engine = AVAudioEngine()
     private val player = AVAudioPlayerNode()
 
-    private val sampleRate: Int =
-        engine.outputNode.outputFormatForBus(0u).sampleRate.toInt().coerceAtLeast(8000)
+    // configures the session before asking, or the node answers 0 — see outputSampleRate
+    private val sampleRate: Int = outputSampleRate(engine)
 
     private val dsp = WaveDsp(sampleRate)
 

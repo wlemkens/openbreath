@@ -27,8 +27,8 @@ import platform.AVFAudio.AVAudioPlayerNode
 class IosMarkers {
     private val engine = AVAudioEngine()
 
-    private val sampleRate: Int =
-        engine.outputNode.outputFormatForBus(0u).sampleRate.toInt().coerceAtLeast(8000)
+    // configures the session before asking, or the node answers 0 — see outputSampleRate
+    private val sampleRate: Int = outputSampleRate(engine)
 
     private val format = AVAudioFormat(
         commonFormat = AVAudioPCMFormatFloat32,
