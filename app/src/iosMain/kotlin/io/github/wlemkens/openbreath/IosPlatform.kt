@@ -42,7 +42,7 @@ class IosPlatform : Platform {
         override fun openRating() = Unit
     }
 
-    override fun session(): SessionServices = SilentSession()
+    override fun session(): SessionServices = IosSession()
 
     private fun open(url: String) {
         val target = NSURL.URLWithString(url) ?: return
@@ -51,21 +51,26 @@ class IosPlatform : Platform {
 }
 
 /**
- * A session that breathes without a sound. The cue animates, the phases turn, the sitting is
- * logged — everything the engine does is platform-free already. What is missing is only the
- * playing of it, which is owed by the audio work.
+ * A session that breathes. The waves are real and shared with Android to the constant; the
+ * struck markers are still owed.
  */
-private class SilentSession : SessionServices {
+private class IosSession : SessionServices {
+
+    private val wave = IosWaveSynth()
 
     override val synth = object : Synth {
-        // written every frame and read by nobody yet; kept rather than discarded so that the
-        // screen driving them is exercised exactly as it will be once there is an engine behind
-        override var openness: Float = 0f
-        override var wavesGain: Float = 0f
-        override var soundwaveGain: Float = 0f
+        override var openness: Float
+            get() = wave.openness
+            set(value) { wave.openness = value }
+        override var wavesGain: Float
+            get() = wave.wavesGain
+            set(value) { wave.wavesGain = value }
+        override var soundwaveGain: Float
+            get() = wave.soundwaveGain
+            set(value) { wave.soundwaveGain = value }
 
-        override fun start() = Unit
-        override fun stop() = Unit
+        override fun start() = wave.start()
+        override fun stop() = wave.stop()
     }
 
     override val markers = object : Markers {
@@ -98,5 +103,7 @@ private class SilentSession : SessionServices {
         override fun off() = Unit
     }
 
-    override fun release() = Unit
+    override fun release() {
+        wave.release()
+    }
 }
