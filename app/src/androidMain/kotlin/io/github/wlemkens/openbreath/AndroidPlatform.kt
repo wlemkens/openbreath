@@ -34,6 +34,7 @@ class AndroidPlatform(private val activity: Activity) : Platform {
             runCatching { activity.startActivity(feedbackIntent()) }
         }
 
+        override val canRate = true
         override fun openRating() = activity.openRating()
     }
 

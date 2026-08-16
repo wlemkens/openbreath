@@ -73,10 +73,6 @@ class DndGuard(private val context: Context) {
 
 fun notificationPolicyIntent() = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
 
-// the respondent link, without the usp=publish-editor the form editor appends when you copy it
-private const val FEEDBACK_FORM =
-    "https://docs.google.com/forms/d/e/1FAIpQLSfiiYcjxAfzvYQXIEQfyxwErtbEDVqjxbdaPAsvSuZpGgaFDA/viewform"
-
 /** Opens the form in a browser. The app sends nothing itself — you fill it in and it is yours. */
 fun feedbackIntent() = Intent(Intent.ACTION_VIEW, Uri.parse(FEEDBACK_FORM))
 

@@ -98,9 +98,18 @@ interface KeepAwake {
  * now rather than added unused. Whatever else changes about it, the rule it lives under does not:
  * nothing is ever given in return for a payment.
  */
+internal const val FEEDBACK_FORM =
+    "https://docs.google.com/forms/d/e/1FAIpQLSfiiYcjxAfzvYQXIEQfyxwErtbEDVqjxbdaPAsvSuZpGgaFDA/viewform"
+
 interface Links {
     /** The feedback form, in a browser. The app itself sends nothing. */
     fun openFeedback()
+
+    /**
+     * False where there is no store page to open, which is the honest answer before an app has
+     * ever been submitted and been given an id. The menu leaves the item out when it is.
+     */
+    val canRate: Boolean
 
     /** The app's own store page, where the rating is. */
     fun openRating()
