@@ -10,7 +10,9 @@ name: build
 
 on:
   push:
-    branches: [main]
+    # the port branch as well as main: the iOS half cannot be checked on the machine it is
+    # written on, so it needs to reach a runner without waiting for a merge
+    branches: [main, ios-port]
   pull_request:
   workflow_dispatch:
 
