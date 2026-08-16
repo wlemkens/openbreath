@@ -1,0 +1,95 @@
+# The check that nothing has broken, for both platforms.
+#
+# Android is the regression gate CLAUDE.md names, and it runs on Linux because nothing about it
+# needs a Mac. iOS cannot be built anywhere but a Mac — the Kotlin/Native link step needs Xcode —
+# and it cannot be built on an Intel one either, since Compose Multiplatform stopped publishing
+# an ios_x64 variant after 1.9.3. macos-15 runners are Apple Silicon with Xcode 16, which is why
+# the iOS job lives here rather than on a developer's laptop.
+
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # verifies gradle-wrapper.jar against the published checksums before running it
+      - uses: gradle/actions/wrapper-validation@v4
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # the runner image carries an Android SDK but not necessarily this compileSdk
+      - name: Install the SDK the build asks for
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Test and assemble
+        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-test-report
+          path: app/build/reports/tests/
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # the Kotlin/Native distribution is ~1 GB and unpacks per Kotlin version, so it is worth
+      # keeping between runs; the key is the Kotlin version the root build script pins
+      - uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('build.gradle.kts') }}
+          restore-keys: konan-${{ runner.os }}-
+
+      # compiling needs no Xcode, but linking a framework and booting a simulator do
+      - name: Compile the shared code for a phone
+        run: ./gradlew --no-daemon :app:compileKotlinIosArm64 :app:compileTestKotlinIosArm64
+
+      # the real point of the job: StorageTest and SessionTest executed by the iOS compiler, so a
+      # backup written on Android is proven to open on an iPhone rather than assumed to
+      - name: Run the shared tests on the iOS simulator
+        run: ./gradlew --no-daemon :app:iosSimulatorArm64Test
+
+      - name: Link the framework
+        run: ./gradlew --no-daemon :app:linkDebugFrameworkIosSimulatorArm64
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-test-report
+          path: app/build/reports/tests/
+          if-no-files-found: ignore
