@@ -72,6 +72,15 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
+        # Compose refuses to start without this, and is right to: left out, iOS caps the app at
+        # 60Hz on a ProMotion phone. This app is one slowly expanding sphere, which is precisely
+        # the content where a halved frame rate shows as visible stepping.
+        #   Uncaught Kotlin exception: kotlin.IllegalStateException: Error: `Info.plist` doesn't
+        #   have a valid `CADisableMinimumFrameDurationOnPhone` entry
+        CADisableMinimumFrameDurationOnPhone: true
+        # portrait-only is only allowed to mean portrait-only if the app also says it wants the
+        # whole screen; without this the build warns that every orientation must be supported
+        UIRequiresFullScreen: true
         # portrait only: the cue is a circle centred in the screen and a landscape phone gives it
         # nothing but a shorter axis to be cropped by
         UISupportedInterfaceOrientations:

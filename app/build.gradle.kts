@@ -40,6 +40,9 @@ kotlin {
         target.binaries.framework {
             baseName = "OpenBreath"
             isStatic = true
+            // without it the compiler warns that it cannot infer one and falls back to the bundle
+            // name, which is what a crash report would then have to be symbolicated against
+            binaryOption("bundleId", "io.github.wlemkens.openbreath.shared")
         }
     }
 
