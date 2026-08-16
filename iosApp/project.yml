@@ -10,9 +10,14 @@ name: iosApp
 options:
   bundleIdPrefix: io.github.wlemkens
   deploymentTarget:
-    # Compose Multiplatform's floor. Nothing in the app asks for more, and asking for less does not
-    # build.
-    iOS: "13.0"
+    # 15, and the floor is SwiftUI rather than Compose: the App/Scene lifecycle that OpenBreathApp
+    # is built on did not exist before iOS 14, so 13 does not compile at all. 15 rather than 14
+    # because there is no one to serve between them — an iPhone that cannot reach 15 is a 6s — and
+    # every year below costs availability annotations to no purpose.
+    #
+    # For scale against the other platform: minSdk 26 is Android 8, from 2017. iOS 15 is 2021, so
+    # this is the stricter of the two, not the looser.
+    iOS: "15.0"
   createIntermediateGroups: true
 
 targets:
