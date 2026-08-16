@@ -62,9 +62,13 @@ internal fun outputSampleRate(engine: AVAudioEngine): Int {
     // something anyone can check on any run.
     //
     // NSLog and not println: a Kotlin/Native println goes to stdout, and the stdout of an app
-    // launched by simctl goes nowhere anyone can read. Only the unified log is collectable, and
-    // NSLog is what reaches it.
-    NSLog("OpenBreath: audio at %d Hz (node %f, session %f)", chosen, fromNode, fromSession)
+    // launched by simctl goes nowhere anyone can read. Only the unified log is collectable.
+    //
+    // One argument and no format specifiers, deliberately. NSLog is variadic, Kotlin/Native does
+    // not properly support calling C variadic functions, and passing %d and %f through it is
+    // undefined however convincingly it prints the first time. The string is built in Kotlin,
+    // where the types are real, and handed over whole.
+    NSLog("OpenBreath: audio at $chosen Hz (node $fromNode, session $fromSession)")
     return chosen
 }
 
