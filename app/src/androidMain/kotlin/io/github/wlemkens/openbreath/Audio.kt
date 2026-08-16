@@ -101,18 +101,6 @@ class WaveSynth {
     }
 }
 
-private const val BELL_HZ = 528f
-
-/** Near-harmonic: a fundamental and its octave. */
-private val BELL_PARTIALS = floatArrayOf(1f, 2f)
-
-// gongRate, tickRate and markerRate moved to commonMain/MarkerPitch.kt: they are arithmetic over
-// Phase and MarkerTone with nothing of Android in them, and the shared tests that pin the
-// zero-length-hold rule have to run on both platforms.
-
-/** Base pitch of the metronome tick, before [tickRate] moves it. */
-private const val TICK_HZ = 900f
-
 /**
  * The bowl recording rings for nearly 15 s, longer than a breath phase. It plays at full
  * level until [GONG_FADE_START_MS], ramps down over [GONG_FADE_MS], then the stream is
@@ -124,30 +112,8 @@ private const val TICK_HZ = 900f
 private const val GONG_FADE_START_MS = 3_500L
 private const val GONG_FADE_MS = 700L
 
-/** Twin-partial offset: 0.6% apart beats slowly enough to read as shimmer, not as vibrato. */
-private const val DETUNE = 1.006
-
-// Warmth knobs for the struck markers. Warmth is mostly the absence of high-frequency
-// energy, so every one of these tilts the balance downward.
-
-/**
- * Corner of the spectral tilt, in Hz. Partials are attenuated by absolute frequency rather
- * than by partial number: warmth is about where energy sits in Hz, and tilting by index
- * strips body from a low sound while leaving a bright 1 kHz octave untouched.
- */
-private const val WARM_HZ = 700.0
-
-/** How much faster each higher partial dies. Higher makes brightness leave sooner. */
-private const val HF_DECAY = 0.45
-
-/** The strike is a lowpassed thump; unfiltered noise here read as a bright tick. */
-private const val STRIKE_HZ = 900.0
-
-/** A few ms of rise. An instant attack is heard as a hard edge however dark the tone is. */
-private const val ATTACK_S = 0.006
-
-/** Peak every marker is normalised to, leaving headroom over the waves it plays against. */
-private const val MARKER_PEAK = 12500f
+// BELL_HZ, TICK_HZ and the synthesis of both moved to commonMain/MarkerSynth.kt: they are
+// arithmetic over a sample rate, and iOS strikes the same bell from the same numbers.
 
 /**
  * The sound at the *end* of a phase: the user's own mp3 if they picked one, otherwise the
@@ -307,94 +273,14 @@ class PhaseMarkers(private val context: Context) {
         loaded.clear()
     }
 
-    /**
-     * Renders a struck-metal marker into a static buffer.
-     *
-     * Higher partials decay faster than low ones, so the wash settles into a hum rather than
-     * every partial dying at once. Each partial is doubled by a slightly detuned twin: the
-     * two beat against each other, and that shimmer is what separates a gong from a big bell.
-     */
-    private fun struck(hz: Float): AudioTrack {
-        val partials = BELL_PARTIALS
-        val baseDecay = 3.2
-        val seconds = 1.2
+    /** Wraps commonMain's bell in a static track. */
+    private fun struck(hz: Float): AudioTrack = staticTrack(struckMarker(hz, SR).toPcm())
 
-        val n = (SR * seconds).toInt()
-        val raw = FloatArray(n)
-        val rnd = Random()
-        // -12 dB/octave above WARM_HZ, so brightness is shed wherever it actually lives
-        val amps = FloatArray(partials.size) {
-            val ratio = hz * partials[it] / WARM_HZ
-            (1.0 / (1.0 + ratio * ratio)).toFloat()
-        }
-        val norm = 1.0 / amps.sum()
-        // whatever is still ringing when the buffer ends would click, so taper the last tenth
-        val taperFrom = (n * 0.9).toInt()
+    /** Wraps commonMain's tick in a static track. */
+    private fun ticked(hz: Float): AudioTrack = staticTrack(tickMarker(hz, SR).toPcm())
 
-        // the strike gets its own lowpass, and closing a one-pole costs amplitude, so undo
-        // that here rather than letting the filter secretly set how hard the hit lands
-        val strikeA = 1.0 - exp(-2.0 * PI * STRIKE_HZ / SR)
-        val strikeNorm = 1.0 / sqrt(strikeA / (2.0 - strikeA))
-        var strikeLp = 0.0
-
-        for (i in 0 until n) {
-            val t = i.toDouble() / SR
-            var s = 0.0
-            for (p in partials.indices) {
-                val f = hz * partials[p]
-                val env = amps[p] * exp(-baseDecay * (1.0 + p * HF_DECAY) * t)
-                s += env * (sin(2 * PI * f * t) + sin(2 * PI * f * DETUNE * t)) * 0.5
-            }
-            // the strike itself: a soft thump, gone in about 50 ms
-            strikeLp += strikeA * ((rnd.nextFloat() * 2 - 1) - strikeLp)
-            val strike = exp(-70.0 * t) * strikeLp * strikeNorm * 0.4
-
-            val attack = if (t < ATTACK_S) eased((t / ATTACK_S).toFloat()).toDouble() else 1.0
-            val taper = if (i > taperFrom) (n - i).toDouble() / (n - taperFrom) else 1.0
-            raw[i] = ((s * norm + strike) * attack * taper).toFloat()
-        }
-
-        // every marker lands at the same peak. Left to a fixed scalar, each tone and pitch
-        // ends up a different loudness purely from how its partials happen to sum — and
-        // normalising also makes clipping impossible rather than merely unlikely.
-        var peak = 0f
-        for (v in raw) peak = maxOf(peak, abs(v))
-        val scale = if (peak > 0f) MARKER_PEAK / peak else 0f
-        return staticTrack(ShortArray(n) { (raw[it] * scale).toInt().toShort() })
-    }
-
-    /**
-     * A metronome click: a short sine gone in about 40 ms, with a filtered noise transient on
-     * top. The noise is what the ear hears as the tick; the sine is what gives it a pitch to
-     * tell one boundary from another. No detune and no partials — shimmer is what makes a bell
-     * sound like a bell, and a metronome is meant to be a hard, plain edge.
-     */
-    private fun ticked(hz: Float): AudioTrack {
-        val seconds = 0.06
-        val n = (SR * seconds).toInt()
-        val raw = FloatArray(n)
-        val rnd = Random()
-        // the same one-pole as the struck markers, and the same correction for what it costs
-        val clickA = 1.0 - exp(-2.0 * PI * STRIKE_HZ / SR)
-        val clickNorm = 1.0 / sqrt(clickA / (2.0 - clickA))
-        var clickLp = 0.0
-
-        for (i in 0 until n) {
-            val t = i.toDouble() / SR
-            clickLp += clickA * ((rnd.nextFloat() * 2 - 1) - clickLp)
-            // starts at zero either way: a sine from phase 0 and noise through a closed filter
-            val body = sin(2 * PI * hz * t) * exp(-90.0 * t)
-            val click = clickLp * clickNorm * exp(-260.0 * t)
-            // whatever is left at the end of the buffer would click on its own, so taper out
-            val taper = 1.0 - (i.toDouble() / n).pow(6)
-            raw[i] = ((body * 0.7 + click * 0.6) * taper).toFloat()
-        }
-
-        var peak = 0f
-        for (v in raw) peak = maxOf(peak, abs(v))
-        val scale = if (peak > 0f) MARKER_PEAK / peak else 0f
-        return staticTrack(ShortArray(n) { (raw[it] * scale).toInt().toShort() })
-    }
+    /** The exact inverse of the scaling MarkerSynth applies, so these are the same samples. */
+    private fun FloatArray.toPcm() = ShortArray(size) { (this[it] * 32768f).toInt().toShort() }
 
     private fun staticTrack(pcm: ShortArray): AudioTrack {
         val n = pcm.size

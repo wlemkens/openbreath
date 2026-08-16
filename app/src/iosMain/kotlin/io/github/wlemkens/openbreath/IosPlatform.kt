@@ -57,6 +57,7 @@ class IosPlatform : Platform {
 private class IosSession : SessionServices {
 
     private val wave = IosWaveSynth()
+    private val struck = IosMarkers()
 
     override val synth = object : Synth {
         override var openness: Float
@@ -74,7 +75,7 @@ private class IosSession : SessionServices {
     }
 
     override val markers = object : Markers {
-        override fun prepare(preset: Preset) = Unit
+        override fun prepare(preset: Preset) = struck.prepare(preset)
 
         /**
          * Still has to answer honestly: the screen uses this to collapse two phases that end on
@@ -84,7 +85,10 @@ private class IosSession : SessionServices {
         override fun soundIdOf(phase: Phase, preset: Preset): Any =
             preset.soundOf(phase).let { it.markerUri ?: (it.tone to markerRate(it.tone, phase)) }
 
-        override fun play(phase: Phase, preset: Preset) = Unit
+        override fun play(phase: Phase, preset: Preset) = struck.play(phase, preset)
+
+        // both are recordings rather than syntheses — see IosMarkers for why they are silent
+        // rather than approximated with the bell
         override fun playSessionEnd() = Unit
         override fun stopSessionEnd() = Unit
     }
@@ -105,5 +109,6 @@ private class IosSession : SessionServices {
 
     override fun release() {
         wave.release()
+        struck.release()
     }
 }

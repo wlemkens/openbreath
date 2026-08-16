@@ -28,6 +28,20 @@ import platform.AVFAudio.setActive
  * output node is running at, which is commonly 48000 where Android asked for 44100, and every
  * filter corner in the DSP is derived from it.
  */
+/**
+ * .playback, so a meditation still sounds with the ringer switch silenced. A breathing app that
+ * goes mute because the phone is on silent has failed at the one moment it was most wanted.
+ *
+ * Shared by both engines and safe to call twice: the markers may sound in a preset whose phases
+ * ask for no ambient bed at all, so neither can rely on the other having gone first.
+ */
+@OptIn(ExperimentalForeignApi::class)
+internal fun configureAudioSession() {
+    val session = AVAudioSession.sharedInstance()
+    session.setCategory(AVAudioSessionCategoryPlayback, null)
+    session.setActive(true, null)
+}
+
 @OptIn(ExperimentalForeignApi::class)
 class IosWaveSynth {
     private val engine = AVAudioEngine()
@@ -64,12 +78,7 @@ class IosWaveSynth {
         if (started) return // already fading back in rather than starting a second engine
         dsp.prime()
 
-        // .playback, so a meditation still sounds with the ringer switch silenced. A breathing
-        // app that goes mute because the phone is on silent has failed at the one moment it is
-        // most likely to be used.
-        val session = AVAudioSession.sharedInstance()
-        session.setCategory(AVAudioSessionCategoryPlayback, null)
-        session.setActive(true, null)
+        configureAudioSession()
 
         engine.attachNode(player)
         engine.connect(player, engine.mainMixerNode, format)
