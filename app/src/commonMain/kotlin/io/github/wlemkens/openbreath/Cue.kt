@@ -11,21 +11,90 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
 /** The far end of the cue's gradient. Fixed; only the bright end is the user's to pick. */
-internal val Deep = Color(0xFF1E4B78)
+/**
+ * How dark the far side of the cue goes, as a fraction of the colour picked in settings.
+ *
+ * Depth used to be a blend towards a fixed deep blue, which reads well only for a cue that is
+ * already blueish. Anything near its complement passed through grey on the way — an orange cue
+ * lost almost all its colour a quarter of the way back (10% saturation, measured). Scaling the
+ * three channels together instead leaves hue and saturation exactly where they were and moves
+ * only brightness, whatever colour is chosen.
+ */
+private const val FAR_SIDE = 0.45f
+
+/** The wash behind the points, which is what gives the cloud its volume. */
+private const val HAZE = 0.18f
+private const val HAZE_MID = 0.14f
+
+/** How far a point dips as it twinkles. */
+private const val TWINKLE = 0.45f
+
+/**
+ * How one point is drawn. Everything else about the three point styles — the lattice, the
+ * turning, the trips, the breathing — is identical; only these five numbers differ, and they
+ * are all by eye.
+ */
+private class PointLook(
+    /** How far the centre burns towards white. 0 leaves it the cue colour. */
+    val coreWhite: Float,
+    /** The centre, against the original dot size. Small and hard reads as a star. */
+    val coreSize: Float,
+    /** The coloured glow around it: how wide, and how faint. */
+    val haloSpread: Float,
+    val haloAlpha: Float,
+    /**
+     * The dimmest a point can be, as a fraction. 1 gives every point the same brightness, which
+     * is an even field; lower leaves a few bright ones among many faint, which is a sky.
+     */
+    val floor: Float,
+)
+
+private fun lookOf(style: CueStyle) = when (style) {
+    // the first cloud: one flat dot in a close glow, every point alike
+    CueStyle.CLOUD -> PointLook(coreWhite = 0f, coreSize = 1f, haloSpread = 2.6f, haloAlpha = 0.15f, floor = 1f)
+    CueStyle.BUBBLES -> PointLook(coreWhite = 0.75f, coreSize = 0.55f, haloSpread = 3.2f, haloAlpha = 0.20f, floor = 0.35f)
+    // a harder centre inside a softer glow. Softer means fainter, not wider: at 5.5 the halos
+    // overlapped into a wash and the points stopped reading as separate
+    CueStyle.STARS -> PointLook(coreWhite = 0.9f, coreSize = 0.38f, haloSpread = 1.5f, haloAlpha = 0.10f, floor = 0.45f)
+    CueStyle.GLOW -> error("the sphere does not draw points")
+}
+
+/**
+ * The chosen hue at the most it can be: full saturation and full brightness. The colour picker
+ * cannot express this, because a colour already at 100% saturation has nowhere left to go — this
+ * takes whatever was picked and drives the dullest channel to nothing, which is the same hue
+ * with all of the grey taken out.
+ *
+ * Grey and black are left alone. Neither has a hue to make more of, and pushing them would
+ * invent one.
+ */
+fun Color.vivid(): Color {
+    val top = maxOf(red, green, blue)
+    val bottom = minOf(red, green, blue)
+    if (top <= 0f || top == bottom) return this
+    val pull = top / (top - bottom)
+    fun channel(c: Float) = ((top - (top - c) * pull) / top).coerceIn(0f, 1f)
+    return Color(channel(red), channel(green), channel(blue), alpha)
+}
+
+private fun Color.atDepth(d: Float): Color {
+    val k = FAR_SIDE + (1f - FAR_SIDE) * d
+    return copy(red = red * k, green = green * k, blue = blue * k)
+}
 
 /** The breath cue: something that grows on the inhale and shrinks on the exhale. */
 @Composable
 fun Cue(style: CueStyle, openness: Float, glow: Color) {
-    if (style == CueStyle.GLOW) GlowSphere(openness, glow) else PointCloud(openness, glow)
+    if (style == CueStyle.GLOW) GlowSphere(openness, glow) else PointCloud(openness, glow, lookOf(style))
 }
 
 /** The original: a soft sphere, [glow] core fading through deep blue. */
@@ -38,8 +107,8 @@ private fun GlowSphere(openness: Float, glow: Color) {
         drawCircle(
             brush = Brush.radialGradient(
                 0f to glow.copy(alpha = 0.95f),
-                0.6f to Deep.copy(alpha = 0.75f),
-                1f to Deep.copy(alpha = 0.05f),
+                0.6f to glow.atDepth(0.1f).copy(alpha = 0.75f),
+                1f to glow.atDepth(0f).copy(alpha = 0.05f),
                 center = center,
                 radius = r,
             ),
@@ -55,7 +124,7 @@ private fun GlowSphere(openness: Float, glow: Color) {
  * see is one object turning rather than a swarm reshuffling.
  */
 @Composable
-private fun PointCloud(openness: Float, glow: Color) {
+private fun PointCloud(openness: Float, glow: Color, look: PointLook) {
     val pts = remember { cuePoints() }
     // the session clock only ticks while running; the cloud drifts on the idle screen too
     val seconds = remember { mutableFloatStateOf(0f) }
@@ -71,12 +140,12 @@ private fun PointCloud(openness: Float, glow: Color) {
         val max = maxRadius()
         val r = max * (0.24f + 0.76f * openness)
         rimRing(max, glow)
-        // the old gradient, dimmed, still under the points — it is what gives the cloud volume
+        // the wash under the points, which is what gives the cloud its volume
         drawCircle(
             brush = Brush.radialGradient(
-                0f to glow.copy(alpha = 0.18f),
-                0.6f to Deep.copy(alpha = 0.14f),
-                1f to Deep.copy(alpha = 0f),
+                0f to glow.copy(alpha = HAZE),
+                0.6f to glow.atDepth(0.1f).copy(alpha = HAZE_MID),
+                1f to glow.atDepth(0f).copy(alpha = 0f),
                 center = center,
                 radius = r,
             ),
@@ -150,18 +219,29 @@ private fun PointCloud(openness: Float, glow: Color) {
 
             val d = (z2 + 1f) / 2f // 0 at the back, 1 at the front
             // ponytail: index-phased sine instead of value noise — at this density it reads the same
-            val twinkle = 0.55f + 0.45f * sin(t * 1.7f + phase)
+            val twinkle = 1f - TWINKLE + TWINKLE * sin(t * 1.7f + phase)
             // a point off on its own lifts out of the depth fade, so the breakaway is legible even
             // when it is round the back
             val alpha = twinkle * (0.10f + 0.90f * d * d + 0.7f * strayed)
-            val color = lerp(Deep, glow, d)
+            val color = glow.atDepth(d)
             val at = Offset(center.x + x1 * r, center.y + y2 * r)
             val size = dot * (0.9f + 1.3f * d) * (0.75f + 0.5f * s1)
 
             // ponytail: two drawCircle per point, ~840 a frame on Cloud and Motes. If that ever
             // drops frames, bucket into a few depth bands and use drawPoints instead.
-            drawCircle(color.copy(alpha = alpha * 0.15f), size * 2.6f, at)
-            drawCircle(color.copy(alpha = alpha), size, at)
+            // A star is a hard white point inside a soft coloured halo, and the two are what
+            // sell it: the halo alone is a smudge, the point alone is a pixel. Magnitude is
+            // fixed per point, so the sky has a few bright ones rather than an even field.
+            // Every core the same small size — scaling it with magnitude made them dots again.
+            // A bright point is whiter and less transparent, not wider.
+            val magnitude = look.floor + (1f - look.floor) * s1 * s1
+            val lit = alpha * magnitude
+            drawCircle(color.copy(alpha = lit * look.haloAlpha), size * look.haloSpread, at)
+            drawCircle(
+                lerp(color, Color.White, look.coreWhite * magnitude).copy(alpha = lit),
+                size * look.coreSize,
+                at,
+            )
         }
     }
 }

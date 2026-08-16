@@ -145,7 +145,7 @@ fun SessionScreen(
     val preset = config.active
     val timing = preset.timing
     val total = remember(config) { config.limit.totalMs(timing) }
-    val glow = Color(config.cueColor)
+    val glow = Color(config.cueColor).let { if (config.vividCue) it.vivid() else it }
 
     val synth = remember { WaveSynth() }
     val markers = remember { PhaseMarkers(context) }
