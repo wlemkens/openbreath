@@ -176,10 +176,38 @@ Functionality includes:
     the store; where a screen still takes one it is for something else, and that is the signal
     it cannot move yet.
 
+  ### The sound
+  The sound and the playing of it are separate, and have to stay that way. `WaveDsp.kt` and
+  `MarkerSynth.kt` in commonMain hold every filter, every ear-picked constant and both syntheses;
+  `androidMain/Audio.kt` and `iosMain/IosAudio.kt` hold only where the samples go. Forty tuning
+  constants in two copies would have drifted, and a drift in a constant picked by ear is a bug
+  invisible in a diff.
+
+  **The sample rate is a parameter, never a constant.** It was 44100 baked into five filter
+  coefficients while AudioTrack was the only sink; iOS returns whatever its output node runs at,
+  commonly 48000. A synth built for one played at the other is the same sound a semitone sharp
+  with its filter corners moved to match.
+
+  iOS schedules buffers instead of installing an `AVAudioSourceNode`. A source node's render block
+  runs on the realtime audio thread and Kotlin/Native's runtime does not belong there — a
+  collection inside a render callback is a dropout you can hear.
+
+  Still owed on iOS: the two recorded bowls and a user's own mp3. They are deliberately **silent**
+  rather than falling back to the synthesised bell — pick the bowl, hear a bell, and there is no
+  way to tell which of the two is the bug.
+
+  ### The bundled audio is in Git LFS
+  `.gitattributes` puts every audio format in LFS, and **anything that clones or checks out without
+  git-lfs gets a 130-byte pointer file instead of the mp3.** The build succeeds, the APK packages
+  the pointer, and the only symptom is that the bowls never sound — which `Audio.kt` itself calls
+  the failure that is "invisible without this". Every APK CI built before this was noticed had it.
+
+  So `actions/checkout` sets `lfs: true` and `.github/check-media.sh` fails the build if any
+  bundled mp3 is still a pointer. If you clone this and the bowls are silent, that is the first
+  thing to check — `git lfs pull`.
+
   Still Android-only, and why:
 
-  - **`Audio.kt`** — AudioTrack/SoundPool. The DSP is portable; only the sink swaps for
-    AVAudioEngine.
   - **`Reminders.kt`** — AlarmManager and a BroadcastReceiver → UNUserNotificationCenter.
   - **`Platform.kt`** — vibration → CoreHaptics, torch → AVCaptureDevice.
   - **`Settings.kt`, `RemindersScreen.kt`** — the file picker, permission prompts and intents.
