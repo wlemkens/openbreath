@@ -75,6 +75,21 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
+      # Compose Multiplatform 1.11.1 is built against the iOS 26 SDK: ui-uikit references
+      # UIViewLayoutRegion, which does not exist in Xcode 16, and the link dies on an undefined
+      # Objective-C class rather than on anything in this repository. The runner image ships
+      # several Xcode 26.x but still defaults to 16.4, so it has to be chosen.
+      - name: Use an Xcode new enough for Compose Multiplatform
+        run: |
+          newest=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$newest" ]; then
+            echo "::error title=No Xcode 26::Only these are installed:%0A$(ls -d /Applications/Xcode*.app | tr '\n' ' ')"
+            exit 1
+          fi
+          echo "selecting $newest"
+          sudo xcode-select -s "$newest"
+          xcodebuild -version
+
       # the Kotlin/Native distribution is ~1 GB and unpacks per Kotlin version, so it is worth
       # keeping between runs; the key is the Kotlin version the root build script pins
       - uses: actions/cache@v6
