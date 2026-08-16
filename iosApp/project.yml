@@ -32,6 +32,14 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.wlemkens.openbreath
         PRODUCT_NAME: OpenBreath
+        # the app is called OpenBreath but its Swift module must not be, because the Kotlin
+        # framework already is. Left to default, PRODUCT_MODULE_NAME follows PRODUCT_NAME, the app
+        # ends up in a module named OpenBreath, and `import OpenBreath` is then a self-import:
+        #   warning: file 'OpenBreathApp.swift' is part of module 'OpenBreath'; ignoring import
+        #   error: cannot find 'MainViewControllerKt' in scope
+        # A warning for the cause and an error somewhere else entirely, which is why it is spelled
+        # out here rather than left as a mysterious one-liner.
+        PRODUCT_MODULE_NAME: OpenBreathApp
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: "1.0"
         # the Kotlin framework is built into this directory by the gradle phase below, and is a
