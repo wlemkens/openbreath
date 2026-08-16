@@ -24,7 +24,14 @@ jobs:
   android:
     runs-on: ubuntu-latest
     steps:
+      # lfs, because .gitattributes puts every mp3 in LFS and checkout does not fetch it by
+      # default — without this the APK ships 130-byte pointer files in place of the bowls
       - uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Check the bundled audio is audio
+        run: .github/check-media.sh
 
       - uses: actions/setup-java@v5
         with:
@@ -66,7 +73,14 @@ jobs:
   ios:
     runs-on: macos-15
     steps:
+      # lfs, because .gitattributes puts every mp3 in LFS and checkout does not fetch it by
+      # default — without this the APK ships 130-byte pointer files in place of the bowls
       - uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Check the bundled audio is audio
+        run: .github/check-media.sh
 
       - uses: actions/setup-java@v5
         with:
