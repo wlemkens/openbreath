@@ -43,11 +43,13 @@ jobs:
           packages: 'platforms;android-36 build-tools;36.0.0'
 
       - name: Test and assemble
-        run: ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug 2>&1 | tee /tmp/android.log
 
-      - name: Say which tests failed
+      - name: Say what failed
         if: failure()
-        run: .github/print-test-failures.sh
+        run: .github/print-test-failures.sh /tmp/android.log
 
       - uses: actions/upload-artifact@v7
         if: always()
@@ -88,11 +90,13 @@ jobs:
       # the real point of the job: StorageTest and SessionTest executed by the iOS compiler, so a
       # backup written on Android is proven to open on an iPhone rather than assumed to
       - name: Run the shared tests on the iOS simulator
-        run: ./gradlew --no-daemon :app:iosSimulatorArm64Test
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:iosSimulatorArm64Test 2>&1 | tee /tmp/ios.log
 
-      - name: Say which tests failed
+      - name: Say what failed
         if: failure()
-        run: .github/print-test-failures.sh
+        run: .github/print-test-failures.sh /tmp/ios.log
 
       - name: Link the framework
         run: ./gradlew --no-daemon :app:linkDebugFrameworkIosSimulatorArm64
