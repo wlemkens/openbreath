@@ -61,6 +61,15 @@ kotlin {
         androidMain.dependencies {
             implementation("androidx.activity:activity-compose:1.13.0")
         }
+        // The session engine, the stored shape and the cue are checked on every platform that
+        // runs them, not just Android. StorageTest especially: a backup written on a phone has to
+        // open on an iPhone, so the strings older releases really wrote are now decoded by both
+        // compilers rather than one.
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
+        // JUnit stays for what is genuinely Android's: the icon generator, the interruption-filter
+        // arithmetic, and the reminder scheduling still sitting on java.time.
         val androidUnitTest by getting {
             dependencies { implementation("junit:junit:4.13.2") }
         }

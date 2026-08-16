@@ -1,8 +1,8 @@
 package io.github.wlemkens.openbreath
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * What older versions of the app actually wrote to DataStore, decoded by today's code.
@@ -30,7 +30,8 @@ class StorageTest {
     fun `a log written by any older version still reads`() {
         for (stored in listOf(historyV1, historyV2)) {
             val log = decodeHistory(stored)
-            assertEquals("an entry was dropped from $stored", 1, log.size)
+            // kotlin.test takes the message last, where JUnit took it first
+            assertEquals(1, log.size, "an entry was dropped from $stored")
             assertEquals(1786345207163L, log[0].at)
             assertEquals(300160L, log[0].durationMs)
             assertEquals("Coherence 5.5", log[0].preset)
@@ -111,7 +112,7 @@ class StorageTest {
     }
 
     @Test
-    fun `a backup says what is in it without writing "1 sittings"`() {
+    fun `a backup says what is in it without writing '1 sittings'`() {
         val one = Backup(
             config = Config(presets = listOf(Preset())),
             history = listOf(Entry(1L, 300_000L, "x")),

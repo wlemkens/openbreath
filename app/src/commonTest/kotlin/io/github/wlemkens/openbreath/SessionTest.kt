@@ -1,11 +1,11 @@
 package io.github.wlemkens.openbreath
 
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertSame
-import org.junit.Assert.assertTrue
-import org.junit.Assert.assertThrows
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -27,7 +27,7 @@ class SessionTest {
     }
 
     @Test
-    fun `zero length holds are skipped, not divided by`() {
+    fun `zero length holds are skipped rather than divided by`() {
         val coherence = Timing(inhaleMs = 5500, holdInMs = 0, exhaleMs = 5500, holdOutMs = 0)
         // the instant the inhale ends we must already be exhaling
         assertEquals(Phase.EXHALE, phaseAt(5500, coherence).phase)
@@ -59,7 +59,7 @@ class SessionTest {
     }
 
     @Test
-    fun `openness runs 0 to 1 and back, flat through the holds`() {
+    fun `openness runs 0 to 1 and back and is flat through the holds`() {
         assertEquals(0f, phaseAt(0, t).openness, 1e-4f)
         assertEquals(1f, phaseAt(4000, t).openness, 1e-4f) // hold_in
         assertEquals(1f, phaseAt(5999, t).openness, 1e-4f) // still hold_in
@@ -110,17 +110,18 @@ class SessionTest {
         // a zero-length hold ends on the same instant as the phase before it. Both are asked
         // for their sound, and the two answers must be one sound, not two struck together
         for (tone in MarkerTone.entries) {
+            // kotlin.test takes the message last, where JUnit took it first
             assertEquals(
-                "$tone splits the top of the breath",
                 markerRate(tone, Phase.INHALE),
                 markerRate(tone, Phase.HOLD_IN),
                 1e-4f,
+                "$tone splits the top of the breath",
             )
             assertEquals(
-                "$tone splits the bottom of the breath",
                 markerRate(tone, Phase.EXHALE),
                 markerRate(tone, Phase.HOLD_OUT),
                 1e-4f,
+                "$tone splits the bottom of the breath",
             )
         }
         // and the two turns of the breath are told apart, which is the point of varying at all
@@ -140,7 +141,7 @@ class SessionTest {
     }
 
     @Test
-    fun `a zero length phase still ends, so a marker on it can ring`() {
+    fun `a zero length phase still ends so a marker on it can ring`() {
         val coherence = Timing(inhaleMs = 5500, holdInMs = 0, exhaleMs = 5500, holdOutMs = 0)
         // the instant the inhale ends is also the instant the skipped hold ends
         assertEquals(
@@ -196,8 +197,8 @@ class SessionTest {
 
     @Test
     fun `an all zero timing is rejected rather than dividing by zero`() {
-        assertThrows(IllegalArgumentException::class.java) { Timing(0, 0, 0, 0) }
-        assertThrows(IllegalArgumentException::class.java) { Timing(inhaleMs = -1) }
+        assertFailsWith<IllegalArgumentException> { Timing(0, 0, 0, 0) }
+        assertFailsWith<IllegalArgumentException> { Timing(inhaleMs = -1) }
     }
 
     @Test
@@ -219,22 +220,28 @@ class SessionTest {
     }
 
     @Test
-    fun `a logged sitting keeps the timing it was breathed at, and counts whole breaths only`() {
+    fun `a logged sitting keeps the timing it was breathed at and counts whole breaths only`() {
         val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
         // 84s of an 11s breath: seven finished, and the eighth is in the duration but uncounted
         val entry = entryFor(1_000L, 84_000L, preset)
         assertEquals(7, entry.cycles)
         assertEquals(5500, entry.inhaleMs)
         assertEquals(0, entry.holdInMs)
-        // zero-length phases are left out, and whole seconds are written without a decimal
-        assertEquals("5.5 – 5.5", entry.pattern)
+        // zero-length phases are left out, and whole seconds are written without a decimal.
+        //
+        // The separator inside 5.5 is the reader's business and not this test's — formatOneDecimal
+        // exists precisely so a Belgian sees 5,5 — so the expectation is composed with it rather
+        // than spelling the dot a US locale happens to give. As a literal this failed on any
+        // machine set to nl_BE, and it would fail the same way on the iOS simulator.
+        val half = formatOneDecimal(5.5f)
+        assertEquals("$half – $half", entry.pattern)
         assertEquals("4 – 7 – 8", entryFor(0L, 0L, Preset("4-7-8", 4000, 7000, 8000, 0)).pattern)
         // an entry from before timings were logged has nothing to show rather than "0 – 0"
         assertEquals("", Entry(1_000L, 60_000L, "Box 4").pattern)
     }
 
     @Test
-    fun `a goal counts only the sittings inside its own period, in its own unit`() {
+    fun `a goal counts only the sittings inside its own period and in its own unit`() {
         val zone = TimeZone.of("Europe/Brussels")
         val noon = LocalDateTime(2026, 8, 12, 12, 0).toInstant(zone)
         val startOfDay = periodStartMs(GoalPeriod.DAY, noon, zone)
@@ -260,7 +267,7 @@ class SessionTest {
     }
 
     @Test
-    fun `a streak counts back from now, and today's blank page does not break it`() {
+    fun `a streak counts back from now and today's blank page does not break it`() {
         val zone = TimeZone.of("Europe/Brussels")
         val wednesdayNoon = LocalDateTime(2026, 8, 12, 12, 0).toInstant(zone)
         val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
@@ -279,7 +286,7 @@ class SessionTest {
     }
 
     @Test
-    fun `a streak is of the goal being reached, not of sitting at all`() {
+    fun `a streak is of the goal being reached rather than of sitting at all`() {
         val zone = TimeZone.of("Europe/Brussels")
         val wednesdayNoon = LocalDateTime(2026, 8, 12, 12, 0).toInstant(zone)
         val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
@@ -341,7 +348,7 @@ class SessionTest {
     }
 
     @Test
-    fun `a milestone is due once, and a run that passed one while away still gets its moment`() {
+    fun `a milestone is due once and a run that passed one while away still gets its moment`() {
         assertEquals(null, dueMilestone(days = 2, celebrated = 0))
         assertEquals(3, dueMilestone(days = 3, celebrated = 0))
         // shown once: the same run does not celebrate again tomorrow
