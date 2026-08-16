@@ -48,9 +48,17 @@ xcrun simctl install "$udid" "$app"
 xcrun simctl io "$udid" recordVideo --codec h264 --force "$out/launch.mp4" &
 recorder=$!
 
-# attached to a pty, so whatever the app writes on its way down is captured. A Kotlin/Native
-# uncaught exception prints its message and stack here and nowhere else that survives the run.
-( xcrun simctl launch --console-pty "$udid" "$bundle_id" > "$out/console.log" 2>&1 & )
+# The unified log, not --console-pty. A pty cannot be allocated on a headless runner and the
+# launch itself dies with "Mach error -308 (ipc/mig) server died", which looks exactly like the
+# app failing to start — an instrument that breaks the thing it measures. Streaming the log
+# leaves the launch alone and still catches a Kotlin/Native exception, which goes to stderr and
+# from there into the unified log.
+xcrun simctl spawn "$udid" log stream --style compact \
+    --predicate 'processImagePath CONTAINS "OpenBreath"' > "$out/console.log" 2>&1 &
+logger=$!
+sleep 1
+
+xcrun simctl launch "$udid" "$bundle_id"
 
 # three frames over a few seconds: the first can catch a launch screen rather than the app
 for i in 1 2 3; do
@@ -60,13 +68,16 @@ done
 
 kill -INT "$recorder" 2>/dev/null || true
 wait "$recorder" 2>/dev/null || true
+kill "$logger" 2>/dev/null || true
 
 # a crash on launch leaves the process gone; say so rather than uploading three identical frames
 # of a home screen and calling the job green
+crashed=0
 if xcrun simctl spawn "$udid" launchctl list 2>/dev/null | grep -q "$bundle_id"; then
     echo "$bundle_id was still running — the frames are the app"
 else
-    echo "::error title=App crashed on launch::$bundle_id was not running when the screenshots were taken"
+    crashed=1
+    echo "::error title=App did not stay running::$bundle_id was not running when the screenshots were taken"
 
     # the console is where a Kotlin exception says what it was
     if [ -s "$out/console.log" ]; then
@@ -88,8 +99,16 @@ PY
         head -60 "$r"
         cp "$r" "$out/" 2>/dev/null || true
     done
-    [ -z "$reports" ] && echo "(no crash report was written — the app may have exited rather than crashed)"
+    # an if, not a && — under set -e the && form exits the script the moment a report does
+    # exist, skipping the shutdown and the upload of the very thing it just found
+    if [ -z "$reports" ]; then
+        echo "(no crash report was written — the app may have exited rather than crashed)"
+    fi
 fi
 
 xcrun simctl shutdown "$udid" || true
 ls -la "$out"
+
+# the whole point of the check. The previous version printed the error and exited 0, so a run
+# where the app never started was reported as a pass — a guard that does not fail is decoration.
+exit "$crashed"
