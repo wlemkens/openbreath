@@ -109,8 +109,67 @@ jobs:
         if: failure()
         run: .github/print-test-failures.sh /tmp/ios.log
 
-      - name: Link the framework
-        run: ./gradlew --no-daemon :app:linkDebugFrameworkIosSimulatorArm64
+      # XcodeGen from a pinned release rather than brew: brew update is minutes of nothing, and a
+      # pinned binary means the project generated today is the project generated next year
+      - name: Install XcodeGen
+        run: |
+          curl -fsSL -o /tmp/xcodegen.zip \
+            https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip
+          unzip -q /tmp/xcodegen.zip -d /tmp/xcodegen
+          echo "/tmp/xcodegen/bin" >> "$GITHUB_PATH"
+
+      - name: Generate the Xcode project
+        working-directory: iosApp
+        run: |
+          /tmp/xcodegen/bin/xcodegen generate
+          ls -d iosApp.xcodeproj
+
+      # a real app bundle for a real arm64 phone, unsigned. AltStore and SideStore re-sign it with
+      # a free Apple ID, so this is installable without a paid membership or a modern Mac.
+      - name: Build the app for a device
+        run: |
+          set -o pipefail
+          xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+            -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build/ios-device \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tee /tmp/ios-device.log | xcbeautify || {
+              .github/print-test-failures.sh /tmp/ios-device.log; exit 1; }
+
+      - name: Wrap it as an ipa
+        run: |
+          .github/package-ipa.sh \
+            build/ios-device/Build/Products/Debug-iphoneos/OpenBreath.app \
+            build/OpenBreath-unsigned.ipa
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: OpenBreath-unsigned-ipa
+          path: build/OpenBreath-unsigned.ipa
+
+      # and the same app actually running, for when there is no phone to hand: a breathing cue is
+      # an animation, and a still frame cannot show whether it moves
+      - name: Build for the simulator
+        run: |
+          set -o pipefail
+          xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+            -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/ios-sim \
+            build 2>&1 | tee /tmp/ios-sim.log | xcbeautify || {
+              .github/print-test-failures.sh /tmp/ios-sim.log; exit 1; }
+
+      - name: Run it and film it
+        run: .github/record-simulator.sh build/ios-sim/Build/Products/Debug-iphonesimulator/OpenBreath.app
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ios-simulator-recording
+          path: |
+            build/recording/*.png
+            build/recording/*.mp4
+          if-no-files-found: warn
 
       - uses: actions/upload-artifact@v7
         if: always()
