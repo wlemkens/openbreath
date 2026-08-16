@@ -40,8 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -49,6 +47,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.time.Clock
 
 private val Ink = Color(0xFF07090F)
 
@@ -58,7 +57,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             // the one place a Context is turned into a Store; nothing below this asks for one
-            CompositionLocalProvider(LocalStore provides store()) {
+            CompositionLocalProvider(
+                LocalStore provides store(),
+                LocalPlatform provides AndroidPlatform(this),
+            ) {
                 MaterialTheme(colorScheme = darkColorScheme(background = Ink, surface = Ink)) {
                     Surface(Modifier.fillMaxSize()) {
                         Breath(Modifier.safeDrawingPadding())
@@ -71,7 +73,6 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun Breath(modifier: Modifier = Modifier) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val store = LocalStore.current
     val config by remember { store.configFlow() }.collectAsState(initial = null)
@@ -139,18 +140,19 @@ fun SessionScreen(
     onOpenSupport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     val store = LocalStore.current
-    val view = LocalView.current
+    val platform = LocalPlatform.current
     val preset = config.active
     val timing = preset.timing
     val total = remember(config) { config.limit.totalMs(timing) }
     val glow = Color(config.cueColor)
 
-    val synth = remember { WaveSynth() }
-    val markers = remember { PhaseMarkers(context) }
-    val dnd = remember { DndGuard(context) }
-    val torch = remember { Torch(context) }
+    // one lifetime, one teardown: see SessionServices for why these are grouped
+    val session = remember(platform) { platform.session() }
+    val synth = session.synth
+    val markers = session.markers
+    val dnd = session.focus
+    val torch = session.torch
 
     var running by remember { mutableStateOf(false) }
     var elapsed by remember { mutableLongStateOf(0L) }
@@ -161,21 +163,16 @@ fun SessionScreen(
 
     // a session that outlives its screen would leave audio playing, the torch burning and the
     // phone in DND
-    DisposableEffect(Unit) {
-        onDispose {
-            synth.stop()
-            markers.release()
-            dnd.restore()
-            torch.off()
-        }
+    DisposableEffect(session) {
+        onDispose { session.release() }
     }
 
     // foreground only, by design: leaving the app pauses rather than playing on in the background
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) { running = false }
 
     DisposableEffect(running) {
-        view.keepScreenOn = running
-        onDispose { view.keepScreenOn = false }
+        platform.screen.keepAwake(running)
+        onDispose { platform.screen.keepAwake(false) }
     }
 
     LaunchedEffect(running) {
@@ -190,7 +187,7 @@ fun SessionScreen(
         markers.stopSessionEnd()
 
         val base = elapsed
-        if (base == 0L) startedAt = System.currentTimeMillis()
+        if (base == 0L) startedAt = Clock.System.now().toEpochMilliseconds()
         var prev = phaseAt(base, timing)
         // read back in the finally instead of `elapsed`, which Reset clears in the same event
         // that stops the session — the breaths taken still happened
@@ -198,7 +195,7 @@ fun SessionScreen(
 
         fun boundaryCrossed(ended: List<Phase>) {
             // one buzz per boundary, however many zero-length phases ended on it
-            if (config.vibrate) context.buzz()
+            if (config.vibrate) platform.haptics.buzz()
             ended.filter { preset.soundOf(it).mode == SoundMode.MARKER }
                 // two phases ending on the same instant must not play the same sound twice
                 .distinctBy { markers.soundIdOf(it, preset) }
@@ -230,7 +227,7 @@ fun SessionScreen(
                         // the session ending is the larger event; the final phase's own marker
                         // on top of it would only muddy the moment. The buzz still belongs to
                         // the phase boundary, so it stays.
-                        if (config.vibrate) context.buzz()
+                        if (config.vibrate) platform.haptics.buzz()
                         markers.playSessionEnd()
                     } else {
                         // the final phase completed, plus any zero-length phase trailing it
@@ -306,11 +303,7 @@ fun SessionScreen(
                         )
                         DropdownMenuItem(
                             text = { Text("Feedback") },
-                            onClick = {
-                                menuOpen = false
-                                // a phone with nothing that opens links is not a crash
-                                runCatching { context.startActivity(feedbackIntent()) }
-                            },
+                            onClick = { menuOpen = false; platform.links.openFeedback() },
                         )
                         DropdownMenuItem(
                             text = { Text("Support") },
@@ -318,7 +311,7 @@ fun SessionScreen(
                         )
                         DropdownMenuItem(
                             text = { Text("Rate") },
-                            onClick = { menuOpen = false; context.openRating() },
+                            onClick = { menuOpen = false; platform.links.openRating() },
                         )
                     }
                 }
