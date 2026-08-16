@@ -46,14 +46,21 @@ internal fun configureAudioSession() {
 internal fun outputSampleRate(engine: AVAudioEngine): Int {
     configureAudioSession()
     val fromNode = engine.outputNode.outputFormatForBus(0u).sampleRate
-    if (fromNode > 0.0) return fromNode.toInt()
-
     val fromSession = AVAudioSession.sharedInstance().sampleRate
-    if (fromSession > 0.0) return fromSession.toInt()
 
-    // neither would answer, which should not happen on a device; 44100 because that is what the
-    // constants were tuned at, so a wrong guess is at least the one they were written for
-    return 44100
+    val chosen = when {
+        fromNode > 0.0 -> fromNode.toInt()
+        fromSession > 0.0 -> fromSession.toInt()
+        // neither would answer, which should not happen on a device; 44100 because that is what
+        // the constants were tuned at, so a wrong guess is at least the one they were written for
+        else -> 44100
+    }
+
+    // Said out loud, because the failure this replaces was inaudible to every test and visible
+    // only as a wrong pitch. One line per engine, in the log, is what turns "the rate looked
+    // plausible" into something anyone can check on any run.
+    println("OpenBreath: audio at $chosen Hz (node $fromNode, session $fromSession)")
+    return chosen
 }
 
 /**
