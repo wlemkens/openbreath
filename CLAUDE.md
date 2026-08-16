@@ -131,6 +131,19 @@ Functionality includes:
   included. Only *linking* a framework and running a simulator need Xcode. Type-check iOS code
   locally with those two tasks; do not wait for CI to find a typo.
 
+  **Linking needs Xcode 26, not merely some Xcode.** Compose Multiplatform 1.11.1 is built
+  against the iOS 26 SDK: `ui-uikit` references `UIViewLayoutRegion`, which does not exist in
+  Xcode 16, and the link fails on an undefined Objective-C class inside a Compose object file
+  rather than on anything here. GitHub's macos-15 image carries several Xcode 26.x but still
+  defaults to 16.4, so the workflow selects one.
+
+  That is what finally settles the hardware question. Xcode 26 needs macOS 15, which no Intel Mac
+  before 2019 can run, so the split is not a preference: type-check locally on whatever Mac is to
+  hand, link and test on CI. An Apple Silicon machine collapses the two, and nothing else does.
+
+  Kotlin/Native builds Apple targets on a macOS host **only** — on Linux the targets are not
+  merely broken, they are absent, so there is no iOS feedback there at all.
+
   The check that the port has not broken anything:
 
       ./gradlew :app:testDebugUnitTest :app:assembleDebug \
