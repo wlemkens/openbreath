@@ -53,6 +53,12 @@ targets:
           - OpenBreath
           # Compose's UIKit layer auto-links this and the linker has to be told where to look
           - -ObjC
+        # There is no Intel simulator slice and there never will be: Compose Multiplatform stopped
+        # publishing an ios_x64 variant after 1.9.3, so the Kotlin build phase answers
+        #   error: Unknown iOS simulator arch: 'x86_64'
+        # to anything that asks for one — which a generic simulator destination does by default.
+        EXCLUDED_ARCHS[sdk=iphonesimulator*]: x86_64
+
         # sideloading re-signs the app anyway, and CI has no certificates; a signed build is the
         # business of whoever has an account, not of the thing that proves it compiles
         CODE_SIGNING_ALLOWED: NO
