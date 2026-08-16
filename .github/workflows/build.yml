@@ -79,16 +79,12 @@ jobs:
       # UIViewLayoutRegion, which does not exist in Xcode 16, and the link dies on an undefined
       # Objective-C class rather than on anything in this repository. The runner image ships
       # several Xcode 26.x but still defaults to 16.4, so it has to be chosen.
+      # newest available rather than a named version, with 26 as the floor: matching Xcode_26*
+      # by name would stop finding anything the day the image ships Xcode 27, and a pipeline that
+      # breaks on someone else's release schedule is one that breaks while an OS update has
+      # already knocked the app off the store.
       - name: Use an Xcode new enough for Compose Multiplatform
-        run: |
-          newest=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
-          if [ -z "$newest" ]; then
-            echo "::error title=No Xcode 26::Only these are installed:%0A$(ls -d /Applications/Xcode*.app | tr '\n' ' ')"
-            exit 1
-          fi
-          echo "selecting $newest"
-          sudo xcode-select -s "$newest"
-          xcodebuild -version
+        run: .github/select-xcode.sh 26
 
       # the Kotlin/Native distribution is ~1 GB and unpacks per Kotlin version, so it is worth
       # keeping between runs; the key is the Kotlin version the root build script pins
