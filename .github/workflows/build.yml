@@ -173,6 +173,8 @@ jobs:
           path: |
             build/recording/*.png
             build/recording/*.mp4
+            build/recording/*.log
+            build/recording/*.ips
           if-no-files-found: warn
 
       - uses: actions/upload-artifact@v7
