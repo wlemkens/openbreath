@@ -116,12 +116,16 @@ jobs:
           curl -fsSL -o /tmp/xcodegen.zip \
             https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip
           unzip -q /tmp/xcodegen.zip -d /tmp/xcodegen
-          echo "/tmp/xcodegen/bin" >> "$GITHUB_PATH"
+          # the zip nests a xcodegen/ directory, and the binary needs its sibling share/ beside it
+          bin=$(find /tmp/xcodegen -type f -path '*/bin/xcodegen' | head -1)
+          [ -n "$bin" ] || { echo "::error title=XcodeGen missing::not found in the release zip"; exit 1; }
+          echo "XCODEGEN=$bin" >> "$GITHUB_ENV"
+          "$bin" --version
 
       - name: Generate the Xcode project
         working-directory: iosApp
         run: |
-          /tmp/xcodegen/bin/xcodegen generate
+          "$XCODEGEN" generate
           ls -d iosApp.xcodeproj
 
       # a real app bundle for a real arm64 phone, unsigned. AltStore and SideStore re-sign it with
