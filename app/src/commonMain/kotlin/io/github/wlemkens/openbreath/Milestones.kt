@@ -55,7 +55,7 @@ fun MilestoneWatch(config: Config, goals: List<Goal>) {
     val days = remember(log, goals) { log.allReachedStreak(goals, Clock.System.now()) }
     val due = dueMilestone(days, last) ?: return
 
-    MilestoneDialog(due, Color(config.cueColor)) {
+    MilestoneDialog(due, Color(config.cueColor).let { if (config.vividCue) it.vivid() else it }) {
         // marked before the dialog closes, so a recomposition cannot show it a second time
         scope.launch { store.saveCelebrated(due) }
     }

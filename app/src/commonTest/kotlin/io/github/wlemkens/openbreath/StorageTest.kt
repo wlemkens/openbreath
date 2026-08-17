@@ -187,6 +187,9 @@ class StorageTest {
         assertEquals(6000, config.active.inhaleMs)
         assertEquals(2000, config.active.holdInMs)
         assertEquals(600000L, config.durationMs)
+        // settings added after this config was written take their defaults, not a decode failure
+        assertEquals(false, config.vividCue)
+        assertEquals(false, config.advancedSettings)
         // the retired names fall back to a default rather than taking the preset down
         assertEquals(SoundMode.AMBIENT, config.active.soundOf(Phase.INHALE).mode)
         assertEquals(AmbientVoice.WAVES, config.active.soundOf(Phase.INHALE).voice)

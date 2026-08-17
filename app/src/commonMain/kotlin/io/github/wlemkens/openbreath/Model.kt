@@ -49,9 +49,19 @@ enum class MarkerTone(val label: String) {
 }
 
 /** What the breath cue on the session screen looks like. */
+/**
+ * Three of these draw the same turning lattice of points and differ only in how one point is
+ * drawn — see `PointLook`. The names are stored, so they are added to rather than renamed.
+ */
 enum class CueStyle(val label: String) {
     /** Points packed into a core at the bottom of the breath, opening into a sphere at the top. */
     CLOUD("Cloud"),
+
+    /** The same cloud, each point a white centre in a tight glow. */
+    BUBBLES("Bubbles"),
+
+    /** The same again, the centre harder and the glow wider and fainter around it. */
+    STARS("Stars"),
 
     /** The plain gradient sphere. */
     GLOW("Glow"),
@@ -128,6 +138,10 @@ data class Config(
     val cue: CueStyle = CueStyle.CLOUD,
     /** Opaque ARGB. The bright end of the cue, and the colour of the breath dots. */
     val cueColor: Int = DEFAULT_CUE_COLOR,
+    /** Draw the cue past what the picker can express — see `Color.vivid`. */
+    val vividCue: Boolean = false,
+    /** Which half of the settings screen was last open, so it opens there again. */
+    val advancedSettings: Boolean = false,
 ) {
     val active: Preset get() = presets[activeIndex]
 

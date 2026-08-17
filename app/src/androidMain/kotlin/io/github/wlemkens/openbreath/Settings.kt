@@ -65,8 +65,8 @@ fun SettingsScreen(
         onChange(config.copy(presets = config.presets.toMutableList().also { it[config.activeIndex] = f(preset) }))
     }
 
+    val advanced = config.advancedSettings
     var renaming by remember { mutableStateOf(false) }
-    var advanced by remember { mutableStateOf(false) }
     var pendingPhase by remember { mutableStateOf<Phase?>(null) }
     val pickMp3 = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         val phase = pendingPhase
@@ -124,17 +124,17 @@ fun SettingsScreen(
             }
         }
         item {
-            // not persisted: which half you were last looking at is not a preference, and
-            // opening on Standard is the right answer for anyone who did not come to tinker
+            // remembered, so the screen opens where it was left: someone who works in Advanced
+            // should not have to find it again every time
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = !advanced,
-                    onClick = { advanced = false },
+                    onClick = { onChange(config.copy(advancedSettings = false)) },
                     label = { Text("Standard") },
                 )
                 FilterChip(
                     selected = advanced,
-                    onClick = { advanced = true },
+                    onClick = { onChange(config.copy(advancedSettings = true)) },
                     label = { Text("Advanced") },
                 )
             }
@@ -157,7 +157,7 @@ fun SettingsScreen(
                 }
             }
         }
-        if (advanced) item {
+        item {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -376,9 +376,12 @@ fun SettingsScreen(
             }
         }
 
-        item { SectionLabel("Breath cue") }
-        item {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (advanced) item { SectionLabel("Breath cue") }
+        if (advanced) item {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 CueStyle.entries.forEach { style ->
                     FilterChip(
                         selected = config.cue == style,
@@ -389,6 +392,14 @@ fun SettingsScreen(
             }
         }
         if (advanced) item { CueColour(config.cueColor) { onChange(config.copy(cueColor = it)) } }
+        if (advanced) item {
+            ToggleRow("Vivid", config.vividCue) { onChange(config.copy(vividCue = it)) }
+            Text(
+                "The same hue with the grey taken out, past what the sliders can reach.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
 
         item { SectionLabel("Progress on screen") }
         item {

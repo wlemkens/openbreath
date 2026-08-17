@@ -82,7 +82,7 @@ fun SessionScreen(
     val preset = config.active
     val timing = preset.timing
     val total = remember(config) { config.limit.totalMs(timing) }
-    val glow = Color(config.cueColor)
+    val glow = Color(config.cueColor).let { if (config.vividCue) it.vivid() else it }
 
     // one lifetime, one teardown: see SessionServices for why these are grouped
     val session = remember(platform) { platform.session() }
