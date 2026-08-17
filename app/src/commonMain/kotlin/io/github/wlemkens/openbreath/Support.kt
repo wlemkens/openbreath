@@ -18,7 +18,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
 private val SUPPORT = listOf(
@@ -36,9 +35,9 @@ private val AMOUNTS = listOf(4, 15, 26)
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SupportScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
+    val platform = LocalPlatform.current
     // a phone with nothing that opens links is not a crash
-    fun pay(euros: Int?) = runCatching { context.startActivity(paypalIntent(euros)) }
+    fun pay(euros: Int?) = platform.links.openPayPal(euros)
 
     Column(
         modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp),

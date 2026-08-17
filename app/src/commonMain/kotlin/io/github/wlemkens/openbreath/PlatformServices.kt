@@ -1,6 +1,7 @@
 package io.github.wlemkens.openbreath
 
 import androidx.compose.runtime.staticCompositionLocalOf
+import kotlinx.datetime.LocalDate
 
 /**
  * What a breathing session needs from the machine it runs on.
@@ -91,19 +92,56 @@ interface KeepAwake {
 }
 
 /**
+ * The handful of things whose formatting is the reader's own setting rather than their locale.
+ *
+ * An interface and not an `expect fun` because Android cannot answer without a Context: whether
+ * this phone writes 14:00 or 2:00 PM is a system setting, and `DateFormat.getTimeFormat` wants
+ * the Context to read it from. kotlinx-datetime has no opinion here and shouldn't — it carries
+ * no locale data at all, which is the same reason [firstDayOfWeek] is an expect.
+ *
+ * `uses24Hour` belongs here too and joins with the reminders port, which needs it for a picker.
+ */
+interface Formats {
+    /** A time of day written the way this phone writes them. */
+    fun clockTime(hour: Int, minute: Int): String
+
+    /**
+     * A whole date, spelled out — "Thursday, 13 August 2026". Localised rather than a pattern of
+     * our own: which of the day, month and year comes first is not ours to decide, and a log is
+     * read at a glance or not at all.
+     */
+    fun dayLabel(date: LocalDate): String
+}
+
+/**
  * Sending the reader somewhere outside the app. Opening a link is not a crash risk worth taking a
  * meditation down for, so implementations swallow the case of a device with nothing to open it.
  *
- * The PayPal link belongs here too and joins when the Support screen moves; it is left out for
- * now rather than added unused. Whatever else changes about it, the rule it lives under does not:
- * nothing is ever given in return for a payment.
+ * The PayPal link is here now that the Support screen has moved. Whatever else changes about it,
+ * the rule it lives under does not: nothing is ever given in return for a payment.
  */
 internal const val FEEDBACK_FORM =
     "https://docs.google.com/forms/d/e/1FAIpQLSfiiYcjxAfzvYQXIEQfyxwErtbEDVqjxbdaPAsvSuZpGgaFDA/viewform"
 
+internal const val PAYPAL_ME = "https://paypal.me/wimlemkens"
+
+/** PayPal, with the amount already filled in when one was chosen. */
+internal fun payPalUrl(euros: Int?) = if (euros == null) PAYPAL_ME else "$PAYPAL_ME/${euros}EUR"
+
 interface Links {
     /** The feedback form, in a browser. The app itself sends nothing. */
     fun openFeedback()
+
+    /**
+     * PayPal, in a browser. A browser and not a screen of our own on either platform, and on iOS
+     * that is the rule rather than a preference: App Review 3.2.2(iv) allows funds to be collected
+     * for a cause only outside the app, "such as via Safari or SMS". Opening a URL is exactly that.
+     *
+     * Nothing is charged here and no amount is remembered — the app opens a page and steps out of
+     * the way, and it is never told whether anything was sent. That is what keeps this a tip and
+     * not a purchase, on both stores. See the monetisation note in CLAUDE.md.
+     */
+    fun openPayPal(euros: Int?)
 
     /**
      * False where there is no store page to open, which is the honest answer before an app has
@@ -141,6 +179,7 @@ interface Platform {
     val haptics: Haptics
     val screen: KeepAwake
     val links: Links
+    val formats: Formats
 
     fun session(): SessionServices
 }

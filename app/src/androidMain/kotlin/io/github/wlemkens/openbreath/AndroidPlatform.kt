@@ -2,6 +2,10 @@ package io.github.wlemkens.openbreath
 
 import android.app.Activity
 import android.view.WindowManager
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.toJavaLocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 /**
  * Android's answers to commonMain/PlatformServices.kt.
@@ -34,12 +38,25 @@ class AndroidPlatform(private val activity: Activity) : Platform {
             runCatching { activity.startActivity(feedbackIntent()) }
         }
 
+        override fun openPayPal(euros: Int?) {
+            runCatching { activity.startActivity(paypalIntent(euros)) }
+        }
+
         override val canRate = true
         override fun openRating() = activity.openRating()
     }
 
+    override val formats = object : Formats {
+        override fun clockTime(hour: Int, minute: Int) = activity.clockTime(hour, minute)
+
+        override fun dayLabel(date: LocalDate): String = dayFormat.format(date.toJavaLocalDate())
+    }
+
     override fun session(): SessionServices = AndroidSession(activity)
 }
+
+/** Localised rather than a hand-written pattern — see [Formats.dayLabel]. */
+private val dayFormat: DateTimeFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
 
 private class AndroidSession(context: Activity) : SessionServices {
     private val wave = WaveSynth()

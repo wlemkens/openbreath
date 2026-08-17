@@ -6,22 +6,17 @@ import platform.UIKit.UIApplication
 /**
  * iOS's answers to commonMain/PlatformServices.kt.
  *
- * Two of these are real and the rest are honest silence. Keeping the app awake and opening a link
- * are a line each and there is no reason to defer them; sound, haptics and the torch are whole
- * subsystems and are owed by later work. A no-op here is deliberate and says so — the alternative,
- * leaving the interface unimplemented, is an app that cannot be run at all, and a breathing app
- * that runs silently is still a breathing app.
+ * All of it is real now except the two that cannot be: do-not-disturb, which iOS has no public
+ * API for at all, and the rating link, which needs an App Store id this app has not been given
+ * yet. Both answer false rather than pretending, which is the signal for a screen to hide the
+ * setting instead of offering one that does nothing.
  *
- * Nothing here pretends to a capability it lacks: [FocusGuard.granted] and [TorchLight.available]
- * both answer false, which is the signal for a screen to hide the setting rather than offer one
- * that does nothing.
+ * What is still owed is inside the sound: the two recorded bowls and a file of the reader's own
+ * — see IosMarkers for why those are silent rather than approximated with the bell.
  */
 class IosPlatform : Platform {
 
-    /** Owed by the haptics work: CHHapticEngine, where Android has Vibrator. */
-    override val haptics = object : Haptics {
-        override fun buzz(ms: Long) = Unit
-    }
+    override val haptics = IosHaptics()
 
     override val screen = object : KeepAwake {
         override fun keepAwake(on: Boolean) {
@@ -32,6 +27,8 @@ class IosPlatform : Platform {
     override val links = object : Links {
         override fun openFeedback() = open(FEEDBACK_FORM)
 
+        override fun openPayPal(euros: Int?) = open(payPalUrl(euros))
+
         /**
          * Nothing yet, and it cannot be otherwise: an App Store review link needs the numeric app
          * id Apple assigns at first submission, and this app has never been submitted. Wiring a
@@ -41,6 +38,8 @@ class IosPlatform : Platform {
 
         override fun openRating() = Unit
     }
+
+    override val formats = IosFormats()
 
     override fun session(): SessionServices = IosSession()
 
@@ -100,15 +99,11 @@ private class IosSession : SessionServices {
         override fun restore() = Unit
     }
 
-    /** Owed by the torch work: AVCaptureDevice, where Android has CameraManager. */
-    override val torch = object : TorchLight {
-        override val available = false
-        override fun follow(state: PhaseState) = Unit
-        override fun off() = Unit
-    }
+    override val torch = IosTorch()
 
     override fun release() {
         wave.release()
         struck.release()
+        torch.off()
     }
 }

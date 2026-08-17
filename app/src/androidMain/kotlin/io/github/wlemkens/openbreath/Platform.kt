@@ -13,7 +13,6 @@ import android.os.VibratorManager
 import android.provider.Settings
 import android.text.format.DateFormat
 import java.util.Calendar
-import kotlin.math.roundToInt
 
 fun Context.vibrator(): Vibrator? =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -76,14 +75,8 @@ fun notificationPolicyIntent() = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCE
 /** Opens the form in a browser. The app sends nothing itself — you fill it in and it is yours. */
 fun feedbackIntent() = Intent(Intent.ACTION_VIEW, Uri.parse(FEEDBACK_FORM))
 
-private const val PAYPAL_ME = "https://paypal.me/wimlemkens"
-
-/**
- * PayPal, with the amount already filled in when one was chosen. Nothing is charged here and no
- * amount is remembered: the app opens a page and steps out of the way.
- */
-fun paypalIntent(euros: Int? = null) =
-    Intent(Intent.ACTION_VIEW, Uri.parse(if (euros == null) PAYPAL_ME else "$PAYPAL_ME/${euros}EUR"))
+/** The URL is commonMain's now, since both platforms open the same one — see [payPalUrl]. */
+fun paypalIntent(euros: Int? = null) = Intent(Intent.ACTION_VIEW, Uri.parse(payPalUrl(euros)))
 
 /**
  * The app's own store page, where the rating is. market:// opens the Play app directly; a phone
@@ -112,22 +105,6 @@ fun Context.clockTime(hour: Int, minute: Int): String =
 
 /** Whether that clock is the 24-hour one, for pickers that have to be asked up front. */
 fun Context.uses24Hour(): Boolean = DateFormat.is24HourFormat(this)
-
-/**
- * The breath as a torch strength, 0 meaning off. Variable brightness only exists from API 33,
- * and even then plenty of devices report a maximum of 1 — those get lit for the whole inhale and
- * dark for the whole exhale, which is still a breath you can follow. Pulsing the torch faster to
- * fake levels flickers and hammers the camera service, so it isn't attempted.
- */
-internal fun torchLevel(state: PhaseState, maxLevel: Int): Int =
-    // a hold continues the phase before it: lit through hold-in, dark through hold-out
-    if (maxLevel <= 1) {
-        if (state.phase == Phase.INHALE || state.phase == Phase.HOLD_IN) 1 else 0
-    } else {
-        // rounding over the whole range rather than reserving level 1 for "barely lit": a
-        // finished exhale has to leave you in the dark, not at the dimmest setting
-        (maxLevel * state.openness.coerceIn(0f, 1f)).roundToInt()
-    }
 
 /**
  * The flashlight, brightening with the inhale. Wants no CAMERA permission: [setTorchMode] is

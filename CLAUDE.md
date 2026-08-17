@@ -208,15 +208,18 @@ Functionality includes:
 
   Still Android-only, and why:
 
-  - **`Reminders.kt`** — AlarmManager and a BroadcastReceiver → UNUserNotificationCenter.
-  - **`Platform.kt`** — vibration → CoreHaptics, torch → AVCaptureDevice.
-  - **`Settings.kt`, `RemindersScreen.kt`** — the file picker, permission prompts and intents.
-  - **`Log.kt`** — only `clockTime`, which asks Android whether this user reads 14:00 or 2 PM.
-    That is a genuine platform question, so it wants an expect/actual, not a rewrite.
+  - **`Reminders.kt`, `RemindersScreen.kt`** — AlarmManager and a BroadcastReceiver →
+    UNUserNotificationCenter, plus the permission prompt.
+  - **`Settings.kt`** — the mp3 file picker, and a colour picker built on `android.graphics.Color`.
+    Backup export and import live inside it, which is why an iPhone cannot yet read a backup —
+    and that file is the only route a practice log has to reach one.
 
-  kotlinx-datetime carries no locale data, so the week's first day is `expect firstDayOfWeek()`
-  — Android reads the locale, iOS will read NSCalendar. It is the only calendar fact the
-  library would not answer.
+  **Locale data is the recurring seam.** kotlinx-datetime carries none, on purpose, so every
+  question about how a reader writes something goes to the platform. `firstDayOfWeek()` is an
+  `expect` because it is a plain value; the day heading and the time of day are on the `Formats`
+  interface instead, because Android cannot answer either without a Context. `uses24Hour` joins
+  them with the reminders port. Anything reaching for `java.time.format` or `String.format` in
+  commonMain is this seam being crossed by accident.
 
   Do-not-disturb has no iOS equivalent and is not getting one — no public API sets a Focus.
   That feature is Android-only by nature, not by omission.
