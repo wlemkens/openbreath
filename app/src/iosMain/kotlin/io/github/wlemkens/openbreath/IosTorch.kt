@@ -1,14 +1,13 @@
 package io.github.wlemkens.openbreath
 
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.AVFoundation.AVCaptureDevice
 import platform.AVFoundation.AVMediaTypeVideo
 import platform.AVFoundation.AVCaptureTorchModeOff
 import platform.AVFoundation.hasTorch
 import platform.AVFoundation.isTorchAvailable
-import platform.AVFoundation.lockForConfiguration
 import platform.AVFoundation.setTorchMode
 import platform.AVFoundation.setTorchModeOnWithLevel
-import platform.AVFoundation.unlockForConfiguration
 
 /**
  * The flashlight on iOS, brightening with the inhale.
@@ -24,7 +23,13 @@ import platform.AVFoundation.unlockForConfiguration
  *
  * Every call is guarded the same way Android's is. Another app holding the camera makes the lock
  * fail, and a meditation must not end because the torch could not.
+ *
+ * The opt-in is for the two calls that take an `NSError **`: Kotlin/Native models an out-pointer
+ * as a CPointer, and every CPointer is behind ExperimentalForeignApi. Passing null for it is the
+ * normal way to say "no error out-param wanted", and the calls report failure by return value
+ * anyway, which is what is actually checked here.
  */
+@OptIn(ExperimentalForeignApi::class)
 class IosTorch : TorchLight {
 
     private val device: AVCaptureDevice? =
