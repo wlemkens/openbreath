@@ -13,6 +13,9 @@ import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFAudio.sampleRate
 import platform.AVFAudio.setActive
 import platform.Foundation.NSLog
+import platform.darwin.dispatch_async
+import platform.darwin.dispatch_get_main_queue
+import platform.darwin.dispatch_queue_create
 
 /**
  * .playback, so a meditation still sounds with the ringer switch silenced. A breathing app that
@@ -109,6 +112,13 @@ class IosWaveSynth {
     private val scratch = FloatArray(FRAMES)
     private var started = false
 
+    /**
+     * Where a buffer is filled. Not the realtime thread, which must not run Kotlin, and not the
+     * main thread, which is drawing the breath at 60 Hz and should not be rendering audio between
+     * frames. Serial, so [scratch] is only ever touched by one of them at a time.
+     */
+    private val render = dispatch_queue_create("io.github.wlemkens.openbreath.audio", null)
+
     var openness: Float
         get() = dsp.openness
         set(value) { dsp.openness = value }
@@ -133,9 +143,12 @@ class IosWaveSynth {
         started = true
 
         // two in flight: one playing while the next is being filled, which is the smallest number
-        // that never leaves the node with nothing to read
-        scheduleNext()
-        scheduleNext()
+        // that never leaves the node with nothing to read. On the render queue like every other
+        // fill, so that scratch has exactly one thread that ever writes it.
+        dispatch_async(render) {
+            scheduleNext()
+            scheduleNext()
+        }
     }
 
     /**
@@ -159,8 +172,11 @@ class IosWaveSynth {
     private fun scheduleNext() {
         if (!started) return
         if (dsp.finished) {
-            // the fade has reached silence; let go of the hardware rather than idle on it
-            release()
+            // the fade has reached silence; let go of the hardware rather than idle on it.
+            // On the main queue, because every start and stop of the engine belongs to one
+            // thread and start() is called from composition — see the completion handler below
+            // for why it must not happen here.
+            dispatch_async(dispatch_get_main_queue()) { release() }
             return
         }
         val buffer = AVAudioPCMBuffer(pCMFormat = format, frameCapacity = FRAMES.toUInt())
@@ -170,7 +186,14 @@ class IosWaveSynth {
         dsp.render(scratch)
         for (i in 0 until FRAMES) channel[i] = scratch[i]
 
-        player.scheduleBuffer(buffer) { scheduleNext() }
+        // AVFoundation calls this back on its own audio thread, and nothing here may touch the
+        // engine from inside it: stop() drains the pending completion handlers before returning,
+        // so calling it from within one waits on itself. The audio thread wedges, the watchdog
+        // takes the process, and what the user sees is the app vanishing a second after Pause —
+        // a second being how long the fade takes to reach dsp.finished and ask for release().
+        //
+        // So the handler does one thing: hand the work to a queue that is allowed to do it.
+        player.scheduleBuffer(buffer) { dispatch_async(render) { scheduleNext() } }
     }
 
     private companion object {
