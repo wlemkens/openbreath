@@ -15,7 +15,10 @@ import java.time.format.FormatStyle
  * layer cheap to read and the port honest — if a screen stops working after moving to commonMain,
  * the cause is in the screen, not in a reimplementation hiding here.
  */
-class AndroidPlatform(private val activity: Activity) : Platform {
+class AndroidPlatform(
+    private val activity: Activity,
+    override val files: Files,
+) : Platform {
 
     override val haptics = object : Haptics {
         override fun buzz(ms: Long) = activity.buzz(ms)
@@ -52,17 +55,39 @@ class AndroidPlatform(private val activity: Activity) : Platform {
         override fun dayLabel(date: LocalDate): String = dayFormat.format(date.toJavaLocalDate())
     }
 
-    override fun session(): SessionServices = AndroidSession(activity)
+    // one each, built here and handed to every session: there is one torch on the phone
+    private val dnd = DndGuard(activity)
+    private val flashlight = Torch(activity)
+
+    override val focus = object : FocusGuard {
+        override val supported = true
+        override val granted: Boolean get() = dnd.granted
+        override fun requestAccess() {
+            runCatching { activity.startActivity(notificationPolicyIntent()) }
+        }
+        override fun silence() = dnd.silence()
+        override fun restore() = dnd.restore()
+    }
+
+    override val torch = object : TorchLight {
+        override val available: Boolean get() = flashlight.available
+        override fun follow(state: PhaseState) = flashlight.follow(state)
+        override fun off() = flashlight.off()
+    }
+
+    override fun session(): SessionServices = AndroidSession(activity, focus, torch)
 }
 
 /** Localised rather than a hand-written pattern — see [Formats.dayLabel]. */
 private val dayFormat: DateTimeFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
 
-private class AndroidSession(context: Activity) : SessionServices {
+private class AndroidSession(
+    context: Activity,
+    override val focus: FocusGuard,
+    override val torch: TorchLight,
+) : SessionServices {
     private val wave = WaveSynth()
     private val phaseMarkers = PhaseMarkers(context)
-    private val dnd = DndGuard(context)
-    private val flashlight = Torch(context)
 
     override val synth = object : Synth {
         override var openness: Float
@@ -88,23 +113,11 @@ private class AndroidSession(context: Activity) : SessionServices {
         override fun stopSessionEnd() = phaseMarkers.stopSessionEnd()
     }
 
-    override val focus = object : FocusGuard {
-        override val granted: Boolean get() = dnd.granted
-        override fun silence() = dnd.silence()
-        override fun restore() = dnd.restore()
-    }
-
-    override val torch = object : TorchLight {
-        override val available: Boolean get() = flashlight.available
-        override fun follow(state: PhaseState) = flashlight.follow(state)
-        override fun off() = flashlight.off()
-    }
-
     /** Exactly what the session screen's onDispose used to do, in the order it did it. */
     override fun release() {
         wave.stop()
         phaseMarkers.release()
-        dnd.restore()
-        flashlight.off()
+        focus.restore()
+        torch.off()
     }
 }

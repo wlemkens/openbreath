@@ -62,7 +62,20 @@ interface Markers {
  * false, which is the signal for the setting to be hidden rather than shown and broken.
  */
 interface FocusGuard {
+    /**
+     * Whether this platform has the idea at all. False on iOS, where no public API sets a Focus,
+     * and the setting is then left out of the screen entirely rather than shown as un-grantable —
+     * "you have not allowed this" and "this cannot exist here" are different sentences and only
+     * one of them is worth printing.
+     */
+    val supported: Boolean
+
+    /** Whether the reader has allowed it. Always false where [supported] is false. */
     val granted: Boolean
+
+    /** Send them to wherever the permission is given. Never called unless [supported]. */
+    fun requestAccess()
+
     fun silence()
 
     /** Safe when never silenced, and idempotent — a phone left in DND is unforgivable. */
@@ -114,6 +127,39 @@ interface Formats {
 }
 
 /**
+ * Reaching the reader's own files, for the backup that leaves the phone and the mp3 that comes
+ * onto it.
+ *
+ * Callbacks rather than suspend functions because both platforms are genuinely asynchronous in a
+ * way a coroutine would only paper over: each hands the choosing to a system picker and hears
+ * back through the machinery it registered with, long after the call returned.
+ *
+ * A null result means nothing happened — the reader cancelled, or the file could not be read.
+ * Those two are not told apart, deliberately: a file the system has just handed over and then
+ * refuses to open is rare enough that a second error message for it would be noise, and the
+ * screen already says the useful thing when a file opens but is not a backup.
+ */
+interface Files {
+    /** Ask where to put [text] and write it. [onDone] is false when it did not land. */
+    fun exportText(suggestedName: String, text: String, onDone: (Boolean) -> Unit)
+
+    /** Ask for a file and read it as text. */
+    fun importText(onResult: (String?) -> Unit)
+
+    /**
+     * False where choosing your own sound is not implemented yet, which leaves the button out
+     * rather than offering one that does nothing — the same rule [FocusGuard.granted] follows.
+     */
+    val canPickAudio: Boolean
+
+    /** Ask for an audio file. The string is the opaque handle stored in [PhaseSound.markerUri]. */
+    fun pickAudio(onPicked: (String?) -> Unit)
+
+    /** Something a reader would recognise for a handle from [pickAudio]. */
+    fun audioName(handle: String): String
+}
+
+/**
  * Sending the reader somewhere outside the app. Opening a link is not a crash risk worth taking a
  * meditation down for, so implementations swallow the case of a device with nothing to open it.
  *
@@ -162,6 +208,13 @@ interface Links {
 interface SessionServices {
     val synth: Synth
     val markers: Markers
+
+    /**
+     * The very same objects [Platform.focus] and [Platform.torch] hand out, not copies. A session
+     * drives them and the settings screen only asks them questions, but there is one torch on the
+     * phone and one do-not-disturb state, and two objects believing they own either is how one
+     * gets left switched on.
+     */
     val focus: FocusGuard
     val torch: TorchLight
 
@@ -180,6 +233,15 @@ interface Platform {
     val screen: KeepAwake
     val links: Links
     val formats: Formats
+    val files: Files
+
+    /**
+     * Reachable without starting a session, because the settings screen has to ask whether this
+     * device has a torch and whether this platform has do-not-disturb at all — and building a
+     * session to find out would start an audio engine to answer a question about a flashlight.
+     */
+    val focus: FocusGuard
+    val torch: TorchLight
 
     fun session(): SessionServices
 }

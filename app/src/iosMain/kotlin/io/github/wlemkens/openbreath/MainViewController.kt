@@ -34,13 +34,10 @@ fun MainViewController(): UIViewController = ComposeUIViewController {
 /**
  * Which screen is showing, over the ones that exist here.
  *
- * The twin of androidMain's Breath, and temporary in the same way. Settings, Log, Reminders and
- * Support are not reachable because they have not been ported, and passing null for them leaves
- * them out of the menu rather than offering an item that does nothing. When those four move to
- * commonMain, this file and its Android twin become one navigator and both are deleted.
- *
- * Everything else is already shared: the session, the cue, the goals, the achievements and the
- * milestone that interrupts them are all commonMain and are reached from here unchanged.
+ * The twin of androidMain's Breath, and temporary in the same way. Reminders is the last screen
+ * not reachable here, and passing null for it leaves it out of the menu rather than offering an
+ * item that opens nothing. When it moves to commonMain, this file and its Android twin become
+ * one navigator and both are deleted.
  */
 @Composable
 private fun IosBreath(modifier: Modifier = Modifier) {
@@ -50,6 +47,9 @@ private fun IosBreath(modifier: Modifier = Modifier) {
     val goals by remember { store.goalsFlow() }.collectAsState(initial = null)
     var showGoals by remember { mutableStateOf(false) }
     var showAchievements by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
+    var showLog by remember { mutableStateOf(false) }
+    var showSupport by remember { mutableStateOf(false) }
 
     // the same null gate the Android side has, and for the same reason: a list built on a value
     // that has not loaded yet is a lie the goal screen would act on
@@ -59,6 +59,17 @@ private fun IosBreath(modifier: Modifier = Modifier) {
     MilestoneWatch(current, saved)
 
     when {
+        showSettings -> SettingsScreen(
+            config = current,
+            onChange = { scope.launch { store.saveConfig(it) } },
+            onBack = { showSettings = false },
+            modifier = modifier,
+        )
+
+        showLog -> LogScreen(onBack = { showLog = false }, modifier = modifier)
+
+        showSupport -> SupportScreen(onBack = { showSupport = false }, modifier = modifier)
+
         showGoals -> GoalsScreen(
             goals = saved,
             onChange = { scope.launch { store.saveGoals(it) } },
@@ -73,6 +84,9 @@ private fun IosBreath(modifier: Modifier = Modifier) {
             current,
             onOpenGoals = { showGoals = true },
             onOpenAchievements = { showAchievements = true },
+            onOpenSettings = { showSettings = true },
+            onOpenLog = { showLog = true },
+            onOpenSupport = { showSupport = true },
             modifier = modifier,
         )
     }

@@ -1,10 +1,5 @@
 package io.github.wlemkens.openbreath
 
-import android.content.Intent
-import android.graphics.Color as AndroidColor
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,10 +35,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -54,12 +49,13 @@ fun SettingsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
+    val platform = LocalPlatform.current
+    val files = platform.files
     val store = LocalStore.current
     val scope = rememberCoroutineScope()
     val preset = config.active
-    val dnd = remember { DndGuard(context) }
-    val torch = remember { Torch(context) }
+    val dnd = platform.focus
+    val torch = platform.torch
 
     fun editPreset(f: (Preset) -> Preset) {
         onChange(config.copy(presets = config.presets.toMutableList().also { it[config.activeIndex] = f(preset) }))
@@ -68,15 +64,10 @@ fun SettingsScreen(
     val advanced = config.advancedSettings
     var renaming by remember { mutableStateOf(false) }
     var pendingPhase by remember { mutableStateOf<Phase?>(null) }
-    val pickMp3 = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
-        val phase = pendingPhase
-        pendingPhase = null
-        if (uri == null || phase == null) return@rememberLauncherForActivityResult
-        // without a persisted grant the URI dies when the process does
-        runCatching {
-            context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    fun pickMp3(phase: Phase) = files.pickAudio { handle ->
+        if (handle != null) {
+            editPreset { it.withSound(phase) { s -> s.copy(markerUri = handle, mode = SoundMode.MARKER) } }
         }
-        editPreset { it.withSound(phase) { s -> s.copy(markerUri = uri.toString(), mode = SoundMode.MARKER) } }
     }
 
     // what the import found, held until it has been agreed to: an import overwrites settings
@@ -85,32 +76,23 @@ fun SettingsScreen(
     var pendingImport by remember { mutableStateOf<Backup?>(null) }
     var backupMessage by remember { mutableStateOf<String?>(null) }
 
-    val exportBackup = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/json")
-    ) { uri: Uri? ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        scope.launch {
-            backupMessage = runCatching {
-                val backup = store.exportBackup(System.currentTimeMillis())
-                context.contentResolver.openOutputStream(uri)?.use {
-                    it.write(encodeBackup(backup).toByteArray())
-                } ?: error("could not open the file for writing")
-                "Saved ${backup.summary}."
-            }.getOrElse { "Could not write that file. Nothing has changed." }
+    // the file is written before it is offered anywhere to put it, because reading the store is
+    // the part that suspends and a picker callback is not a place to start a coroutine
+    fun exportBackup() = scope.launch {
+        val backup = store.exportBackup(Clock.System.now().toEpochMilliseconds())
+        files.exportText(backupFileName(), encodeBackup(backup)) { ok ->
+            backupMessage =
+                if (ok) "Saved ${backup.summary}." else "Could not write that file. Nothing has changed."
         }
     }
 
-    val importBackup = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        val text = runCatching {
-            context.contentResolver.openInputStream(uri)?.use { it.readBytes().decodeToString() }
-        }.getOrNull()
-        // telling "wrong file" apart from "empty log" matters: one is a mistake to correct, the
-        // other is a fact about the file, and they want different words
-        pendingImport = decodeBackup(text)
-        if (pendingImport == null) backupMessage = "That is not an OpenBreath backup."
+    fun importBackup() = files.importText { text ->
+        // a cancelled picker says nothing at all; a file that opens but is not a backup says so.
+        // Telling those apart matters — one is a decision, the other is a mistake to correct
+        if (text != null) {
+            pendingImport = decodeBackup(text)
+            if (pendingImport == null) backupMessage = "That is not an OpenBreath backup."
+        }
     }
 
     LazyColumn(
@@ -207,10 +189,8 @@ fun SettingsScreen(
         }
         item {
             Text(
-                "One breath: %.1f s  •  %.1f breaths per minute".format(
-                    preset.timing.cycleMs / 1000f,
-                    60_000f / preset.timing.cycleMs,
-                ),
+                "One breath: ${formatOneDecimal(preset.timing.cycleMs / 1000f)} s" +
+                    "  •  ${formatOneDecimal(60_000f / preset.timing.cycleMs)} breaths per minute",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -257,12 +237,13 @@ fun SettingsScreen(
                     }
                     if (sound.mode == SoundMode.MARKER) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            TextButton(onClick = {
-                                pendingPhase = phase
-                                pickMp3.launch(arrayOf("audio/*"))
-                            }) { Text(if (sound.markerUri == null) "Choose mp3" else "Change") }
+                            if (files.canPickAudio) {
+                                TextButton(onClick = {
+                                    pickMp3(phase)
+                                }) { Text(if (sound.markerUri == null) "Choose mp3" else "Change") }
+                            }
                             Text(
-                                sound.markerUri?.let { context.displayName(Uri.parse(it)) }
+                                sound.markerUri?.let { files.audioName(it) }
                                     ?: "built-in ${sound.tone.label.lowercase()}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -330,9 +311,9 @@ fun SettingsScreen(
             }
             val total = config.limit.totalMs(preset.timing)
             Text(
-                "Rounds up to whole breaths: %d:%02d, %d breaths".format(
-                    total / 60_000, total / 1000 % 60, total / preset.timing.cycleMs,
-                ),
+                "Rounds up to whole breaths: ${total / 60_000}:" +
+                    "${(total / 1000 % 60).toString().padStart(2, '0')}, " +
+                    "${total / preset.timing.cycleMs} breaths",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -359,19 +340,19 @@ fun SettingsScreen(
             }
         }
         item {
-            ToggleRow("Silence notifications", config.muteNotifications) {
-                onChange(config.copy(muteNotifications = it))
+            if (dnd.supported) {
+                ToggleRow("Silence notifications", config.muteNotifications) {
+                    onChange(config.copy(muteNotifications = it))
+                }
             }
-            if (config.muteNotifications && !dnd.granted) {
+            if (dnd.supported && config.muteNotifications && !dnd.granted) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         "Needs Do Not Disturb access",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
-                    TextButton(onClick = { context.startActivity(notificationPolicyIntent()) }) {
-                        Text("Grant")
-                    }
+                    TextButton(onClick = { dnd.requestAccess() }) { Text("Grant") }
                 }
             }
         }
@@ -426,12 +407,10 @@ fun SettingsScreen(
         }
         if (advanced) item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { exportBackup.launch(backupFileName()) }) { Text("Export") }
+                Button(onClick = { exportBackup() }) { Text("Export") }
                 // application/json alone hides backups on the phones whose file picker types
                 // them octet-stream, which is most of them once a file has been off the device
-                TextButton(onClick = {
-                    importBackup.launch(arrayOf("application/json", "text/plain", "*/*"))
-                }) { Text("Import") }
+                TextButton(onClick = { importBackup() }) { Text("Import") }
             }
         }
         item { HorizontalDivider(Modifier.padding(vertical = 24.dp)) }
@@ -500,7 +479,7 @@ private fun SecondsSlider(label: String, ms: Int, minMs: Int, maxMs: Int, onChan
         value = ms / 500f,
         range = (minMs / 500f)..(maxMs / 500f),
         steps = (maxMs - minMs) / 500 - 1,
-        readout = "%.1f s".format(ms / 1000f),
+        readout = "${formatOneDecimal(ms / 1000f)} s",
         onChange = { onChange(it.roundToInt() * 500) },
     )
 }
@@ -515,11 +494,11 @@ private fun CueColour(argb: Int, onChange: (Int) -> Unit) {
     // Seeded once. Nothing outside this row edits the stored colour while it is on screen, and
     // reading it back each time would snap a fully desaturated colour's hue to red, since grey
     // has no hue to recover.
-    val seed = remember { FloatArray(3).also { AndroidColor.colorToHSV(argb, it) } }
+    val seed = remember { argbToHsv(argb) }
     var h by remember { mutableFloatStateOf(seed[0]) }
     var s by remember { mutableFloatStateOf(seed[1]) }
     var v by remember { mutableFloatStateOf(seed[2]) }
-    val picked = AndroidColor.HSVToColor(floatArrayOf(h, s, v))
+    val picked = hsvToArgb(h, s, v)
     // on release, not on every frame of the drag: the cue is not on this screen to follow along,
     // and a slider at 60fps would be 60 DataStore writes a second
     val commit = { onChange(picked) }
@@ -533,14 +512,14 @@ private fun CueColour(argb: Int, onChange: (Int) -> Unit) {
                 modifier = Modifier.weight(1f).padding(start = 12.dp),
             )
             TextButton(onClick = {
-                AndroidColor.colorToHSV(DEFAULT_CUE_COLOR, seed)
-                h = seed[0]; s = seed[1]; v = seed[2]
+                val reset = argbToHsv(DEFAULT_CUE_COLOR)
+                h = reset[0]; s = reset[1]; v = reset[2]
                 onChange(DEFAULT_CUE_COLOR)
             }) { Text("Reset") }
         }
-        LabelledSlider("Hue", h, 0f..360f, 0, "%.0f°".format(h), commit) { h = it }
-        LabelledSlider("Saturation", s, 0f..1f, 0, "%.0f%%".format(s * 100), commit) { s = it }
-        LabelledSlider("Brightness", v, 0f..1f, 0, "%.0f%%".format(v * 100), commit) { v = it }
+        LabelledSlider("Hue", h, 0f..360f, 0, "${h.roundToInt()}°", commit) { h = it }
+        LabelledSlider("Saturation", s, 0f..1f, 0, "${(s * 100).roundToInt()}%", commit) { s = it }
+        LabelledSlider("Brightness", v, 0f..1f, 0, "${(v * 100).roundToInt()}%", commit) { v = it }
     }
 }
 

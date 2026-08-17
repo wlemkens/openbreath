@@ -41,7 +41,20 @@ class IosPlatform : Platform {
 
     override val formats = IosFormats()
 
-    override fun session(): SessionServices = IosSession()
+    override val files = IosFiles()
+
+    /** One each, built here and handed to every session — see [SessionServices.focus]. */
+    override val focus = object : FocusGuard {
+        override val supported = false
+        override val granted = false
+        override fun requestAccess() = Unit
+        override fun silence() = Unit
+        override fun restore() = Unit
+    }
+
+    override val torch = IosTorch()
+
+    override fun session(): SessionServices = IosSession(focus, torch)
 
     private fun open(url: String) {
         val target = NSURL.URLWithString(url) ?: return
@@ -53,7 +66,10 @@ class IosPlatform : Platform {
  * A session that breathes. The waves are real and shared with Android to the constant; the
  * struck markers are still owed.
  */
-private class IosSession : SessionServices {
+private class IosSession(
+    override val focus: FocusGuard,
+    override val torch: TorchLight,
+) : SessionServices {
 
     private val wave = IosWaveSynth()
     private val struck = IosMarkers()
@@ -91,15 +107,6 @@ private class IosSession : SessionServices {
         override fun playSessionEnd() = Unit
         override fun stopSessionEnd() = Unit
     }
-
-    /** No public API sets a Focus on iOS, so this is not a gap to be filled later — see CLAUDE.md. */
-    override val focus = object : FocusGuard {
-        override val granted = false
-        override fun silence() = Unit
-        override fun restore() = Unit
-    }
-
-    override val torch = IosTorch()
 
     override fun release() {
         wave.release()

@@ -23,13 +23,18 @@ import kotlinx.coroutines.launch
  * asks for either. iosMain/MainViewController.kt does the same with its own two.
  */
 class MainActivity : ComponentActivity() {
+
+    // a field and not a local: the launchers inside register with the Activity, and registering
+    // has to happen before it is started — see AndroidFiles
+    private val files = AndroidFiles(this)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             CompositionLocalProvider(
                 LocalStore provides store(),
-                LocalPlatform provides AndroidPlatform(this),
+                LocalPlatform provides AndroidPlatform(this, files),
             ) {
                 AppTheme { Breath(Modifier.safeDrawingPadding()) }
             }
