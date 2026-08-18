@@ -20,6 +20,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+/**
+ * Who the money reaches is said plainly, and that is not only good manners.
+ *
+ * On iOS the app is published by a non-profit while a tip goes to the person who writes it, and
+ * those two facts have to be impossible to confuse. Apple allows this as a gift between people —
+ * "a monetary gift to another individual", optional, all of it to the receiver — and not as
+ * fundraising for an organisation, which is a different guideline with Apple Pay, fund disclosure
+ * and donor receipts attached. A screen that let someone believe they were funding the
+ * non-profit would be describing the wrong one. See the monetisation notes in CLAUDE.md.
+ *
+ * It is also simply true on both stores: nothing is given in return, and every cent goes to one
+ * person.
+ */
 private val SUPPORT = listOf(
     "OpenBreath is free, and it stays free — no trial, no unlock, no subscription.",
     "Plenty of apps like this one charge before you have tried them, or ask for a yearly " +
@@ -27,6 +40,9 @@ private val SUPPORT = listOf(
         "a lot to ask.",
     "So there is no price here. If the app has been good to you and you feel like it, send a " +
         "coffee, or more. If not, that is genuinely fine — it is the same app either way.",
+    "Anything you send goes to Wim Lemkens, who writes the app — personally, not to any " +
+        "organisation, and not for anything in return. It buys you nothing here and unlocks " +
+        "nothing, because there is nothing to unlock.",
 )
 
 /** The amounts on the buttons. Anything else goes through PayPal's own field. */
@@ -63,8 +79,8 @@ fun SupportScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         }
 
         Text(
-            "Opens PayPal in your browser. Nothing is charged from here, and the app is not told " +
-                "whether you went through with it.",
+            "Opens PayPal in your browser, paying the developer directly. Nothing is charged from " +
+                "here, and the app is not told whether you went through with it.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 24.dp),
