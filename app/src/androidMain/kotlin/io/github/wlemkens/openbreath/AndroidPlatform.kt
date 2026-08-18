@@ -105,7 +105,7 @@ private class AndroidSession(
     }
 
     override val markers = object : Markers {
-        override fun prepare(preset: Preset) = phaseMarkers.prepare(preset)
+        override suspend fun prepare(preset: Preset) = phaseMarkers.prepare(preset)
         override fun soundIdOf(phase: Phase, preset: Preset): Any =
             phaseMarkers.soundIdOf(phase, preset)
         override fun play(phase: Phase, preset: Preset) = phaseMarkers.play(phase, preset)

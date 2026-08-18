@@ -40,8 +40,14 @@ interface Synth {
 
 /** The sound struck at the end of a phase, and the one that ends a whole session. */
 interface Markers {
-    /** Decode everything the preset points at up front — a phase change must not wait on IO. */
-    fun prepare(preset: Preset)
+    /**
+     * Decode everything the preset points at up front — a phase change must not wait on IO.
+     *
+     * Suspends because the bundled bowls are read through the resource loader, which does. It is
+     * called from the session's own coroutine at start, seconds before the earliest boundary it
+     * could be needed for, so the suspension costs nothing anyone can hear.
+     */
+    suspend fun prepare(preset: Preset)
 
     /**
      * Identity of the sound a phase would play, so that two phases ending on the same instant —

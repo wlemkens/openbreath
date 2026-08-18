@@ -11,8 +11,8 @@ import platform.UIKit.UIApplication
  * yet. Both answer false rather than pretending, which is the signal for a screen to hide the
  * setting instead of offering one that does nothing.
  *
- * What is still owed is inside the sound: the two recorded bowls and a file of the reader's own
- * — see IosMarkers for why those are silent rather than approximated with the bell.
+ * What is still owed inside the sound is a file of the reader's own — see IosMarkers for why it
+ * is silent rather than approximated with the bell.
  */
 class IosPlatform : Platform {
 
@@ -90,7 +90,7 @@ private class IosSession(
     }
 
     override val markers = object : Markers {
-        override fun prepare(preset: Preset) = struck.prepare(preset)
+        override suspend fun prepare(preset: Preset) = struck.prepare(preset)
 
         /**
          * Still has to answer honestly: the screen uses this to collapse two phases that end on
@@ -102,10 +102,8 @@ private class IosSession(
 
         override fun play(phase: Phase, preset: Preset) = struck.play(phase, preset)
 
-        // both are recordings rather than syntheses — see IosMarkers for why they are silent
-        // rather than approximated with the bell
-        override fun playSessionEnd() = Unit
-        override fun stopSessionEnd() = Unit
+        override fun playSessionEnd() = struck.playSessionEnd()
+        override fun stopSessionEnd() = struck.stopSessionEnd()
     }
 
     override fun release() {

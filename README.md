@@ -232,7 +232,7 @@ whose terms restrict recipients in ways the GPL forbids, which is what makes dis
 the App Store possible at all. It grants nothing over the source: a copy from a store is still
 a GPL copy, and the source is still yours to ask for and pass on.
 
-The bundled audio is **not** covered by that grant. `app/src/main/res/raw/*.mp3` are cuts of
+The bundled audio is **not** covered by that grant. `app/src/commonMain/composeResources/files/*.mp3` are cuts of
 files from the
 [freesound_community](https://pixabay.com/users/freesound_community-46691455/) Pixabay account,
 released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). CC0 asks for no

@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import java.io.File
 import java.util.Random
 import kotlin.math.PI
 import kotlin.math.abs
@@ -101,17 +102,6 @@ class WaveSynth {
     }
 }
 
-/**
- * The bowl recording rings for nearly 15 s, longer than a breath phase. It plays at full
- * level until [GONG_FADE_START_MS], ramps down over [GONG_FADE_MS], then the stream is
- * stopped outright — about 4.2 s audible.
- *
- * Both are tuning knobs, but the bundled sample is 6 s, so pushing the total much past that
- * needs a longer cut rather than a bigger number here.
- */
-private const val GONG_FADE_START_MS = 3_500L
-private const val GONG_FADE_MS = 700L
-
 // BELL_HZ, TICK_HZ and the synthesis of both moved to commonMain/MarkerSynth.kt: they are
 // arithmetic over a sample rate, and iOS strikes the same bell from the same numbers.
 
@@ -131,6 +121,16 @@ class PhaseMarkers(private val context: Context) {
         )
         .build()
 
+    /**
+     * A resource written into the cache so SoundPool has a path to open. Rewritten only when it
+     * is absent or the wrong length, so a session start after the first costs no IO at all.
+     */
+    private fun spill(name: String, bytes: ByteArray): File {
+        val file = File(context.cacheDir, name)
+        if (!file.exists() || file.length() != bytes.size.toLong()) file.writeBytes(bytes)
+        return file
+    }
+
     private val loaded = mutableMapOf<String, Int>()
     private val fades = Handler(Looper.getMainLooper())
     private var bowl = -1
@@ -147,25 +147,28 @@ class PhaseMarkers(private val context: Context) {
         }
     }
 
-    /** Decode every mp3 the preset points at up front — a phase change must not wait on IO. */
-    fun prepare(preset: Preset) {
-        // res/raw/singing_bowl.mp3 is media/freesound_community-singing-bowl-hit-3-33366.mp3
-        // cut to 6 s. The original rings for nearly 15 s and SoundPool decodes the whole thing
-        // into memory, so the cut is there to keep the sample small — we never play past ~4 s.
-        //
-        // SoundPool decodes asynchronously; prepare() runs at session start and the earliest
-        // possible phase end is seconds later, so the sample is ready long before it is needed.
+    /**
+     * Decode every recording the preset points at up front — a phase change must not wait on IO.
+     *
+     * SoundPool decodes asynchronously; this runs at session start and the earliest possible phase
+     * end is seconds later, so a sample is ready long before it is needed.
+     */
+    suspend fun prepare(preset: Preset) {
+        // the two bowls are commonMain's resources now, not res/raw, so that iOS can read the
+        // same files. SoundPool will not take bytes — only a path or a descriptor — so they are
+        // spilled to the cache once and loaded from there. The cache is the right place for it:
+        // losing the copy costs one decode, and the resource it came from is still in the APK.
         if (bowl < 0) {
-            runCatching { bowl = pool.load(context, R.raw.singing_bowl, 1) }
-                .onFailure { Log.w(TAG, "could not load the singing bowl", it) }
+            bowlBytes(Bowl.PHASE)?.let { bytes ->
+                runCatching { bowl = pool.load(spill("singing_bowl.mp3", bytes).path, 1) }
+                    .onFailure { Log.w(TAG, "could not load the singing bowl", it) }
+            } ?: Log.w(TAG, "the singing bowl resource is missing or empty")
         }
-        // res/raw/session_end.mp3 is media/freesound_community-025535_singing-bowl-60767.mp3
-        // cut to 12 s with its fade baked in. The original runs 50 s, which would be nearly
-        // 5 MB of PCM in a SoundPool; unlike the phase gong this needs no fade in code —
-        // a session that is over can simply ring out.
         if (endBowl < 0) {
-            runCatching { endBowl = pool.load(context, R.raw.session_end, 1) }
-                .onFailure { Log.w(TAG, "could not load the session end bowl", it) }
+            bowlBytes(Bowl.SESSION_END)?.let { bytes ->
+                runCatching { endBowl = pool.load(spill("session_end.mp3", bytes).path, 1) }
+                    .onFailure { Log.w(TAG, "could not load the session end bowl", it) }
+            } ?: Log.w(TAG, "the session end bowl resource is missing or empty")
         }
         for (phase in Phase.entries) {
             val uri = preset.soundOf(phase).markerUri ?: continue

@@ -29,13 +29,13 @@ Functionality includes:
   which is fine one-way into GPLv3. Adding anything under a proprietary or GPL-incompatible
   licence would make the combined app undistributable, so check before pulling one in.
 
-  The bundled audio is **not** covered by that grant. `app/src/main/res/raw/*.mp3` are cuts
+  The bundled audio is **not** covered by that grant. `app/src/commonMain/composeResources/files/*.mp3` are cuts
   of files in `media/` from the `freesound_community` Pixabay account, released under
   **CC0 1.0** (public domain dedication). CC0 requires no attribution, so nothing has to
   ship in the app, but we credit the source anyway in README and here:
 
-  - `res/raw/session_end.mp3` — cut from `media/freesound_community-025535_singing-bowl-60767.mp3`
-  - `res/raw/singing_bowl.mp3` — cut from `media/freesound_community-singing-bowl-hit-3-33366.mp3`
+  - `files/session_end.mp3` — cut from `media/freesound_community-025535_singing-bowl-60767.mp3`
+  - `files/singing_bowl.mp3` — cut from `media/freesound_community-singing-bowl-hit-3-33366.mp3`
 
   `media/alex_jauk-zen-gong-199844.mp3` is by a different Pixabay uploader and is **not**
   shipped in the APK. Confirm its terms separately before using it.
@@ -196,6 +196,20 @@ Functionality includes:
   rather than falling back to the synthesised bell — pick the bowl, hear a bell, and there is no
   way to tell which of the two is the bug.
 
+  ### The two bowls are resources, not res/raw
+  `commonMain/composeResources/files/*.mp3`, read on both platforms through the generated `Res`
+  in `Bowls.kt`. They were Android resources, which is the whole reason the gong was silent on
+  iOS: `res/raw` is Android machinery and Kotlin/Native has no way into it.
+
+  They are the only sounds that are not arithmetic. The bell and the tick are synthesised from
+  `MarkerSynth.kt` on both platforms and cost nothing to share; a recording has to be bundled
+  somewhere both can read. Android cannot hand SoundPool bytes, so it spills them to its cache
+  once and loads the path — the cache is right, since losing the copy costs one decode and the
+  resource is still in the APK.
+
+  `GONG_FADE_START_MS` and `GONG_FADE_MS` live in `Bowls.kt` for the reason every other ear-picked
+  constant does: two copies drift, and a drift you can hear is invisible in a diff.
+
   ### The bundled audio is in Git LFS
   `.gitattributes` puts every audio format in LFS, and **anything that clones or checks out without
   git-lfs gets a 130-byte pointer file instead of the mp3.** The build succeeds, the APK packages
@@ -232,4 +246,7 @@ Functionality includes:
   # TODO
   - Generate the release keystore (see README) so `bundleRelease` produces something Play will
     take. The Gradle wiring is in place and falls back to unsigned until the key exists.
-  
+  - Default new Goal is "1 sitting a day". Not "10 minutes a day"
+  - What is the correct way to get contributions in iOS?
+  - There should also be marker sound at the beginning, of the session. In other words. The marker should mark the start, not the end of the phase. But when there is no "Bowl at the end of the session", there should be a marker at the end of the session.
+  - iOS markers are all the same (all have the bell effect)

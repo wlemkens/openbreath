@@ -15,13 +15,13 @@ import platform.AVFAudio.AVAudioPlayerNode
  * The bell and the tick are synthesised, and by commonMain/MarkerSynth.kt — the same buffer
  * Android strikes, from the same numbers. Only the playing of it is here.
  *
- * **The bowl and the end-of-session bowl are not here yet, and are silent rather than
- * approximated.** They are recordings, and the recordings live in `androidMain/res/raw` where
- * nothing on this side can reach them; bundling them as multiplatform resources is its own piece
- * of work. Substituting the synthesised bell for them would be the kind of quiet difference that
- * is worse than an absence — someone would pick the bowl, hear a bell, and have no way to know
- * which of the two was the bug. Neither is reachable on iOS today in any case: the default tone
- * is BELL and the Settings screen that could change it has not been ported.
+ * The two recorded bowls are [IosBowls]', not this class's: they are encoded mp3 and want a
+ * player, where everything here is samples we generated and wants the engine. This class routes
+ * to them and otherwise ignores them.
+ *
+ * A file of the reader's own is still owed, and is still silent rather than approximated with the
+ * bell — someone would pick their own sound, hear a bell, and have no way to know which of the two
+ * was the bug. It waits on the picker, which waits on decoding an arbitrary file.
  */
 @OptIn(ExperimentalForeignApi::class)
 class IosMarkers {
@@ -49,8 +49,11 @@ class IosMarkers {
     private val rendered = mutableMapOf<Float, AVAudioPCMBuffer>()
     private var started = false
 
-    fun prepare(preset: Preset) {
+    private val bowls = IosBowls()
+
+    suspend fun prepare(preset: Preset) {
         start()
+        bowls.prepare()
         for (phase in Phase.entries) {
             val hz = pitchOf(phase, preset) ?: continue
             rendered.getOrPut(hz) { buffer(samplesFor(hz, preset, phase)) }
@@ -58,6 +61,12 @@ class IosMarkers {
     }
 
     fun play(phase: Phase, preset: Preset) {
+        val sound = preset.soundOf(phase)
+        // a recording rather than a synthesis, so it takes the other road out of here entirely
+        if (sound.markerUri == null && sound.tone == MarkerTone.GONG) {
+            bowls.playPhase(phase)
+            return
+        }
         val hz = pitchOf(phase, preset) ?: return
         val buffer = rendered[hz] ?: return
         start()
@@ -69,7 +78,12 @@ class IosMarkers {
         player.play()
     }
 
+    fun playSessionEnd() = bowls.playSessionEnd()
+
+    fun stopSessionEnd() = bowls.stopSessionEnd()
+
     fun release() {
+        bowls.release()
         if (!started) return
         players.forEach { it.stop() }
         engine.stop()
@@ -78,8 +92,9 @@ class IosMarkers {
     }
 
     /**
-     * Which pitch a phase would strike, or null for a sound this platform cannot make yet — the
-     * two recorded bowls and a file of the user's own.
+     * Which pitch a phase would strike, or null for anything this class does not synthesise: the
+     * recorded bowl, which [IosBowls] plays instead, and a file of the reader's own, which is
+     * still owed.
      */
     private fun pitchOf(phase: Phase, preset: Preset): Float? {
         val sound = preset.soundOf(phase)
@@ -87,7 +102,7 @@ class IosMarkers {
         return when (sound.tone) {
             MarkerTone.BELL -> BELL_HZ
             MarkerTone.TICK -> TICK_HZ * tickRate(phase)
-            MarkerTone.GONG -> null // a recording, not a synthesis
+            MarkerTone.GONG -> null // a recording — handled by IosBowls, never reaches here
         }
     }
 

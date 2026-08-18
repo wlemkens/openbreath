@@ -79,6 +79,19 @@ kotlin {
     }
 }
 
+/**
+ * The generated accessor for commonMain/composeResources — `Res.readBytes("files/…")`.
+ *
+ * Named explicitly rather than left to the default, which derives a package from the group and
+ * module and so changes if either is ever renamed. The two bowls are reached through this on both
+ * platforms: they are recordings and not arithmetic, so unlike the bell they cannot simply be
+ * computed on each side.
+ */
+compose.resources {
+    packageOfResClass = "io.github.wlemkens.openbreath.media"
+    publicResClass = false
+}
+
 android {
     namespace = "io.github.wlemkens.openbreath"
     compileSdk = 36
