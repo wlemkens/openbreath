@@ -33,11 +33,18 @@ sha="$(echo "${GITHUB_SHA:-local}" | cut -c1-7)"
 # CFBundleVersion in the ipa exactly, or the update either never appears or never stops appearing —
 # which is why the build stamps them from the same run number this does.
 #
+# The same version is then repeated in the flat `version`/`downloadURL`/`size` fields on the app
+# itself. That is not redundancy for its own sake: `versions` is the newer shape, the flat fields
+# are the original one, and a client reading only the old fields finds an app with no version at
+# all — which is what "The latest version could not be determined" means. Writing both costs four
+# lines and works whichever a given SideStore build looks for. Keep them in step.
+#
 # iconURL is required by the schema and there is no app icon yet, so it points at the GitHub avatar
 # to keep the file valid. Swap it for a real icon when the app has one.
 cat > "$out" <<JSON
 {
   "name": "OpenBreath",
+  "identifier": "io.github.wlemkens.openbreath.source",
   "subtitle": "Heart coherence breathing meditations",
   "website": "https://github.com/wlemkens/openbreath",
   "apps": [
@@ -49,6 +56,11 @@ cat > "$out" <<JSON
       "localizedDescription": "Breathing meditations with custom timings, soundscapes and progress tracking. Free software, GPL-3.0-or-later.",
       "iconURL": "https://github.com/wlemkens.png",
       "category": "lifestyle",
+      "version": "$version",
+      "versionDate": "$date",
+      "versionDescription": "Build $build from $sha.",
+      "downloadURL": "$url",
+      "size": $size,
       "versions": [
         {
           "version": "$version",
