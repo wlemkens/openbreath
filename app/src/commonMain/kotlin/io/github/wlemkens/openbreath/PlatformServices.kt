@@ -235,6 +235,15 @@ interface SessionServices {
  * are released with the screen that asked for them.
  */
 interface Platform {
+    /**
+     * What this build calls itself — "1.0.41 (41)", the marketing version and the build number.
+     *
+     * Shown under Advanced so it can be quoted in a bug report. A report that names a version is
+     * the difference between fixing something and asking which one they had, and the person
+     * reporting it cannot be expected to know where a store hides it.
+     */
+    val version: String
+
     val haptics: Haptics
     val screen: KeepAwake
     val links: Links

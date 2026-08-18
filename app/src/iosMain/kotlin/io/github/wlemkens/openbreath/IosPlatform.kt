@@ -1,5 +1,6 @@
 package io.github.wlemkens.openbreath
 
+import platform.Foundation.NSBundle
 import platform.Foundation.NSURL
 import platform.UIKit.UIApplication
 
@@ -15,6 +16,17 @@ import platform.UIKit.UIApplication
  * is silent rather than approximated with the bell.
  */
 class IosPlatform : Platform {
+
+    /**
+     * CFBundleShortVersionString and CFBundleVersion, which CI stamps from the run number so a
+     * build installed through SideStore can be named exactly.
+     */
+    override val version: String = run {
+        fun key(k: String) = NSBundle.mainBundle.objectForInfoDictionaryKey(k) as? String
+        val name = key("CFBundleShortVersionString") ?: "?"
+        val build = key("CFBundleVersion") ?: "?"
+        "$name ($build)"
+    }
 
     override val haptics = IosHaptics()
 

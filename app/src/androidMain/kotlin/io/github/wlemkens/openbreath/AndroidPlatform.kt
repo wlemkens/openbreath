@@ -1,6 +1,7 @@
 package io.github.wlemkens.openbreath
 
 import android.app.Activity
+import android.os.Build
 import android.view.WindowManager
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toJavaLocalDate
@@ -15,10 +16,20 @@ import java.time.format.FormatStyle
  * layer cheap to read and the port honest — if a screen stops working after moving to commonMain,
  * the cause is in the screen, not in a reimplementation hiding here.
  */
+@Suppress("DEPRECATION") // versionCode: longVersionCode is API 28 and minSdk is 26
+private fun Activity.versionLabel(): String = runCatching {
+    val info = packageManager.getPackageInfo(packageName, 0)
+    val code =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) info.longVersionCode else info.versionCode.toLong()
+    "${info.versionName} ($code)"
+}.getOrDefault("unknown")
+
 class AndroidPlatform(
     private val activity: Activity,
     override val files: Files,
 ) : Platform {
+
+    override val version = activity.versionLabel()
 
     override val haptics = object : Haptics {
         override fun buzz(ms: Long) = activity.buzz(ms)

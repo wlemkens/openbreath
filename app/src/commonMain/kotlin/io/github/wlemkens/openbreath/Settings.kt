@@ -413,6 +413,15 @@ fun SettingsScreen(
                 TextButton(onClick = { importBackup() }) { Text("Import") }
             }
         }
+        // last, and only under Advanced: it is here to be quoted in a bug report, not read
+        if (advanced) item { SectionLabel("This build") }
+        if (advanced) item {
+            Text(
+                "OpenBreath ${platform.version}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         item { HorizontalDivider(Modifier.padding(vertical = 24.dp)) }
     }
 
