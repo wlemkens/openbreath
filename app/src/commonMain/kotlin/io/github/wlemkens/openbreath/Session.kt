@@ -115,23 +115,24 @@ const val EDGE_FLOOR_AT_PEAK = 0.3f
 internal fun eased(p: Float) = ((1.0 - cos(PI * p)) / 2.0).toFloat()
 
 /**
- * Which phases end at the instant [from] gives way to [next]: [from] itself, plus every
+ * Which phases begin at the instant [from] gives way to [next]: [next] itself, plus every
  * zero-length phase sitting between the two.
  *
- * A phase of 0 never becomes the current phase — [phaseAt] skips it — but the user can still
- * put a marker on it, and the instant it would have occupied is a genuine boundary. With a
- * 5.5/0/5.5/0 breath, the moment the inhale ends is also the moment the skipped hold ends,
- * so a marker on that hold has to ring there or it never rings at all.
+ * A marker announces the phase you are about to breathe, so it belongs to the phase that starts
+ * rather than the one that finishes. A zero-length phase begins and ends on the same instant, and
+ * it is included: the user may have put a marker on it, and that instant is the only chance it
+ * will ever get to ring.
  */
-fun phasesEndingBetween(from: Phase, next: Phase, t: Timing): List<Phase> {
+fun phasesStartingBetween(from: Phase, next: Phase, t: Timing): List<Phase> {
     val order = Phase.entries
-    val ended = mutableListOf(from)
+    val starting = mutableListOf<Phase>()
     var i = (from.ordinal + 1) % order.size
     while (order[i] != next) {
-        if (t.durationOf(order[i]) == 0) ended += order[i]
+        if (t.durationOf(order[i]) == 0) starting += order[i]
         i = (i + 1) % order.size
     }
-    return ended
+    starting += next
+    return starting
 }
 
 /**

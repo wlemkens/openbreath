@@ -107,18 +107,19 @@ class SessionTest {
 
     @Test
     fun `a marker that varies by phase still sounds once at a skipped hold`() {
-        // a zero-length hold ends on the same instant as the phase before it. Both are asked
-        // for their sound, and the two answers must be one sound, not two struck together
+        // a zero-length hold begins on the same instant as the phase after it. Both are asked
+        // for their sound, and the two answers must be one sound, not two struck together.
+        // A hold pairs with what it runs into, because that is what opens alongside it
         for (tone in MarkerTone.entries) {
             // kotlin.test takes the message last, where JUnit took it first
             assertEquals(
-                markerRate(tone, Phase.INHALE),
+                markerRate(tone, Phase.EXHALE),
                 markerRate(tone, Phase.HOLD_IN),
                 1e-4f,
                 "$tone splits the top of the breath",
             )
             assertEquals(
-                markerRate(tone, Phase.EXHALE),
+                markerRate(tone, Phase.INHALE),
                 markerRate(tone, Phase.HOLD_OUT),
                 1e-4f,
                 "$tone splits the bottom of the breath",
@@ -141,51 +142,53 @@ class SessionTest {
     }
 
     @Test
-    fun `a zero length phase still ends so a marker on it can ring`() {
+    fun `a zero length phase still begins so a marker on it can ring`() {
         val coherence = Timing(inhaleMs = 5500, holdInMs = 0, exhaleMs = 5500, holdOutMs = 0)
-        // the instant the inhale ends is also the instant the skipped hold ends
+        // the instant the exhale begins is also the instant the skipped hold begins
         assertEquals(
-            listOf(Phase.INHALE, Phase.HOLD_IN),
-            phasesEndingBetween(Phase.INHALE, Phase.EXHALE, coherence),
+            listOf(Phase.HOLD_IN, Phase.EXHALE),
+            phasesStartingBetween(Phase.INHALE, Phase.EXHALE, coherence),
         )
         assertEquals(
-            listOf(Phase.EXHALE, Phase.HOLD_OUT),
-            phasesEndingBetween(Phase.EXHALE, Phase.INHALE, coherence),
+            listOf(Phase.HOLD_OUT, Phase.INHALE),
+            phasesStartingBetween(Phase.EXHALE, Phase.INHALE, coherence),
         )
     }
 
     @Test
-    fun `a phase with real length ends on its own`() {
+    fun `a phase with real length begins on its own`() {
         val box = Timing(4000, 4000, 4000, 4000)
-        assertEquals(listOf(Phase.INHALE), phasesEndingBetween(Phase.INHALE, Phase.HOLD_IN, box))
-        assertEquals(listOf(Phase.HOLD_OUT), phasesEndingBetween(Phase.HOLD_OUT, Phase.INHALE, box))
+        assertEquals(listOf(Phase.HOLD_IN), phasesStartingBetween(Phase.INHALE, Phase.HOLD_IN, box))
+        assertEquals(listOf(Phase.INHALE), phasesStartingBetween(Phase.HOLD_OUT, Phase.INHALE, box))
         // an in-between phase that has length is not swept up by its neighbour
-        assertEquals(listOf(Phase.HOLD_IN), phasesEndingBetween(Phase.HOLD_IN, Phase.EXHALE, box))
+        assertEquals(listOf(Phase.EXHALE), phasesStartingBetween(Phase.HOLD_IN, Phase.EXHALE, box))
     }
 
     @Test
-    fun `a cycle with one non-zero phase ends every phase at the wrap`() {
+    fun `a cycle with one non-zero phase begins every phase at the wrap`() {
         val onlyInhale = Timing(inhaleMs = 5000, holdInMs = 0, exhaleMs = 0, holdOutMs = 0)
-        // the phase never changes, so without this every marker in the preset would be mute
+        // the phase never changes, so without this every marker in the preset would be mute.
+        // In the order they arrive: the three skipped ones, then the inhale coming round again
         assertEquals(
-            Phase.entries.toList(),
-            phasesEndingBetween(Phase.INHALE, Phase.INHALE, onlyInhale),
+            listOf(Phase.HOLD_IN, Phase.EXHALE, Phase.HOLD_OUT, Phase.INHALE),
+            phasesStartingBetween(Phase.INHALE, Phase.INHALE, onlyInhale),
         )
     }
 
     @Test
     fun `the gong is low at the top of the breath and higher at the bottom`() {
-        // a slower playback rate is a lower pitch: the end of the in-hold leads into an
-        // exhale (downward), the end of the out-hold into an inhale (upward)
+        // a slower playback rate is a lower pitch, and a marker rings as its phase opens: an
+        // exhale opens downward, an inhale upward. A hold takes the pitch of what follows it
         assertEquals(true, gongRate(Phase.HOLD_IN) < gongRate(Phase.HOLD_OUT))
         // the bowl is used as recorded for the high tone, never sped up
         assertEquals(1f, gongRate(Phase.HOLD_OUT), 1e-3f)
         // and SoundPool only resamples within 0.5x..2x
         assertEquals(true, gongRate(Phase.HOLD_IN) >= 0.5f)
 
-        // the inhale shares the in-hold's pitch, so a zero-length hold between them is one sound
-        assertEquals(gongRate(Phase.INHALE), gongRate(Phase.HOLD_IN), 1e-3f)
-        assertEquals(gongRate(Phase.EXHALE), gongRate(Phase.HOLD_OUT), 1e-3f)
+        // a hold shares the pitch of the phase it runs into, so when it is zero-length and the
+        // two open on the same instant they collapse to one strike
+        assertEquals(gongRate(Phase.EXHALE), gongRate(Phase.HOLD_IN), 1e-3f)
+        assertEquals(gongRate(Phase.INHALE), gongRate(Phase.HOLD_OUT), 1e-3f)
 
         // the bell rings identically wherever it is used
         assertEquals(

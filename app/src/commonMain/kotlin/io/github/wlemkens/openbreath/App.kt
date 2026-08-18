@@ -130,11 +130,15 @@ fun SessionScreen(
         // that stops the session — the breaths taken still happened
         var breathed = base
 
-        fun boundaryCrossed(ended: List<Phase>) {
-            // one buzz per boundary, however many zero-length phases ended on it
+        /**
+         * A marker belongs to the phase it opens, not the one it closes: it is there to tell you
+         * what to breathe next, which is no use arriving after you were meant to start.
+         */
+        fun boundaryCrossed(starting: List<Phase>) {
+            // one buzz per boundary, however many zero-length phases began on it
             if (config.vibrate) platform.haptics.buzz()
-            ended.filter { preset.soundOf(it).mode == SoundMode.MARKER }
-                // two phases ending on the same instant must not play the same sound twice
+            starting.filter { preset.soundOf(it).mode == SoundMode.MARKER }
+                // two phases beginning on the same instant must not play the same sound twice
                 .distinctBy { markers.soundIdOf(it, preset) }
                 .forEach { markers.play(it, preset) }
         }
@@ -155,6 +159,9 @@ fun SessionScreen(
 
         follow(prev)
         synth.start()
+        // the first phase is beginning, and beginnings are what markers are for. Only on a fresh
+        // start: resuming from a pause lands mid-phase, where nothing is opening
+        if (base == 0L) boundaryCrossed(listOf(prev.phase))
         try {
             while (true) {
                 val now = withFrameNanos { it }
@@ -167,9 +174,11 @@ fun SessionScreen(
                         if (config.vibrate) platform.haptics.buzz()
                         markers.playSessionEnd()
                     } else {
-                        // the final phase completed, plus any zero-length phase trailing it
+                        // no closing bowl, so the session still gets a sound of its own: the
+                        // boundary it stopped on, treated like any other — the phase that would
+                        // have opened next, plus any zero-length phase arriving with it
                         val opens = phaseAt(total, timing).phase
-                        boundaryCrossed(phasesEndingBetween(prev.phase, opens, timing))
+                        boundaryCrossed(phasesStartingBetween(prev.phase, opens, timing))
                     }
                     elapsed = total
                     breathed = total
@@ -180,7 +189,7 @@ fun SessionScreen(
                 // a cycle whose only non-zero phase is the inhale never changes phase, so the
                 // cycle index is part of what makes a boundary
                 if (state.phase != prev.phase || state.cycle != prev.cycle) {
-                    boundaryCrossed(phasesEndingBetween(prev.phase, state.phase, timing))
+                    boundaryCrossed(phasesStartingBetween(prev.phase, state.phase, timing))
                     prev = state
                 }
                 elapsed = e
