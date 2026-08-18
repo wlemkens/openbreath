@@ -54,6 +54,7 @@ class IosMarkers {
     suspend fun prepare(preset: Preset) {
         start()
         bowls.prepare()
+        // before the pitches, because whether a picked file is there decides what the pitch is
         bowls.preparePicked(Phase.entries.mapNotNull { preset.soundOf(it).markerUri })
         for (phase in Phase.entries) {
             val hz = pitchOf(phase, preset) ?: continue
@@ -61,10 +62,22 @@ class IosMarkers {
         }
     }
 
+    /**
+     * Whether the phase's own sound is actually available, which for a picked file means the file
+     * is still there. A preset can name one this phone has never had — a backup carried over from
+     * Android names `content://` URIs that mean nothing here — and it can name one that has since
+     * been deleted.
+     *
+     * When it is gone the phase falls back to its tone, which is what Android has always done:
+     * its `play` looks the URI up in the loaded samples and drops through to the tone when it
+     * finds nothing. A boundary that makes no sound at all reads as a broken app.
+     */
+    private fun picked(sound: PhaseSound): String? = sound.markerUri?.takeIf { bowls.hasPicked(it) }
+
     fun play(phase: Phase, preset: Preset) {
         val sound = preset.soundOf(phase)
         // recordings rather than syntheses, so they take the other road out of here entirely
-        val uri = sound.markerUri
+        val uri = picked(sound)
         if (uri != null) {
             bowls.playPicked(uri)
             return
@@ -104,7 +117,9 @@ class IosMarkers {
      */
     private fun pitchOf(phase: Phase, preset: Preset): Float? {
         val sound = preset.soundOf(phase)
-        if (sound.markerUri != null) return null // a recording — IosBowls plays it, not this
+        // a recording IosBowls will play, so nothing to synthesise. Only when it is really there:
+        // a missing one falls back to the tone below, and that tone needs a buffer rendered for it
+        if (picked(sound) != null) return null
         return when (sound.tone) {
             MarkerTone.BELL -> BELL_HZ
             MarkerTone.TICK -> TICK_HZ * tickRate(phase)

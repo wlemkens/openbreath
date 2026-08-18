@@ -212,9 +212,12 @@ class PhaseMarkers(private val context: Context) {
         // Build the synthesised tracks this preset will actually strike. They were built on first
         // use, which was fine while the first marker was a phase *end* seconds away; now that a
         // marker opens the session, the first strike would otherwise be the one constructing it.
+        // the tone is built even for a phase pointing at a file of the user's own, because that
+        // file may be gone — play() drops through to the tone when it is, and the fallback must
+        // not be the strike that builds itself
         for (phase in Phase.entries) {
             val sound = preset.soundOf(phase)
-            if (sound.mode != SoundMode.MARKER || sound.markerUri != null) continue
+            if (sound.mode != SoundMode.MARKER) continue
             when (sound.tone) {
                 MarkerTone.BELL -> bell = bell ?: struck(BELL_HZ)
                 MarkerTone.TICK -> ticks.getOrPut(tickRate(phase)) { ticked(TICK_HZ * tickRate(phase)) }

@@ -46,10 +46,9 @@ class IosBowls {
     /**
      * Reads in every sound the preset points at, before a boundary needs one.
      *
-     * A handle that no longer resolves is left out rather than made an error: a preset can name a
-     * file this phone has never had — a backup carried over from Android names `content://` URIs
-     * that mean nothing here — and that phase falls silent, which is the same thing it did before
-     * anyone could pick a file at all.
+     * A handle that no longer resolves is left out rather than made an error, and the phase then
+     * falls back to its tone — see [IosMarkers]. A preset can name a file this phone has never had:
+     * a backup carried over from Android names `content://` URIs that mean nothing here.
      */
     fun preparePicked(handles: Collection<String>) {
         for (handle in handles) {
@@ -58,6 +57,9 @@ class IosBowls {
             NSData.dataWithContentsOfFile(path)?.let { picked[handle] = it }
         }
     }
+
+    /** Whether that file was actually found — see the fallback in IosMarkers. */
+    fun hasPicked(handle: String): Boolean = handle in picked
 
     /** Played whole and unpitched: truncating or transposing someone's own choice is not ours. */
     fun playPicked(handle: String) {

@@ -318,9 +318,16 @@ Functionality includes:
   phase ends. The copy lives in `Documents/markers`, beside the log and for the same reason —
   Caches is emptied whenever the system likes.
 
-  A consequence worth knowing: a backup carried from Android names `content://` URIs that mean
-  nothing here, so those phases fall silent rather than erroring. That is the same thing they did
-  before a file could be picked at all.
+  **A file that is gone falls back to the phase's tone**, on both platforms — usually the bell,
+  since that is the default and the tone chips are hidden while a file is chosen. Android has
+  always done this (`play` looks the URI up in the loaded samples and drops through), and iOS now
+  matches. It matters more than it sounds: a preset can name a file this phone never had, because
+  a backup carried from Android names `content://` URIs that mean nothing on an iPhone, and a
+  boundary that makes no sound at all reads as a broken app rather than a missing file.
+
+  The tone is therefore prepared even for a phase pointing at a file, on both sides. Otherwise the
+  fallback would be the strike that builds itself, which is the bug the marker-readiness fix was
+  about.
 
   **The torch needs no camera permission — tested on a device, no prompt appears.** Torch control
   is configuration on the capture device rather than capture, so no `AVCaptureSession` is created
@@ -336,7 +343,6 @@ Functionality includes:
   The base sound is waves coming ashore. During the breath in, the pitch goes up, during breathing out, the pitch goes down.
 
   # TODO
-  - iOS markers are all the same (all have the bell effect)
   - **Reminders on iOS.** The last unported screen: AlarmManager and a BroadcastReceiver become
     UNUserNotificationCenter, plus the permission prompt and `uses24Hour` for the picker.
     Deliberately deferred until after the first App Store submission. Worth knowing when that is
@@ -355,3 +361,7 @@ Functionality includes:
   - **The rate link.** `IosPlatform.canRate` is false because the numeric App Store id does not
     exist until first submission. Fill it in once it does — that one really is gated on
     submitting.
+  - **A user's own mp3 on iOS** is still owed: `IosFiles.canPickAudio` is false, so the button is
+    hidden. It needs the document picker and decoding an arbitrary file, which IosBowls now has
+    most of the machinery for.
+  - privacy policy link: Create a html page stating that no information is collected. I'll put the page on https://stanistil.be/openbreat/privacypolicy.html.
