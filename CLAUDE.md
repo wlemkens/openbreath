@@ -232,6 +232,22 @@ Functionality includes:
   `GONG_FADE_START_MS` and `GONG_FADE_MS` live in `Bowls.kt` for the reason every other ear-picked
   constant does: two copies drift, and a drift you can hear is invisible in a diff.
 
+  ### Reading a CI failure without a token
+  Job logs are a 403 without authentication, even on a public repository. Annotations are not:
+
+      # the check runs for a commit, then the annotations on the failing one
+      curl -s https://api.github.com/repos/wlemkens/openbreath/commits/<sha>/check-runs
+      curl -s https://api.github.com/repos/wlemkens/openbreath/check-runs/<id>/annotations
+
+  That is the whole reason the scripts in `.github` print `::error title=…::` rather than plain
+  text on failure: a workflow-command line becomes an annotation, and an annotation can be read
+  back by anyone. `print-test-failures.sh` and `record-simulator.sh` both put the part worth
+  reading — the failing assertions, the app's console tail — through that channel deliberately.
+  Keep doing it; a failure that only exists in the job log cannot be diagnosed from here.
+
+  The unauthenticated API allows 60 requests an hour per IP, which a polling loop eats quickly.
+  Poll on the order of minutes, not seconds.
+
   ### The bundled audio is in Git LFS
   `.gitattributes` puts every audio format in LFS, and **anything that clones or checks out without
   git-lfs gets a 130-byte pointer file instead of the mp3.** The build succeeds, the APK packages
