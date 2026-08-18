@@ -12,6 +12,7 @@ import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSUserDomainMask
 import platform.Foundation.dataWithContentsOfURL
 import platform.Foundation.stringWithContentsOfURL
+import platform.Foundation.writeToFile
 import platform.Foundation.writeToURL
 import platform.UIKit.UIApplication
 import platform.UIKit.UIDocumentPickerDelegateProtocol

@@ -262,6 +262,25 @@ Functionality includes:
   `GONG_FADE_START_MS` and `GONG_FADE_MS` live in `Bowls.kt` for the reason every other ear-picked
   constant does: two copies drift, and a drift you can hear is invisible in a diff.
 
+  ### Importing an Objective-C method in Kotlin/Native
+  This has cost three round trips, each one a single wrong import line, so it is worth stating
+  properly rather than guessing again.
+
+  Whether a method needs an import depends on where Objective-C declares it, not on whether it is
+  an instance method:
+
+  - **Declared in a category** — most of Foundation — becomes a Kotlin *extension* and must be
+    imported: `NSData.writeToFile`, `NSData.dataWithContentsOfFile`, `NSString.writeToURL`,
+    `NSURL.URLByAppendingPathComponent`, `NSData.create`.
+  - **Declared on the class interface itself** — most of AVFoundation — becomes a *member* and
+    must not be: `AVAudioPlayer.setVolume`, `AVCaptureDevice.lockForConfiguration`,
+    `AVCaptureDevice.unlockForConfiguration`.
+
+  Guessing which is which is a waste of a fifteen-minute CI round trip, and the compiler is
+  unambiguous about it if you read *which line* the error is on. `Unresolved reference` on the
+  call means the import is missing; the same words on the `import` line mean it should not be
+  there. Both are one-line fixes in opposite directions.
+
   ### Reading a CI failure without a token
   Job logs are a 403 without authentication, even on a public repository. Annotations are not:
 
