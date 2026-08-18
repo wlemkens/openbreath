@@ -194,20 +194,48 @@ jobs:
         run: |
           set -euo pipefail
 
+          # The ipa carries its version in the filename, and that is the whole trick: SideStore
+          # caches the source and checks the version it downloaded against the version it was
+          # promised. One fixed ipa URL whose contents keep changing fails that check on every
+          # phone whose cache is a build or two behind — "expected 30, got 32". A per-version name
+          # means a stale cache asks for the build it still believes in, gets exactly that, and
+          # installs; the newer one is offered on the next refresh instead of erroring now.
+          #
+          # apps.json keeps its fixed name, because that URL is typed into the phone once.
+          ipa="OpenBreath-$VERSION.ipa"
+          cp build/OpenBreath-unsigned.ipa "build/$ipa"
+
           .github/make-source.sh \
-            build/OpenBreath-unsigned.ipa "$VERSION" "$BUILD" \
-            "https://github.com/$REPO/releases/download/latest/OpenBreath-unsigned.ipa" \
+            "build/$ipa" "$VERSION" "$BUILD" \
+            "https://github.com/$REPO/releases/download/latest/$ipa" \
             build/apps.json
 
-          # one rolling prerelease rather than a tag per build: the phone needs a URL that does not
-          # move, and a year of test builds is not release history worth keeping
+          # one rolling prerelease rather than a tag per build: the source URL has to stay put, and
+          # a year of test builds is not release history worth keeping
           gh release view latest >/dev/null 2>&1 || gh release create latest \
             --prerelease \
             --title "Latest test build" \
-            --notes "Rolling build for sideloading. Replaced by every push; not a release."
+            --notes "Rolling builds for sideloading. Not a release."
 
-          gh release upload latest \
-            build/OpenBreath-unsigned.ipa build/apps.json --clobber
+          gh release upload latest "build/$ipa" build/apps.json --clobber
+
+          # The old ipas are what stale caches resolve against, so several are kept on purpose; left
+          # unbounded they are 18 MB per push forever.
+          #
+          # Counted rather than `head -n -5`, which is a GNU extension: this job runs on macOS, where
+          # BSD head answers "illegal line count". And `|| true` because a grep that matches nothing
+          # exits 1, which under pipefail would fail the build over there being nothing to tidy.
+          keep=5
+          names="$(gh release view latest --json assets --jq '.assets[].name' \
+            | grep -E '^OpenBreath-.*\.ipa$' | sort -V || true)"
+          total="$(printf '%s' "$names" | grep -c . || true)"
+          if [ "${total:-0}" -gt "$keep" ]; then
+            printf '%s\n' "$names" | sed -n "1,$((total - keep))p" | while read -r stale; do
+              [ -n "$stale" ] || continue
+              echo "pruning $stale"
+              gh release delete-asset latest "$stale" --yes
+            done
+          fi
 
           echo "### Sideloading" >> "$GITHUB_STEP_SUMMARY"
           echo "Version \`$VERSION\` is live. SideStore source URL:" >> "$GITHUB_STEP_SUMMARY"
