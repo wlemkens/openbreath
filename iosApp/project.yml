@@ -31,6 +31,11 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.wlemkens.openbreath
+        # Sources/Assets.xcassets is swept up by the sources entry above; this is what makes the
+        # app actually wear it. The single 1024 png is written by IconGen from the same point
+        # lattice the Android launcher icon comes from, so the two cannot drift apart — regenerate
+        # with `./gradlew :app:testDebugUnitTest`, never by hand.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         PRODUCT_NAME: OpenBreath
         # the app is called OpenBreath but its Swift module must not be, because the Kotlin
         # framework already is. Left to default, PRODUCT_MODULE_NAME follows PRODUCT_NAME, the app

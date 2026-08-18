@@ -246,5 +246,4 @@ Functionality includes:
   # TODO
   - What is the correct way to get contributions in iOS?
   - iOS markers are all the same (all have the bell effect)
-  - iOS icon is not the same as the Android icon.
   

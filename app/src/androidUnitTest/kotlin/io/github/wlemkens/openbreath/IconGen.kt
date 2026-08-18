@@ -1,8 +1,15 @@
 package io.github.wlemkens.openbreath
 
 import org.junit.Test
+import java.awt.BasicStroke
+import java.awt.Color
+import java.awt.RadialGradientPaint
+import java.awt.RenderingHints
+import java.awt.geom.Point2D
+import java.awt.image.BufferedImage
 import java.io.File
 import java.util.Locale
+import javax.imageio.ImageIO
 import kotlin.math.cos
 import kotlin.math.floor
 import kotlin.math.sin
@@ -25,6 +32,7 @@ class IconGen {
     fun generate() {
         val pts = cuePoints()
         val body = StringBuilder()
+        val dots = mutableListOf<Dot>()
 
         for (o in pts.indices step STRIDE) {
             // openness 1: the radius factor the point takes at the top of the breath
@@ -74,13 +82,72 @@ class IconGen {
             val size = DOT * (0.9f + 1.3f * d) * (0.75f + 0.5f * s1)
 
             // the halo first, same as the draw loop; below 2% it is not worth the bytes
-            if (alpha * 0.15f > 0.02f) body.append(dot(cx, cy, size * 2.6f, color, alpha * 0.15f))
-            if (alpha > 0.02f) body.append(dot(cx, cy, size, color, alpha))
+            if (alpha * 0.15f > 0.02f) dots += Dot(cx, cy, size * 2.6f, color, alpha * 0.15f)
+            if (alpha > 0.02f) dots += Dot(cx, cy, size, color, alpha)
         }
+
+        for (d in dots) body.append(dot(d.cx, d.cy, d.r, d.rgb, d.alpha))
 
         File("src/androidMain/res/drawable/ic_launcher_foreground.xml").writeText(
             HEADER + body + FOOTER
         )
+        writeIosIcon(dots)
+    }
+
+    private class Dot(val cx: Float, val cy: Float, val r: Float, val rgb: Int, val alpha: Float)
+
+    /**
+     * The same cloud again, as the single 1024 px PNG an iOS app icon is.
+     *
+     * From the same geometry as the vector above rather than exported from it, which is the whole
+     * point of the TODO this answers: two icons drawn from one lattice cannot drift apart.
+     *
+     * **No alpha channel.** An iOS app icon with one is rejected on upload, so this paints the
+     * Ink background first and composites onto it — the same Ink the adaptive icon names as its
+     * background colour and the session screen uses.
+     *
+     * The whole 108 viewport is drawn rather than the 72 the launcher mask keeps. Android crops a
+     * circle out of the middle, where iOS only rounds the corners, so drawing the same fraction on
+     * both would leave the sphere pressed against the edges here. Full viewport puts it at roughly
+     * the size Android's mask leaves it looking.
+     */
+    private fun writeIosIcon(dots: List<Dot>) {
+        val px = 1024
+        val scale = px / 108f
+        val image = BufferedImage(px, px, BufferedImage.TYPE_INT_RGB)
+        val g = image.createGraphics()
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+
+        g.color = Color(INK)
+        g.fillRect(0, 0, px, px)
+
+        // the faint ring and the gradient wash the vector draws before its points, so the sphere
+        // still reads as a sphere and not only as a scatter. The three stops are the vector's own
+        val r = R * scale
+        val c = CENTRE * scale
+        g.paint = RadialGradientPaint(
+            Point2D.Float(c, c),
+            r,
+            floatArrayOf(0f, 0.6f, 1f),
+            arrayOf(Color(0x2E5FD6C8, true), Color(0x241E4B78, true), Color(0x001E4B78, true)),
+        )
+        g.fillOval((c - r).toInt(), (c - r).toInt(), (2 * r).toInt(), (2 * r).toInt())
+
+        g.paint = Color(GLOW or (26 shl 24), true)
+        g.stroke = BasicStroke(1.5f * scale)
+        g.drawOval((c - r).toInt(), (c - r).toInt(), (2 * r).toInt(), (2 * r).toInt())
+
+        for (d in dots) {
+            val a = (d.alpha * 255f).toInt().coerceIn(0, 255)
+            g.paint = Color(d.rgb or (a shl 24), true)
+            val rr = d.r * scale
+            g.fillOval((d.cx * scale - rr).toInt(), (d.cy * scale - rr).toInt(), (2 * rr).toInt(), (2 * rr).toInt())
+        }
+        g.dispose()
+
+        val out = File("../iosApp/Sources/Assets.xcassets/AppIcon.appiconset/icon-1024.png")
+        out.parentFile.mkdirs()
+        ImageIO.write(image, "png", out)
     }
 
     private fun dot(cx: Float, cy: Float, r: Float, rgb: Int, alpha: Float): String {
@@ -125,6 +192,10 @@ class IconGen {
 
         const val DEEP = 0x1E4B78
         const val GLOW = 0x5FD6C8
+
+        /** Ink, the same background colors.xml gives the adaptive icon. */
+        const val INK = 0x07090F
+
 
         // copies of Cue.kt's privates
         const val TILT = 0.4f
