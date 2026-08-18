@@ -23,6 +23,13 @@ concurrency:
 jobs:
   android:
     runs-on: ubuntu-latest
+
+    env:
+      # the same run number the iOS job stamps, so a build of one commit reports the same version
+      # on both phones. Unset outside CI, where the build falls back to what shipped rather than
+      # letting a laptop build claim to be a release
+      OPENBREATH_BUILD: ${{ github.run_number }}
+
     steps:
       # lfs, because .gitattributes puts every mp3 in LFS and checkout does not fetch it by
       # default — without this the APK ships 130-byte pointer files in place of the bowls

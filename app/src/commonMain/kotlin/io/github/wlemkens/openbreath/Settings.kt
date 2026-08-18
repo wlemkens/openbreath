@@ -417,7 +417,9 @@ fun SettingsScreen(
         if (advanced) item { SectionLabel("This build") }
         if (advanced) item {
             Text(
-                "OpenBreath ${platform.version}",
+                // the commit is the part that actually answers "which build is this": a version
+                // says what was intended, a sha says what the binary was made of
+                "OpenBreath ${platform.version} · $BUILD_SHA",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
