@@ -279,6 +279,24 @@ data class Goal(
     fun sane() = copy(target = target.coerceIn(metric.min, metric.max))
 }
 
+/**
+ * What "Add a goal" starts from: one sitting a day.
+ *
+ * Deliberately not [Goal]'s own default values. Those are what a *stored* goal falls back to for
+ * a field it does not carry, so moving them would quietly re-read an old goal as something else
+ * — the same trap as renaming a stored enum constant. This only ever affects a goal being made
+ * now.
+ *
+ * One sitting a day rather than ten minutes a day because it is the smaller promise, and the
+ * first goal someone sets is the one most worth being able to keep.
+ */
+internal fun newGoal(existing: List<Goal>) = Goal(
+    id = (existing.maxOfOrNull { it.id } ?: 0) + 1,
+    metric = GoalMetric.SITTINGS,
+    period = GoalPeriod.DAY,
+    target = 1,
+)
+
 /** What these sittings add up to in [metric]'s own unit. */
 internal fun List<Entry>.tally(metric: GoalMetric): Int = when (metric) {
     GoalMetric.SITTINGS -> size

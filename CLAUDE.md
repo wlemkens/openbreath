@@ -244,9 +244,10 @@ Functionality includes:
   The base sound is waves coming ashore. During the breath in, the pitch goes up, during breathing out, the pitch goes down.
 
   # TODO
-  - Generate the release keystore (see README) so `bundleRelease` produces something Play will
-    take. The Gradle wiring is in place and falls back to unsigned until the key exists.
-  - Default new Goal is "1 sitting a day". Not "10 minutes a day"
   - What is the correct way to get contributions in iOS?
   - There should also be marker sound at the beginning, of the session. In other words. The marker should mark the start, not the end of the phase. But when there is no "Bowl at the end of the session", there should be a marker at the end of the session.
   - iOS markers are all the same (all have the bell effect)
+  - iOS icon is not the same as the Android icon.
+  - Generate the release keystore (see README) so `bundleRelease` produces something Play will
+    take. The Gradle wiring is in place and falls back to unsigned until the key exists.
+  

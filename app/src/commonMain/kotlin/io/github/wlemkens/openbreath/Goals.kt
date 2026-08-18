@@ -77,7 +77,7 @@ fun GoalsScreen(
 
         item {
             Button(
-                onClick = { editing = Goal(id = (goals.maxOfOrNull { it.id } ?: 0) + 1) },
+                onClick = { editing = newGoal(goals) },
                 modifier = Modifier.padding(top = 12.dp),
             ) { Text("Add a goal") }
         }
@@ -137,7 +137,7 @@ private fun GoalDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("${draft.target} ${draft.metric.label}") },
+        title = { Text("${draft.target} ${draft.metric.unit(draft.target)}") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -164,7 +164,7 @@ private fun GoalDialog(
                     range = (draft.metric.min.toFloat() / draft.metric.step)..
                         (draft.metric.max.toFloat() / draft.metric.step),
                     steps = (draft.metric.max - draft.metric.min) / draft.metric.step - 1,
-                    readout = "${draft.target} ${draft.metric.label}",
+                    readout = "${draft.target} ${draft.metric.unit(draft.target)}",
                     onChange = { steps -> edit { it.copy(target = steps.roundToInt() * it.metric.step) } },
                 )
             }
