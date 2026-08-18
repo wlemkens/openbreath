@@ -130,8 +130,14 @@ jobs:
           restore-keys: konan-${{ runner.os }}-
 
       # compiling needs no Xcode, but linking a framework and booting a simulator do
+      # tee'd, because "Say what failed" can only annotate a log that exists. Without this a
+      # compile error reaches the job log and nowhere else — and the job log is the one thing
+      # that needs a token to read, so the failure becomes invisible from outside CI
       - name: Compile the shared code for a phone
-        run: ./gradlew --no-daemon :app:compileKotlinIosArm64 :app:compileTestKotlinIosArm64
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:compileKotlinIosArm64 :app:compileTestKotlinIosArm64 2>&1 \
+            | tee /tmp/ios.log
 
       # the real point of the job: StorageTest and SessionTest executed by the iOS compiler, so a
       # backup written on Android is proven to open on an iPhone rather than assumed to

@@ -67,12 +67,26 @@ if [ -n "$log" ] && [ -f "$log" ]; then
     tail -40 "$log"
     python3 - "$log" <<'PY'
 import sys
+
 lines = open(sys.argv[1], errors="replace").read().splitlines()
-# the interesting part of a Gradle failure is what follows "What went wrong", else just the tail
-start = next((i for i, l in enumerate(lines) if "What went wrong" in l), max(0, len(lines) - 30))
-body = "\n".join(lines[start:start + 30])[:1500]
-safe = body.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A").replace("::", "%3A%3A")
-print(f"::error title=Build log::{safe or 'empty log'}")
+
+def safe(s):
+    return s.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A").replace("::", "%3A%3A")
+
+# A Kotlin compile failure says "Compilation finished with errors" under "What went wrong", which
+# is true and useless. The e: lines are the actual answer, so they get the annotation when there
+# are any — this is the most common way this job fails and it was the least readable.
+errors = [l for l in lines if l.startswith("e: ")]
+if errors:
+    for line in errors[:10]:
+        print(f"::error title=Compile error::{safe(line[3:])[:1500]}")
+    if len(errors) > 10:
+        print(f"::error title=Compile errors::{len(errors) - 10} more not shown")
+else:
+    # otherwise what follows "What went wrong", else just the tail
+    start = next((i for i, l in enumerate(lines) if "What went wrong" in l), max(0, len(lines) - 30))
+    body = "\n".join(lines[start:start + 30])[:1500]
+    print(f"::error title=Build log::{safe(body) or 'empty log'}")
 PY
 fi
 exit 0

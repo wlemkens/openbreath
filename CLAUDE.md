@@ -278,6 +278,11 @@ Functionality includes:
   The unauthenticated API allows 60 requests an hour per IP, which a polling loop eats quickly.
   Poll on the order of minutes, not seconds.
 
+  A step whose output is not tee'd to a file cannot be annotated, because `print-test-failures.sh`
+  reads a log rather than the console. That is how a Kotlin compile failure once reached the job
+  log and nowhere else — the one place a token is needed. Every step that can fail interestingly
+  pipes through `tee`.
+
   ### The bundled audio is in Git LFS
   `.gitattributes` puts every audio format in LFS, and **anything that clones or checks out without
   git-lfs gets a 130-byte pointer file instead of the mp3.** The build succeeds, the APK packages
