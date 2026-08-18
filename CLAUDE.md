@@ -59,6 +59,28 @@ Functionality includes:
   whether it still holds — and if a paid tier is ever genuinely wanted, that is Play Billing,
   not a link.
 
+  ### The same link on the App Store
+  It is already allowed, and by the plainest route Apple offers. Guideline **3.2.2(iv)** bars
+  "collecting funds within the app for charities and fundraisers" and then says what to do
+  instead: such apps "must be free on the App Store and may only collect funds outside of the
+  app, such as via Safari or SMS". `Links.openPayPal` opens a URL in the browser and the app is
+  free, so that is the rule followed rather than worked around, and no entitlement is involved.
+
+  The other road, **3.2.1(vi)**, lets an *approved nonprofit* fundraise inside its own app. It is
+  not the cheaper one: it requires Apple Pay support, a disclosure of how the funds will be used,
+  and tax receipts available to donors — which in Belgium means the selectively granted
+  recognition, not merely being a VZW. Taking it would also turn a tip to the developer into a
+  donation to an organisation, which is a different thing on Play as well, where the peer-to-peer
+  exemption rests on 100% reaching the developer.
+
+  So the two stores agree here for once, and for the same underlying reason: the money buys
+  nothing. Keep it that way and the link needs no permission from either. The guideline numbers
+  do move between revisions — check the text rather than the number if it ever matters.
+
+  What must not happen is an in-app payment sheet of any kind. The moment money is taken inside
+  the app, both stores stop reading it as a tip and start reading it as a purchase, and a purchase
+  has to go through their billing.
+
   ## Technical
   - History, especcialy goals and progress should always be kept intact over updates.
 
@@ -244,6 +266,5 @@ Functionality includes:
   The base sound is waves coming ashore. During the breath in, the pitch goes up, during breathing out, the pitch goes down.
 
   # TODO
-  - What is the correct way to get contributions in iOS?
   - iOS markers are all the same (all have the bell effect)
   
