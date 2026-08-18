@@ -60,26 +60,42 @@ Functionality includes:
   not a link.
 
   ### The same link on the App Store
-  It is already allowed, and by the plainest route Apple offers. Guideline **3.2.2(iv)** bars
-  "collecting funds within the app for charities and fundraisers" and then says what to do
-  instead: such apps "must be free on the App Store and may only collect funds outside of the
-  app, such as via Safari or SMS". `Links.openPayPal` opens a URL in the browser and the app is
-  free, so that is the rule followed rather than worked around, and no entitlement is involved.
+  The rule that governs it is **3.2.1(vii)**, the monetary-gift one, and not the charitable
+  donation rules — a tip to the developer is a gift between people, not a fundraiser for a cause:
 
-  The other road, **3.2.1(vi)**, lets an *approved nonprofit* fundraise inside its own app. It is
-  not the cheaper one: it requires Apple Pay support, a disclosure of how the funds will be used,
-  and tax receipts available to donors — which in Belgium means the selectively granted
-  recognition, not merely being a VZW. Taking it would also turn a tip to the developer into a
-  donation to an organisation, which is a different thing on Play as well, where the peer-to-peer
-  exemption rests on 100% reaching the developer.
+  > Apps may enable individual users to give a monetary gift to another individual without using
+  > in-app purchase, provided that (a) the gift is a completely optional choice by the giver, and
+  > (b) 100% of the funds go to the receiver of the gift. However, a gift that is connected to or
+  > associated at any point in time with receiving digital content or services must use in-app
+  > purchase.
 
-  So the two stores agree here for once, and for the same underlying reason: the money buys
-  nothing. Keep it that way and the link needs no permission from either. The guideline numbers
-  do move between revisions — check the text rather than the number if it ever matters.
+  Read the two conditions and then read the Monetisation rule above: they are the same rule.
+  Optional, all of it to the receiver, nothing given back. Play's peer-to-peer exemption asks for
+  exactly this, word for word in places, which is why one standing check covers both stores.
 
-  What must not happen is an in-app payment sheet of any kind. The moment money is taken inside
-  the app, both stores stop reading it as a tip and start reading it as a purchase, and a purchase
-  has to go through their billing.
+  Two things follow that are specific to iOS.
+
+  **A gift is to an individual.** If the VZW ever publishes the app and the money goes to the
+  VZW, this guideline stops applying — an organisation is not "another individual" — and the app
+  lands in 3.2.1(vi)/3.2.2(iv) charity territory instead, which needs approved-nonprofit status,
+  Apple Pay support, a disclosure of how funds are used and donor tax receipts. The publisher
+  decision and the Support screen are therefore the same decision. See the iOS port notes.
+
+  **Outside the US storefront**, 3.1.1(a) bars "buttons, external links, or other calls to action
+  that direct customers to purchasing mechanisms other than in-app purchase". A gift is not a
+  purchase and 3.2.1(vii) permits it without in-app purchase, so the link stands — but this is
+  the one sentence a reviewer could reach for, and it is worth knowing before an appeal rather
+  than during one.
+
+  In-app purchase is *also* allowed for tipping — 3.1.1 says apps "may use in-app purchase
+  currencies to enable customers to 'tip' the developer". It is not wanted here: Apple would take
+  its cut, so 100% would no longer reach the receiver, and the Play side rests on that 100%.
+
+  What must not happen is a payment sheet of our own inside the app. The moment money is taken
+  in the app by any mechanism that is not Apple's, both stores stop reading it as a gift.
+
+  Guideline numbers move between revisions — check the text rather than the number, at
+  https://developer.apple.com/app-store/review/guidelines/
 
   ## Technical
   - History, especcialy goals and progress should always be kept intact over updates.
