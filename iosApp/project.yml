@@ -27,6 +27,10 @@ targets:
 
     sources:
       - path: Sources
+      # a manifest that is not in the bundle is a manifest Apple never sees, and the rejection
+      # names the missing file rather than the build setting that dropped it
+      - path: Sources/PrivacyInfo.xcprivacy
+        buildPhase: resources
 
     settings:
       base:
@@ -91,6 +95,11 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UIUserInterfaceStyle: Dark
+        # No encryption of any kind, so the export-compliance question is answered once here
+        # rather than by hand on every single upload. It is only false because it is true: the
+        # app makes no network call at all. Anything that later encrypts, or talks to a server
+        # over TLS beyond the exempt uses, has to revisit this rather than inherit it.
+        ITSAppUsesNonExemptEncryption: false
 
     preBuildScripts:
       # builds the Kotlin framework for whichever SDK and architecture Xcode is currently after,

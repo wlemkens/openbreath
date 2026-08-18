@@ -147,6 +147,20 @@ Functionality includes:
   Import is one `edit` for the lot. A half-applied import that took the settings and lost the
   log is the worst outcome the app can produce, so it is all of it or none.
 
+  ### The first run
+  `FirstRun.kt` asks once whether to set a goal of one sitting a day and an evening reminder for
+  the days it has not happened. Both switches start **off**: the recommendation is said, not
+  applied, and an app that sets goals for someone who never asked has decided how they practise.
+
+  A first run is "nothing has ever been stored in this DataStore" — `Store.untouchedFlow()` — and
+  not a flag of its own, because a phone updating from a version that predates the question has no
+  flag either, and asking someone with a year of sittings whether they would like to begin is
+  worse than never asking. The `setupDone` key exists only to be written; nothing reads it.
+
+  The two offers are one offer. The reminder is `onlyIfBehind`, which is worth having because the
+  goal defines behind; declining the goal leaves it a plain evening reminder, which is the honest
+  reading. A test in `SessionTest` holds them together.
+
   ## The iOS port
   The module is Kotlin Multiplatform with Compose Multiplatform, targeting `androidTarget()`
   plus `iosArm64` and `iosSimulatorArm64`. There is no `iosX64`: Compose Multiplatform stopped
@@ -289,6 +303,19 @@ Functionality includes:
   them with the reminders port. Anything reaching for `java.time.format` or `String.format` in
   commonMain is this seam being crossed by accident.
 
+  ### What the App Store still wants
+  `PrivacyInfo.xcprivacy` declares no tracking and no collected data, and one required-reason
+  API: `NSPrivacyAccessedAPICategoryFileTimestamp` with reason `C617.1`. That is DataStore
+  reading the metadata of its own file in the app container to write atomically — nobody thinks
+  of it as a privacy API, which is exactly why it is the one that gets a submission rejected.
+  `ITSAppUsesNonExemptEncryption: false` answers export compliance once instead of on every
+  upload; it is only true because the app makes no network call at all.
+
+  **The torch needs no camera permission — tested on a device, no prompt appears.** Torch control
+  is configuration on the capture device rather than capture, so no `AVCaptureSession` is created
+  and `NSCameraUsageDescription` is not required. If a prompt ever does appear, something has
+  started a session and the cause is that, not the torch.
+
   Do-not-disturb has no iOS equivalent and is not getting one — no public API sets a Focus.
   That feature is Android-only by nature, not by omission.
 
@@ -299,4 +326,24 @@ Functionality includes:
 
   # TODO
   - iOS markers are all the same (all have the bell effect)
-  
+  - **Reminders on iOS.** The last unported screen: AlarmManager and a BroadcastReceiver become
+    UNUserNotificationCenter, plus the permission prompt and `uses24Hour` for the picker.
+    Deliberately deferred until after the first App Store submission. Worth knowing when that is
+    revisited: local notifications need no App Store id and no entitlement, so this *could* be
+    built sooner — the timing is a choice about effort, not a technical gate. Until it lands, the
+    store listing must not promise reminders.
+  - **Ask Apple whether a Belgian VZW is eligible for the fee waiver.** Everything about
+    publishing under the VZW rests on it, and the answer is not published anywhere: the old
+    country list excluded Belgium, the current page names no list at all. Enrolling as an
+    organisation also needs a D-U-N-S number for the VZW, which is free but slow.
+  - **Signing.** CI builds unsigned on purpose, which is right for sideloading and useless for
+    the store: a distribution certificate, an App Store provisioning profile and a
+    `DEVELOPMENT_TEAM` are all still missing, and none can exist before the account does.
+  - **The App Store Connect record**: bundle id, name, category, age rating, description,
+    keywords, support URL, privacy policy URL, screenshots at Apple's sizes.
+  - **The rate link.** `IosPlatform.canRate` is false because the numeric App Store id does not
+    exist until first submission. Fill it in once it does — that one really is gated on
+    submitting.
+  - **A user's own mp3 on iOS** is still owed: `IosFiles.canPickAudio` is false, so the button is
+    hidden. It needs the document picker and decoding an arbitrary file, which IosBowls now has
+    most of the machinery for.

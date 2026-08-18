@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+    What the app does with your data, in the form Apple requires.
+
+    It is a short file because the app is a short story: nothing leaves the phone unless you
+    export it yourself, nothing is measured, and there is no network call to make. The only
+    reason this file is not empty is the last section.
+
+    NSPrivacyTracking is false and the tracking domains list is empty because there is no
+    tracking and nothing to track with — no analytics, no crash reporter, no advertising id.
+
+    NSPrivacyCollectedDataTypes is empty for the same reason. The practice log, the goals and
+    the settings are data the app holds, not data it collects: they never leave the device
+    except through the backup file, which the reader asks for and chooses the destination of.
+
+    NSPrivacyAccessedAPITypes is where the honesty costs something. DataStore keeps the log in
+    a file in the app's own container and reads its metadata to write it atomically, which is a
+    "required reason" API whether or not anyone thinks of it as one. C617.1 is exactly that
+    case — timestamps of files inside the app container — and declaring it is the difference
+    between a submission that goes through and one that comes back.
+-->
+<plist version="1.0">
+<dict>
+    <key>NSPrivacyTracking</key>
+    <false/>
+
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array/>
+
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <string>C617.1</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>
