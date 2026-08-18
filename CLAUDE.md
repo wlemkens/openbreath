@@ -311,6 +311,17 @@ Functionality includes:
   `ITSAppUsesNonExemptEncryption: false` answers export compliance once instead of on every
   upload; it is only true because the app makes no network call at all.
 
+  **A picked mp3 is copied in, not bookmarked.** Android keeps a `content://` URI alive with a
+  persistable permission grant; iOS could do the same with a security-scoped bookmark and
+  deliberately does not. A bookmark still points at someone else's file, so the marker goes silent
+  the day they move it, delete it, or leave it in an iCloud folder that is not on the phone when a
+  phase ends. The copy lives in `Documents/markers`, beside the log and for the same reason —
+  Caches is emptied whenever the system likes.
+
+  A consequence worth knowing: a backup carried from Android names `content://` URIs that mean
+  nothing here, so those phases fall silent rather than erroring. That is the same thing they did
+  before a file could be picked at all.
+
   **The torch needs no camera permission — tested on a device, no prompt appears.** Torch control
   is configuration on the capture device rather than capture, so no `AVCaptureSession` is created
   and `NSCameraUsageDescription` is not required. If a prompt ever does appear, something has
@@ -344,6 +355,3 @@ Functionality includes:
   - **The rate link.** `IosPlatform.canRate` is false because the numeric App Store id does not
     exist until first submission. Fill it in once it does — that one really is gated on
     submitting.
-  - **A user's own mp3 on iOS** is still owed: `IosFiles.canPickAudio` is false, so the button is
-    hidden. It needs the document picker and decoding an arbitrary file, which IosBowls now has
-    most of the machinery for.

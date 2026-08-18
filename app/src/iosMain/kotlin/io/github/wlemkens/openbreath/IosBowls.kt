@@ -6,13 +6,14 @@ import kotlinx.cinterop.usePinned
 import platform.AVFAudio.AVAudioPlayer
 import platform.Foundation.NSData
 import platform.Foundation.create
+import platform.Foundation.dataWithContentsOfFile
 import platform.darwin.dispatch_after
 import platform.darwin.dispatch_get_main_queue
 import platform.darwin.dispatch_time
 
 /**
- * The two recorded bowls on iOS: the one struck at a phase boundary and the one that ends a
- * session.
+ * Everything on iOS that is played rather than synthesised: the two bundled bowls, and a file of
+ * the reader's own once they have picked one.
  *
  * `AVAudioPlayer` and not the engine the rest of the sound goes through, because these are
  * encoded mp3 rather than samples we generated — a player decodes them, where feeding
@@ -30,6 +31,9 @@ class IosBowls {
     private var phaseData: NSData? = null
     private var endData: NSData? = null
 
+    /** Picked files, by the handle stored in the preset — see [Files.pickAudio]. */
+    private val picked = mutableMapOf<String, NSData>()
+
     /** In rotation, so a strike landing inside the previous one's tail does not cut it off. */
     private val ringing = mutableListOf<AVAudioPlayer>()
     private var endPlayer: AVAudioPlayer? = null
@@ -37,6 +41,27 @@ class IosBowls {
     suspend fun prepare() {
         if (phaseData == null) phaseData = bowlBytes(Bowl.PHASE)?.toNSData()
         if (endData == null) endData = bowlBytes(Bowl.SESSION_END)?.toNSData()
+    }
+
+    /**
+     * Reads in every sound the preset points at, before a boundary needs one.
+     *
+     * A handle that no longer resolves is left out rather than made an error: a preset can name a
+     * file this phone has never had — a backup carried over from Android names `content://` URIs
+     * that mean nothing here — and that phase falls silent, which is the same thing it did before
+     * anyone could pick a file at all.
+     */
+    fun preparePicked(handles: Collection<String>) {
+        for (handle in handles) {
+            if (handle in picked) continue
+            val path = pickedMarkerPath(handle) ?: continue
+            NSData.dataWithContentsOfFile(path)?.let { picked[handle] = it }
+        }
+    }
+
+    /** Played whole and unpitched: truncating or transposing someone's own choice is not ours. */
+    fun playPicked(handle: String) {
+        start(picked[handle] ?: return, rate = 1f)
     }
 
     /**
@@ -73,6 +98,7 @@ class IosBowls {
     fun release() {
         ringing.forEach { it.stop() }
         ringing.clear()
+        picked.clear()
         stopSessionEnd()
     }
 

@@ -1,11 +1,16 @@
 package io.github.wlemkens.openbreath
 
 import kotlinx.cinterop.ExperimentalForeignApi
+import platform.Foundation.NSData
+import platform.Foundation.NSFileManager
 import platform.Foundation.NSString
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
 import platform.Foundation.NSUTF8StringEncoding
 import platform.Foundation.URLByAppendingPathComponent
+import platform.Foundation.NSDocumentDirectory
+import platform.Foundation.NSUserDomainMask
+import platform.Foundation.dataWithContentsOfURL
 import platform.Foundation.stringWithContentsOfURL
 import platform.Foundation.writeToURL
 import platform.UIKit.UIApplication
@@ -101,17 +106,57 @@ class IosFiles : Files {
         }
     }
 
+    override val canPickAudio = true
+
     /**
-     * Not implemented, and honest about it rather than opening a picker that leads nowhere. The
-     * sound would have to be decoded and played too, and IosMarkers cannot do that yet — offering
-     * the choice first would let someone pick a file and hear silence.
+     * The chosen file is **copied into the app's own container**, and the handle is its name
+     * there. Android keeps a `content://` URI alive with a persistable permission grant; iOS has
+     * bookmarks for the same job, and this does neither.
+     *
+     * Copying is the better trade here. A bookmark still points at someone else's file, so the
+     * marker goes silent the day they tidy their Downloads, move it, or leave it in an iCloud
+     * folder that is not on the phone at the moment a phase ends — and a breathing app that is
+     * silent for a reason on another screen is indistinguishable from one that is broken. A copy
+     * is a few megabytes and always there.
      */
-    override val canPickAudio = false
+    override fun pickAudio(onPicked: (String?) -> Unit) {
+        val picker = UIDocumentPickerViewController(forOpeningContentTypes = audioTypes())
+        present(picker, Delegate(
+            onPicked = { url ->
+                delegate = null
+                onPicked(url?.let { take(it) })
+            },
+            onCancel = { delegate = null; onPicked(null) },
+        ))
+    }
 
-    override fun pickAudio(onPicked: (String?) -> Unit) = onPicked(null)
+    /** The name it was picked under, which is the only thing a reader would recognise. */
+    override fun audioName(handle: String): String = handle
 
-    override fun audioName(handle: String): String =
-        NSURL.URLWithString(handle)?.lastPathComponent ?: "sound"
+    private fun audioTypes(): List<UTType> = listOfNotNull(UTType.typeWithIdentifier("public.audio"))
+
+    /**
+     * Copies the picked file in and hands back its name, or null if it could not be read. The
+     * security-scoped access has to be opened for the read and given back after, or the grant
+     * leaks for the life of the process.
+     */
+    private fun take(url: NSURL): String? {
+        val name = url.lastPathComponent ?: return null
+        val opened = url.startAccessingSecurityScopedResource()
+        val data = try {
+            NSData.dataWithContentsOfURL(url)
+        } finally {
+            if (opened) url.stopAccessingSecurityScopedResource()
+        }
+        val destination = pickedMarkerPath(name) ?: return null
+        NSFileManager.defaultManager.createDirectoryAtPath(
+            pickedMarkerDir() ?: return null,
+            withIntermediateDirectories = true,
+            attributes = null,
+            error = null,
+        )
+        return if (data != null && data.writeToFile(destination, true)) name else null
+    }
 
     /**
      * One delegate class for both directions. `didPickDocumentsAtURLs` is the modern callback and
@@ -137,3 +182,21 @@ class IosFiles : Files {
         }
     }
 }
+
+/**
+ * Where a picked marker lives once it is ours: a directory beside the practice log, in Documents.
+ *
+ * Documents rather than Caches deliberately, and for the same reason the log is there — the
+ * system may empty Caches whenever it likes, and a preset pointing at a sound the phone quietly
+ * deleted is the silent failure this whole arrangement exists to avoid.
+ */
+@OptIn(ExperimentalForeignApi::class)
+internal fun pickedMarkerDir(): String? {
+    val documents = NSFileManager.defaultManager
+        .URLsForDirectory(NSDocumentDirectory, NSUserDomainMask)
+        .firstOrNull() as? NSURL
+    return documents?.path?.let { "$it/markers" }
+}
+
+/** The full path of a handle from [Files.pickAudio], which is a bare file name. */
+internal fun pickedMarkerPath(name: String): String? = pickedMarkerDir()?.let { "$it/$name" }

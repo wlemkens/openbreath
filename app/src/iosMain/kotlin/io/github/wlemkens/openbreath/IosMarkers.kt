@@ -54,6 +54,7 @@ class IosMarkers {
     suspend fun prepare(preset: Preset) {
         start()
         bowls.prepare()
+        bowls.preparePicked(Phase.entries.mapNotNull { preset.soundOf(it).markerUri })
         for (phase in Phase.entries) {
             val hz = pitchOf(phase, preset) ?: continue
             rendered.getOrPut(hz) { buffer(samplesFor(hz, preset, phase)) }
@@ -62,8 +63,13 @@ class IosMarkers {
 
     fun play(phase: Phase, preset: Preset) {
         val sound = preset.soundOf(phase)
-        // a recording rather than a synthesis, so it takes the other road out of here entirely
-        if (sound.markerUri == null && sound.tone == MarkerTone.GONG) {
+        // recordings rather than syntheses, so they take the other road out of here entirely
+        val uri = sound.markerUri
+        if (uri != null) {
+            bowls.playPicked(uri)
+            return
+        }
+        if (sound.tone == MarkerTone.GONG) {
             bowls.playPhase(phase)
             return
         }
@@ -98,7 +104,7 @@ class IosMarkers {
      */
     private fun pitchOf(phase: Phase, preset: Preset): Float? {
         val sound = preset.soundOf(phase)
-        if (sound.markerUri != null) return null // a picked file: owed with the file picker
+        if (sound.markerUri != null) return null // a recording — IosBowls plays it, not this
         return when (sound.tone) {
             MarkerTone.BELL -> BELL_HZ
             MarkerTone.TICK -> TICK_HZ * tickRate(phase)
