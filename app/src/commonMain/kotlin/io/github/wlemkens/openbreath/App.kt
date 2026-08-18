@@ -259,7 +259,9 @@ fun SessionScreen(
                         )
                         if (onOpenSupport != null) {
                             DropdownMenuItem(
-                                text = { Text("Support") },
+                                // "the app", because a menu item reading only "Support" is
+                                // where someone goes to ask for help, not to offer any
+                                text = { Text("Support the app") },
                                 onClick = { menuOpen = false; onOpenSupport() },
                             )
                         }
