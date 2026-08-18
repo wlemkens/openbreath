@@ -72,6 +72,20 @@ jobs:
 
   ios:
     runs-on: macos-15
+
+    # to publish the rolling `latest` release the phone updates from. Naming it here rather than at
+    # the top of the file keeps the Android job read-only.
+    permissions:
+      contents: write
+
+    env:
+      # One monotonic number for both, from the run counter, so a push always advertises a version
+      # higher than the one on the phone. It has to reach the ipa *and* the source JSON identically:
+      # SideStore compares the source against the installed bundle, and a mismatch either hides the
+      # update forever or offers it forever.
+      VERSION: 1.0.${{ github.run_number }}
+      BUILD: ${{ github.run_number }}
+
     steps:
       # lfs, because .gitattributes puts every mp3 in LFS and checkout does not fetch it by
       # default — without this the APK ships 130-byte pointer files in place of the bowls
@@ -150,6 +164,7 @@ jobs:
           xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
             -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' \
             -derivedDataPath build/ios-device \
+            MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$BUILD" \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             build 2>&1 | tee /tmp/ios-device.log | xcbeautify || {
               .github/print-test-failures.sh /tmp/ios-device.log; exit 1; }
@@ -164,6 +179,41 @@ jobs:
         with:
           name: OpenBreath-unsigned-ipa
           path: build/OpenBreath-unsigned.ipa
+
+      # Everything below turns a push into a tap on the phone. An artifact cannot do it: downloading
+      # one needs a GitHub login, and SideStore has none. A release asset is public, so the source
+      # JSON and the ipa both live on one tag whose URLs never change.
+      #
+      # Not on pull requests: a fork's token cannot write, and a PR build has no business replacing
+      # what the phone is being offered.
+      - name: Publish the ipa and the source for over-the-air updates
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          .github/make-source.sh \
+            build/OpenBreath-unsigned.ipa "$VERSION" "$BUILD" \
+            "https://github.com/$REPO/releases/download/latest/OpenBreath-unsigned.ipa" \
+            build/apps.json
+
+          # one rolling prerelease rather than a tag per build: the phone needs a URL that does not
+          # move, and a year of test builds is not release history worth keeping
+          gh release view latest >/dev/null 2>&1 || gh release create latest \
+            --prerelease \
+            --title "Latest test build" \
+            --notes "Rolling build for sideloading. Replaced by every push; not a release."
+
+          gh release upload latest \
+            build/OpenBreath-unsigned.ipa build/apps.json --clobber
+
+          echo "### Sideloading" >> "$GITHUB_STEP_SUMMARY"
+          echo "Version \`$VERSION\` is live. SideStore source URL:" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "https://github.com/$REPO/releases/download/latest/apps.json" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       # and the same app actually running, for when there is no phone to hand: a breathing cue is
       # an animation, and a still frame cannot show whether it moves
