@@ -9,6 +9,8 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.withTimeoutOrNull
 import java.io.File
 import java.util.Random
 import kotlin.math.PI
@@ -20,6 +22,15 @@ import kotlin.math.sqrt
 
 private const val SR = 44100
 private const val TAG = "OpenBreath"
+
+/**
+ * How long [PhaseMarkers.prepare] will wait for SoundPool to finish decoding.
+ *
+ * Long enough for a 200 KB mp3 on a slow phone, short enough that it is not felt after a tap on
+ * Start. Bounded on purpose: a decode that never finishes should cost a silent bowl, not a
+ * session that will not begin.
+ */
+private const val DECODE_WAIT_MS = 1_500L
 
 /**
  * The sink for [WaveDsp]: a thread, an AudioTrack, and nothing else.
@@ -139,12 +150,27 @@ class PhaseMarkers(private val context: Context) {
     private var bell: AudioTrack? = null
     private val ticks = mutableMapOf<Float, AudioTrack>()
 
+    /** Samples asked for but not decoded yet, so [prepare] can wait for them. */
+    private val pending = mutableMapOf<Int, CompletableDeferred<Unit>>()
+
     init {
         // a marker that silently fails to decode is a phase boundary with no sound at all,
         // which is invisible without this
         pool.setOnLoadCompleteListener { _, sampleId, status ->
             if (status != 0) Log.w(TAG, "marker sample $sampleId failed to decode (status $status)")
+            pending.remove(sampleId)?.complete(Unit)
         }
+    }
+
+    /**
+     * Hands back the sample id and something to wait on. Registering the waiter immediately after
+     * the load is safe without a lock: SoundPool calls the listener on the thread that made it,
+     * which is this one, and nothing suspends in between.
+     */
+    private fun load(name: String, bytes: ByteArray): Int {
+        val id = pool.load(spill(name, bytes).path, 1)
+        if (id > 0) pending[id] = CompletableDeferred()
+        return id
     }
 
     /**
@@ -160,13 +186,13 @@ class PhaseMarkers(private val context: Context) {
         // losing the copy costs one decode, and the resource it came from is still in the APK.
         if (bowl < 0) {
             bowlBytes(Bowl.PHASE)?.let { bytes ->
-                runCatching { bowl = pool.load(spill("singing_bowl.mp3", bytes).path, 1) }
+                runCatching { bowl = load("singing_bowl.mp3", bytes) }
                     .onFailure { Log.w(TAG, "could not load the singing bowl", it) }
             } ?: Log.w(TAG, "the singing bowl resource is missing or empty")
         }
         if (endBowl < 0) {
             bowlBytes(Bowl.SESSION_END)?.let { bytes ->
-                runCatching { endBowl = pool.load(spill("session_end.mp3", bytes).path, 1) }
+                runCatching { endBowl = load("session_end.mp3", bytes) }
                     .onFailure { Log.w(TAG, "could not load the session end bowl", it) }
             } ?: Log.w(TAG, "the session end bowl resource is missing or empty")
         }
@@ -176,10 +202,35 @@ class PhaseMarkers(private val context: Context) {
             // a file the user has since deleted or revoked must not take the session down
             runCatching {
                 context.contentResolver.openAssetFileDescriptor(Uri.parse(uri), "r")!!.use {
-                    loaded[uri] = pool.load(it, 1)
+                    val id = pool.load(it, 1)
+                    loaded[uri] = id
+                    if (id > 0) pending[id] = CompletableDeferred()
                 }
             }
         }
+
+        // Build the synthesised tracks this preset will actually strike. They were built on first
+        // use, which was fine while the first marker was a phase *end* seconds away; now that a
+        // marker opens the session, the first strike would otherwise be the one constructing it.
+        for (phase in Phase.entries) {
+            val sound = preset.soundOf(phase)
+            if (sound.mode != SoundMode.MARKER || sound.markerUri != null) continue
+            when (sound.tone) {
+                MarkerTone.BELL -> bell = bell ?: struck(BELL_HZ)
+                MarkerTone.TICK -> ticks.getOrPut(tickRate(phase)) { ticked(TICK_HZ * tickRate(phase)) }
+                MarkerTone.GONG -> Unit
+            }
+        }
+
+        // And wait for the decodes, which is the whole reason this function suspends. SoundPool
+        // decodes off-thread and a sample asked for too early simply does not sound: pool.play
+        // returns stream 0 and the boundary passes in silence. That is what a marker at t=0 hit.
+        //
+        // Bounded, because a decode that never completes must cost a silent bowl and not a
+        // session that will not start.
+        withTimeoutOrNull(DECODE_WAIT_MS) {
+            pending.values.toList().forEach { it.await() }
+        } ?: Log.w(TAG, "a marker sample was still decoding after ${DECODE_WAIT_MS}ms")
     }
 
     /**
