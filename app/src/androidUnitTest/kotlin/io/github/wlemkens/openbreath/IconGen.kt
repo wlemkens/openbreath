@@ -1,5 +1,6 @@
 package io.github.wlemkens.openbreath
 
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.awt.BasicStroke
 import java.awt.Color
@@ -19,9 +20,14 @@ import kotlin.math.sqrt
  * Draws the launcher foreground from the cue's own lattice, frozen at the top of the breath, so the
  * icon is the thing the app actually shows rather than a drawing of it.
  *
- * Not an assertion — it rewrites `ic_launcher_foreground.xml` on every test run. That is the point:
- * change the cloud, run the tests, and the icon follows. It is deterministic, so an unchanged cloud
- * leaves the file byte-identical and the working tree clean. Never hand-edit the generated file.
+ * Not an assertion — it rewrites the launcher foreground and the iOS app icon. **It only runs when
+ * asked**, with `./gradlew :app:testDebugUnitTest -Picons=true`, because the icons change about
+ * once a year and the cloud they are drawn from rather less often than that. Left on every run it
+ * re-encoded a 200 KB png each time to produce, almost always, exactly the same bytes.
+ *
+ * It is deterministic, so running it against an unchanged cloud leaves both files byte-identical
+ * and the working tree clean. Never hand-edit the generated files: change the cue, run this, and
+ * the icons follow.
  *
  * ponytail: the constants below are copies of Cue.kt's privates, so a change there drifts silently
  * until someone looks at the icon. Promote them to internal if that ever actually bites.
@@ -30,6 +36,12 @@ class IconGen {
 
     @Test
     fun generate() {
+        // skipped rather than silently doing nothing, so a run that was meant to regenerate and
+        // forgot the flag says so in the report instead of looking like it worked
+        assumeTrue(
+            "icons are regenerated only with -Picons=true",
+            System.getProperty("openbreath.icons").toBoolean(),
+        )
         val pts = cuePoints()
         val body = StringBuilder()
         val dots = mutableListOf<Dot>()

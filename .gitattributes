@@ -15,4 +15,4 @@
 # installed gets a pointer file instead of the real one, and the build fails before it
 # can explain why:
 #   gradle/wrapper/gradle-wrapper.jar  bootstraps the build, and is only 43 KB
-#   res/ images (png, webp)            launcher icons are small; LFS buys nothing
+#   res/*.xml vector drawables         text, and diff usefully

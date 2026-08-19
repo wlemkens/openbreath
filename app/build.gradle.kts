@@ -154,6 +154,16 @@ compose.resources {
     publicResClass = false
 }
 
+/**
+ * IconGen regenerates the launcher icon and the iOS app icon, and only when asked:
+ * `./gradlew :app:testDebugUnitTest -Picons=true`. A Gradle property rather than an environment
+ * variable because a test JVM inherits the daemon's environment, not the shell's, so an env var
+ * would work or not depending on whether a daemon was already warm.
+ */
+tasks.withType<Test>().configureEach {
+    systemProperty("openbreath.icons", providers.gradleProperty("icons").getOrElse("false"))
+}
+
 android {
     namespace = "io.github.wlemkens.openbreath"
     compileSdk = 36
