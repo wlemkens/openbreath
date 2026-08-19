@@ -2,6 +2,10 @@
 
 An Android app for heart coherence breathing meditations.
 
+## Personal TODO
+- Generate the release keystore (see README) so `bundleRelease` produces something Play will
+  take. The Gradle wiring is in place and falls back to unsigned until the key exists.
+
 ## Features
 
 - Presets for the usual patterns, and your own timings for the in, hold, out and hold phases.
@@ -214,8 +218,14 @@ Signing**: Google holds the actual signing key and the one you just made is only
 which support can reset if you lose it. Losing an app signing key you manage yourself ends the
 listing.
 
-**`versionCode` must increase with every upload.** It is `1` in
-[app/build.gradle.kts](app/build.gradle.kts); Play rejects a repeat.
+**`versionCode` must increase with every upload,** and Play rejects a repeat. It looks after
+itself: [app/build.gradle.kts](app/build.gradle.kts) takes `OPENBREATH_BUILD` when CI sets it and
+counts the commits otherwise, so `1.0.89 (89)` is the eighty-ninth commit and there is no number
+to remember to bump. `git rev-list --count HEAD` says what the next build will call itself.
+
+The one thing to know is what follows from it: **a second upload needs a second commit.** Rebuild
+the same commit and Play is handed a version it has already taken — which is the right answer,
+since it is also the same app. Commit the change you are shipping, then build.
 
 ## Licence
 

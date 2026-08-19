@@ -20,12 +20,33 @@ val keystoreProperties = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
 
+/** Whatever git says here, or null where there is no git — a source tarball still builds. */
+fun git(vararg args: String): String? = runCatching {
+    ProcessBuilder("git", *args).directory(rootDir).start()
+        .inputStream.bufferedReader().readText().trim()
+}.getOrNull()?.takeIf { it.isNotEmpty() }
+
 /**
- * The build number, which both platforms take from the same CI run so the two never disagree
- * about which build they are. Absent — every build but CI's — it stays at what shipped, so a
- * local build is not mistaken for a released one.
+ * The build number. CI passes it so both platforms take it from the same run and can never
+ * disagree about which build they are; a build off a laptop counts the commits instead.
+ *
+ * Counting commits rather than keeping a number in a file is what makes a release build off this
+ * machine uploadable without bookkeeping: Play rejects a versionCode it has already seen, and the
+ * old fallback of 1 meant every local bundle claimed to be the first one. It also has the property
+ * a stored counter does not — nothing to forget to bump, nothing to merge, and the same commit
+ * always answers the same number.
+ *
+ * The consequence is worth knowing: a second upload needs a second commit. Rebuilding the same
+ * commit gives Play a number it has already taken, which is the honest answer, since it is also
+ * the same app.
+ *
+ * Falls back to 1 only where neither CI nor git can say — a tarball, where nothing is being
+ * released anyway.
  */
-val buildNumber: String? = System.getenv("OPENBREATH_BUILD")?.takeIf { it.isNotBlank() }
+val buildNumber: String =
+    System.getenv("OPENBREATH_BUILD")?.takeIf { it.isNotBlank() }
+        ?: git("rev-list", "--count", "HEAD")
+        ?: "1"
 
 /**
  * Written into commonMain rather than into a BuildConfig or an Info.plist, because both
@@ -38,13 +59,10 @@ val buildNumber: String? = System.getenv("OPENBREATH_BUILD")?.takeIf { it.isNotB
 val generateBuildInfo by tasks.registering {
     val dir = layout.buildDirectory.dir("generated/buildinfo/kotlin")
     outputs.dir(dir)
-    val version = buildNumber?.let { "1.0.$it" } ?: "1.0"
+    val version = "1.0.$buildNumber"
     val sha = System.getenv("GITHUB_SHA")?.take(7)
-        ?: runCatching {
-            ProcessBuilder("git", "rev-parse", "--short=7", "HEAD")
-                .directory(rootDir).start()
-                .inputStream.bufferedReader().readText().trim()
-        }.getOrNull()?.takeIf { it.isNotEmpty() } ?: "unknown"
+        ?: git("rev-parse", "--short=7", "HEAD")
+        ?: "unknown"
     inputs.property("version", version)
     inputs.property("sha", sha)
     doLast {
@@ -144,10 +162,10 @@ android {
         applicationId = "io.github.wlemkens.openbreath"
         minSdk = 26
         targetSdk = 36
-        // stamped by CI from the run number, so an Android build can be named as exactly as an
-        // iOS one; unset it stays where it shipped. Play needs this to increase on every upload
-        versionCode = buildNumber?.toInt() ?: 1
-        versionName = buildNumber?.let { "1.0.$it" } ?: "1.0"
+        // CI's run number, or the commit count off a laptop — see buildNumber. Play needs this
+        // to increase on every upload, which is the whole reason it is never simply 1
+        versionCode = buildNumber.toInt()
+        versionName = "1.0.$buildNumber"
     }
 
     compileOptions {
