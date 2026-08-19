@@ -161,6 +161,30 @@ Functionality includes:
   goal defines behind; declining the goal leaves it a plain evening reminder, which is the honest
   reading. A test in `SessionTest` holds them together.
 
+  ### The store screenshots follow the interface
+  `docs/store/android/*.png` are what the listing shows, and a screenshot is a claim about what the
+  app looks like — the one part of a listing a reader believes without reading. So **any change to a
+  screen that appears there is not finished until the screenshot is retaken**, in the same commit
+  as the change. The ten shots and which screens they are are listed in `docs/store/README.md`.
+
+  It costs one command, which is the whole reason the rule can be absolute:
+
+      ./gradlew :app:installDebug && python3 docs/store/screenshots.py
+
+  It clears the app's data and imports a generated log, so run it on an emulator and never on a
+  phone that holds real practice. It drives the UI by the labels `uiautomator` reports, which means
+  **renaming a button can break the run rather than the app** — if it exits with `no 'X' on
+  screen`, the script is out of date with the interface it photographs, and that is the same rule
+  asking to be applied.
+
+  The copy is a claim too. Adding or dropping a feature means `docs/store/listing.md` changes with
+  it, and the App Store half may only name what iOS actually has — reminders and the silencing of
+  notifications are still Android's alone.
+
+  The iOS screenshots are the ones that will rot, because they cannot be taken from here: `simctl`
+  cannot tap a simulator, so Apple's set is hand-taken on a Mac and nothing reminds anyone. When a
+  shared screen changes, say out loud that the iOS set is now stale.
+
   ## The iOS port
   The module is Kotlin Multiplatform with Compose Multiplatform, targeting `androidTarget()`
   plus `iosArm64` and `iosSimulatorArm64`. There is no `iosX64`: Compose Multiplatform stopped
@@ -316,9 +340,9 @@ Functionality includes:
 
   - **`Reminders.kt`, `RemindersScreen.kt`** — AlarmManager and a BroadcastReceiver →
     UNUserNotificationCenter, plus the permission prompt.
-  - **`Settings.kt`** — the mp3 file picker, and a colour picker built on `android.graphics.Color`.
-    Backup export and import live inside it, which is why an iPhone cannot yet read a backup —
-    and that file is the only route a practice log has to reach one.
+  Settings has since moved to commonMain, and with it the mp3 picker, the colour picker and
+  backup export and import — `IosFiles` answers all three, so an iPhone reads a backup written on
+  Android. Reminders is the only screen left behind.
 
   **Locale data is the recurring seam.** kotlinx-datetime carries none, on purpose, so every
   question about how a reader writes something goes to the platform. `firstDayOfWeek()` is an
@@ -385,7 +409,14 @@ Functionality includes:
   - **The rate link.** `IosPlatform.canRate` is false because the numeric App Store id does not
     exist until first submission. Fill it in once it does — that one really is gated on
     submitting.
-  - **A user's own mp3 on iOS** is still owed: `IosFiles.canPickAudio` is false, so the button is
-    hidden. It needs the document picker and decoding an arbitrary file, which IosBowls now has
-    most of the machinery for.
-  - privacy policy link: Create a html page stating that no information is collected. I'll put the page on https://stanistil.be/openbreat/privacypolicy.html.
+  - **Upload the privacy policy.** `docs/privacypolicy.html` is written — no collection, no
+    network, and what `allowBackup` means. It has to be live at
+    https://stanistil.be/openbreath/privacypolicy.html before either store record can be filled
+    in: both ask for the URL.
+  - **The Play listing.** Copy for both stores is in `docs/store/listing.md`, the phone
+    screenshots and the two Play graphics beside it. Still missing: the keystore, the Play Console
+    record itself, and — for a personal developer account — the 12-tester, 14-day closed test that
+    has to run before production opens.
+  - **Screenshots for the App Store.** `docs/store/screenshots.py` drives the Android emulator by
+    the labels uiautomator can see. The iOS set needs a 6.9" simulator on a Mac with Xcode 26, or
+    an iPhone: simctl cannot tap, and Apple's sizes are its own.
