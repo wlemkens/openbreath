@@ -398,4 +398,22 @@ class SessionTest {
         // a genuinely new sitting is a new start time, so it lands alongside
         assertEquals(2, finished.logging(Entry(started + 1, 60_000L, "Box 4")).size)
     }
+
+    @Test
+    fun `the reminder offered at first run goes quiet once the goal offered with it is done`() {
+        val zone = TimeZone.of("Europe/Brussels")
+        val evening = LocalDateTime(2026, 8, 12, 20, 0).toInstant(zone)
+        val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
+        fun on(day: Int) =
+            entryFor(LocalDateTime(2026, 8, day, 9, 0).toInstant(zone).toEpochMilliseconds(), 300_000L, preset)
+
+        val goals = listOf(setupGoal())
+        // the two are one offer: the reminder is only worth accepting because the goal says when
+        // it has been earned, so onlyIfBehind and the goal have to keep agreeing
+        assertTrue(setupReminder().onlyIfBehind)
+        assertFalse(goals.allReached(emptyList(), evening, zone), "nothing sat and yet nothing to remind")
+        assertTrue(goals.allReached(listOf(on(12)), evening, zone), "sat today and still reminded")
+        // yesterday's sitting is not today's
+        assertFalse(goals.allReached(listOf(on(11)), evening, zone))
+    }
 }

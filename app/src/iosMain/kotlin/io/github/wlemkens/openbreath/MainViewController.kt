@@ -57,6 +57,8 @@ private fun IosBreath(modifier: Modifier = Modifier) {
     val saved = goals ?: return
 
     MilestoneWatch(current, saved)
+    // no onReminder: there are no reminders here yet, so the question asks about the goal alone
+    FirstRunSetup()
 
     when {
         showSettings -> SettingsScreen(

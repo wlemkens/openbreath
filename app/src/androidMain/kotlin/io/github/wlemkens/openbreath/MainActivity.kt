@@ -69,6 +69,7 @@ private fun Breath(modifier: Modifier = Modifier) {
 
     // over whichever screen is showing: a milestone is worth interrupting a settings tweak for
     MilestoneWatch(current, saved)
+    FirstRunSetup(onReminder = rememberReminderScheduler())
 
     when {
         showSettings -> SettingsScreen(
