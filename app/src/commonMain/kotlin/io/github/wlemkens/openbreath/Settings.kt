@@ -122,8 +122,10 @@ fun SettingsScreen(
             }
         }
 
-        item { SectionLabel("Preset") }
-        item {
+        // Advanced: Standard shows the Timing sliders alone, which edit whichever preset is
+        // active — "Custom" until someone picks another here
+        if (advanced) item { SectionLabel("Preset") }
+        if (advanced) item {
             // FlowRow, not Row: the preset count and their names are both user data, so a
             // single line runs off the screen edge as soon as there are a few
             FlowRow(
@@ -139,7 +141,7 @@ fun SettingsScreen(
                 }
             }
         }
-        item {
+        if (advanced) item {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),

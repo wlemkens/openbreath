@@ -223,6 +223,18 @@ class SessionTest {
     }
 
     @Test
+    fun `a fresh config starts on Custom so the Standard timing sliders redefine nothing named`() {
+        assertEquals("Custom", Config().active.name)
+        val named = Config().presets.drop(1)
+        // dragging a slider edits the active preset, which is the unnamed one until Advanced
+        // is used to pick another — the named patterns keep their timings
+        assertEquals(
+            listOf(Timing(5500, 0, 5500, 0), Timing(4000, 0, 6000, 0), Timing(4000, 7000, 8000, 0)),
+            named.take(3).map { it.timing },
+        )
+    }
+
+    @Test
     fun `a logged sitting keeps the timing it was breathed at and counts whole breaths only`() {
         val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
         // 84s of an 11s breath: seven finished, and the eighth is in the duration but uncounted

@@ -159,8 +159,14 @@ data class Config(
 /** The teal the app shipped with. */
 const val DEFAULT_CUE_COLOR: Int = 0xFF5FD6C8.toInt()
 
+// "Custom" is first, so the default activeIndex of 0 selects it: the Timing sliders are the only
+// preset control Standard shows, and someone dragging them there is naming their own pattern
+// rather than quietly redefining what "Box 4" means. Picking a named one in Advanced is the
+// deliberate act that makes the sliders edit that instead.
 internal val DEFAULT_PRESETS = listOf(
+    Preset("Custom", 5500, 0, 5500, 0),
     Preset("Coherence 5.5", 5500, 0, 5500, 0),
+    Preset("4-6", 4000, 0, 6000, 0),
     Preset("4-7-8", 4000, 7000, 8000, 0),
     Preset("Box 4", 4000, 4000, 4000, 4000),
 )
