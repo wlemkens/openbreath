@@ -84,6 +84,7 @@ fun AchievementsScreen(goals: List<Goal>, onBack: () -> Unit, modifier: Modifier
             Stat("Days in a row", if (days == 0) "—" else days.toString())
         }
         item { Stat("Sittings", history.size.toString()) }
+        item { Stat("Breaths", history.tally(GoalMetric.BREATHS).toString()) }
         item { Stat("Minutes", history.tally(GoalMetric.MINUTES).toString()) }
         item {
             val today = history.towards(
