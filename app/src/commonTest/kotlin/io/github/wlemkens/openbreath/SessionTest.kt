@@ -253,6 +253,8 @@ class SessionTest {
         assertEquals("4 – 7 – 8", entryFor(0L, 0L, Preset("4-7-8", 4000, 7000, 8000, 0)).pattern)
         // an entry from before timings were logged has nothing to show rather than "0 – 0"
         assertEquals("", Entry(1_000L, 60_000L, "Box 4").pattern)
+        // the idle screen says the same thing about a preset as the log says about a sitting
+        assertEquals(entry.pattern, preset.pattern)
     }
 
     @Test

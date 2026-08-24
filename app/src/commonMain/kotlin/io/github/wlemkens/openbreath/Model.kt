@@ -109,6 +109,9 @@ data class Preset(
         Phase.HOLD_OUT -> copy(holdOutMs = ms)
     }
 
+    /** "5.5 – 5.5", the same phrasing the log uses for a sitting already breathed. */
+    val pattern: String get() = phasePattern(inhaleMs, holdInMs, exhaleMs, holdOutMs)
+
     /** Falls back to the default rather than throwing on a stored preset that adds up to zero. */
     val timing: Timing
         get() = runCatching { Timing(inhaleMs, holdInMs, exhaleMs, holdOutMs) }.getOrElse { Timing() }
@@ -131,10 +134,18 @@ data class Config(
      * leaves you sitting there wondering.
      */
     val endSound: Boolean = true,
-    /** The three progress readouts, each independently hideable for a barer screen. */
-    val showTime: Boolean = true,
+    /**
+     * The three progress readouts, each independently hideable for a barer screen. Only the
+     * dots to begin with: they say how far in you are without giving you anything to read, and
+     * a number counting down is a thing to watch instead of a breath to take. Both others are
+     * one switch away in Settings for anyone who wants them.
+     *
+     * Defaults, so they change nothing for a phone that has ever saved its settings — a stored
+     * config carries all three explicitly, `encodeDefaults` being on.
+     */
+    val showTime: Boolean = false,
     val showDots: Boolean = true,
-    val showBreaths: Boolean = true,
+    val showBreaths: Boolean = false,
     val cue: CueStyle = CueStyle.CLOUD,
     /** Opaque ARGB. The bright end of the cue, and the colour of the breath dots. */
     val cueColor: Int = DEFAULT_CUE_COLOR,
@@ -204,14 +215,20 @@ data class Entry(
     val cycles: Int = 0,
 ) {
     /** "5.5 – 5.5" or "4 – 7 – 8", in seconds. Empty for an entry logged before timings were. */
-    val pattern: String
-        get() = listOf(inhaleMs, holdInMs, exhaleMs, holdOutMs)
-            // a zero-length phase is one the breath never had, not one that took no time
-            .filter { it > 0 }
-            // whole seconds written whole; a decimal separator is the locale's business, so
-            // trimming a trailing ".0" off the formatted string is not the way to do it
-            .joinToString(" – ") { if (it % 1000 == 0) "${it / 1000}" else formatOneDecimal(it / 1000f) }
+    val pattern: String get() = phasePattern(inhaleMs, holdInMs, exhaleMs, holdOutMs)
 }
+
+/**
+ * The four phase lengths said in seconds — "5.5 – 5.5", "4 – 7 – 8". Shared by the log, which
+ * says what was breathed, and the idle session screen, which says what is about to be.
+ */
+internal fun phasePattern(inhaleMs: Int, holdInMs: Int, exhaleMs: Int, holdOutMs: Int): String =
+    listOf(inhaleMs, holdInMs, exhaleMs, holdOutMs)
+        // a zero-length phase is one the breath never had, not one that took no time
+        .filter { it > 0 }
+        // whole seconds written whole; a decimal separator is the locale's business, so
+        // trimming a trailing ".0" off the formatted string is not the way to do it
+        .joinToString(" – ") { if (it % 1000 == 0) "${it / 1000}" else formatOneDecimal(it / 1000f) }
 
 /** What to log for a sitting of [durationMs] on [preset], started at [at]. */
 internal fun entryFor(at: Long, durationMs: Long, preset: Preset) = Entry(

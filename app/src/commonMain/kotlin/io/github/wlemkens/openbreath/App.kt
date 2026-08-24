@@ -276,15 +276,28 @@ fun SessionScreen(
             }
         }
 
-        Text(
-            when {
-                finished -> "Done"
-                running -> state.phase.label
-                else -> preset.name
-            },
-            style = MaterialTheme.typography.headlineMedium,
-            textAlign = TextAlign.Center,
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                when {
+                    finished -> "Done"
+                    running -> state.phase.label
+                    else -> preset.name
+                },
+                style = MaterialTheme.typography.headlineMedium,
+                textAlign = TextAlign.Center,
+            )
+            // under the name it belongs to, and only while nothing is running: what a preset is
+            // called says nothing about what it will do, and the readouts below are hideable —
+            // so with them off there would otherwise be no way to see the sitting you set up
+            if (!running && !finished) {
+                Text(
+                    "${preset.pattern} · ${mmss(total)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
 
         Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
             Cue(config.cue, if (running) state.openness else 0f, glow)
