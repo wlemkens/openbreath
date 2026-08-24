@@ -2,9 +2,6 @@
 
 An Android app for heart coherence breathing meditations.
 
-## Personal TODO
-- Generate the release keystore (see README) so `bundleRelease` produces something Play will
-  take. The Gradle wiring is in place and falls back to unsigned until the key exists.
 
 ## Features
 

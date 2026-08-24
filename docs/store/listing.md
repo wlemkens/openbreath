@@ -120,6 +120,17 @@ listing has no reason to raise the subject.
     No ads, no accounts, no subscriptions, no in-app purchases and nothing to unlock. OpenBreath
     is released under the GNU General Public License v3 or later; the source is public.
 
-**What's New** (first version)
+**What's New** / **Release notes** (500 max on Play, 4000 on the App Store — write to Play's
+limit and the same text serves both)
 
     First release.
+
+    Set how long to breathe in, hold, breathe out and hold, and follow a sphere that opens
+    and closes with the breath. Choose a sound for each phase, or none at all.
+
+    Every sitting is kept on your phone: a log, goals you set yourself, streaks and
+    milestones. No account, no network, no ads, nothing to unlock.
+
+321 characters. Paste it unwrapped — Play preserves line breaks, so the hard wrapping above
+would show as ragged mid-sentence breaks. Later releases say what changed and nothing else;
+this one has no changes to describe, so it says what the app is.

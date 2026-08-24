@@ -409,10 +409,21 @@ Functionality includes:
   - **The rate link.** `IosPlatform.canRate` is false because the numeric App Store id does not
     exist until first submission. Fill it in once it does — that one really is gated on
     submitting.
-  - **Upload the privacy policy.** `docs/privacypolicy.html` is written — no collection, no
-    network, and what `allowBackup` means. It has to be live at
-    https://stanistil.be/openbreath/privacypolicy.html before either store record can be filled
-    in: both ask for the URL.
+  - ~~**Publish the privacy policy.**~~ Live at
+    https://wlemkens.github.io/openbreath/privacypolicy.html, which is the URL to give both
+    stores — they ask for one and Play checks it resolves. Not `raw.githubusercontent.com`: it
+    serves `text/plain`, so a reviewer would see the markup rather than the page. Either store's
+    URL can be changed later, so this does not foreclose stanistil.be.
+
+    **GitHub Pages serves it from the `ios-port` branch, `/docs` — and `main` has no `docs/`
+    at all.** Merging and deleting that branch takes the privacy policy off the web, and the
+    first sign of it is a store record pointing at a 404. Move the source in the same breath as
+    the merge:
+
+        gh api -X PUT repos/wlemkens/openbreath/pages -f 'source[branch]=main' -f 'source[path]=/docs'
+
+    Publishing `/docs` puts `docs/store/` on the web too, which costs nothing on a public
+    repository.
   - **The Play listing.** Copy for both stores is in `docs/store/listing.md`, the phone
     screenshots and the two Play graphics beside it. Still missing: the keystore, the Play Console
     record itself, and — for a personal developer account — the 12-tester, 14-day closed test that
