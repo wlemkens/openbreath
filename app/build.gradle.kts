@@ -7,6 +7,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("org.jetbrains.compose")
+    id("com.github.triplet.play")
 }
 
 /**
@@ -200,4 +201,79 @@ android {
             isMinifyEnabled = false
         }
     }
+}
+
+/**
+ * Uploading to Play over the Developer API, so that a closed-testing update is one command
+ * instead of a browser and a drag. `./gradlew :app:publishBundle` builds, signs and uploads;
+ * README has how to make the service account and what it must be granted. Run the aggregate
+ * `publishBundle` and not `publishReleaseBundle` — the per-variant one exists but is registered
+ * too late for Gradle to select it by name, so asking for it directly says "task not found".
+ *
+ * Off unless the credentials are actually here, for the same reason the signing config is: on
+ * CI and on any machine but the one holding the key, configuring a publish that cannot happen
+ * would fail the build for everyone who only wants to compile. A publish task run without the
+ * file says so; nothing else notices it is missing.
+ *
+ * The track is Play's own name for it, and "alpha" *is* closed testing — the Console calls it
+ * "Closed testing" while the API has always called it alpha. A track created by hand carries
+ * whatever name it was given, so `-PplayTrack=…` overrides. Getting this wrong is the one
+ * mistake that uploads a tester build to the wrong audience, so it is worth reading twice.
+ */
+val playCredentials = rootProject.file("play-service-account.json")
+
+/**
+ * Release notes, written from the commit subjects instead of by hand. The subjects in this
+ * repository are already sentences about what changed and who it is for, which is what a release
+ * note is; keeping a second hand-written copy of them would drift from the first.
+ *
+ * `src/main/play` and not `src/androidMain/play`, which is what the source layout would suggest:
+ * the plugin reads AGP's own `main` name rather than the KMP one. Verified by letting
+ * `bootstrapListing` choose the path — worth remembering, since guessing gets it wrong and the
+ * only symptom is notes that silently do not appear.
+ *
+ * `default.txt` covers every track, so alpha and internal cannot disagree about what a build was.
+ *
+ * Play truncates at 500 characters, so the newest subjects are taken until the budget runs out.
+ * Older ones fall off the bottom rather than being cut mid-word.
+ *
+ * ponytail: stateless — it says "the most recent changes", not "everything since the last
+ * upload", so two releases close together repeat a line. Answering it exactly needs a record of
+ * what was last published; tag the release and read the range if the repetition ever grates.
+ */
+val releaseNotesFile = layout.projectDirectory.file("src/main/play/release-notes/en-US/default.txt")
+
+val generateReleaseNotes by tasks.registering {
+    description = "Writes the Play release notes from recent commit subjects."
+    outputs.file(releaseNotesFile)
+    // the log moves under it with every commit, and the task costs one git call
+    outputs.upToDateWhen { false }
+    doLast {
+        val budget = 500
+        val notes = mutableListOf<String>()
+        var used = 0
+        for (subject in (git("log", "--format=%s", "-40") ?: "").lines().filter(String::isNotBlank)) {
+            val line = "- $subject"
+            if (used + line.length + 1 > budget) break
+            notes += line
+            used += line.length + 1
+        }
+        // a tarball with no git says nothing rather than shipping an empty release note
+        val text = notes.joinToString("\n").ifEmpty { "Small fixes and improvements." }
+        releaseNotesFile.asFile.apply { parentFile.mkdirs() }.writeText(text + "\n")
+        logger.lifecycle("release notes — ${text.length + 1} of $budget characters:\n$text")
+    }
+}
+
+// The per-variant task is the one that reads the notes, and it is registered too late to be named
+// on the command line — so match by name rather than resolving it, and cover the aggregate too.
+tasks.matching { it.name == "publishBundle" || it.name == "publishReleaseBundle" }
+    .configureEach { dependsOn(generateReleaseNotes) }
+
+play {
+    enabled.set(playCredentials.exists())
+    serviceAccountCredentials.set(playCredentials)
+    track.set(providers.gradleProperty("playTrack").orElse("alpha"))
+    // this project ships bundles; without it the publish tasks would look for an APK
+    defaultToAppBundles.set(true)
 }

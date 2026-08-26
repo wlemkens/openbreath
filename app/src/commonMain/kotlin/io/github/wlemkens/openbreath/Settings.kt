@@ -493,6 +493,7 @@ private fun SecondsSlider(label: String, ms: Int, minMs: Int, maxMs: Int, onChan
         range = (minMs / 500f)..(maxMs / 500f),
         steps = (maxMs - minMs) / 500 - 1,
         readout = "${formatOneDecimal(ms / 1000f)} s",
+        onStep = { dir -> onChange((ms + dir * 500).coerceIn(minMs, maxMs)) },
         onChange = { onChange(it.roundToInt() * 500) },
     )
 }

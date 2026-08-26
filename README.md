@@ -224,6 +224,82 @@ The one thing to know is what follows from it: **a second upload needs a second 
 the same commit and Play is handed a version it has already taken — which is the right answer,
 since it is also the same app. Commit the change you are shipping, then build.
 
+## Publishing to Play
+
+Once set up, shipping a build to the closed test is one command:
+
+```sh
+./gradlew :app:publishBundle                    # closed testing ("alpha")
+./gradlew :app:publishBundle -PplayTrack=internal   # internal testing
+```
+
+It builds, signs and uploads in one go. Run the aggregate `publishBundle`: it drives the
+per-variant `publishReleaseBundle`, which the plugin registers too late for Gradle to select by
+name off the command line.
+
+### The release notes write themselves
+
+`generateReleaseNotes` runs first, and puts the recent commit subjects — newest first, until Play's
+500-character limit runs out — in `src/main/play/release-notes/en-US/default.txt`. That file is
+generated and gitignored; `./gradlew :app:generateReleaseNotes` on its own prints what it would
+say, which is the way to read the notes before they go anywhere.
+
+The subjects in this repository are already sentences about what changed, so they need no
+rewriting. Two things follow from taking them verbatim, both by design and neither hidden:
+
+- **A commit about the build appears too.** "Count the commits for the version code" means nothing
+  to a tester. Filtering to commits that touch app sources is possible and is not done, because a
+  heuristic that silently drops a real change is worse than a line of noise.
+- **It says "the most recent changes", not "since your last build".** Two releases close together
+  repeat a line, since nothing records what was published last.
+
+`src/main/play`, not `src/androidMain/play` — the plugin uses AGP's source-set name and not the
+Kotlin Multiplatform one. Getting it wrong loses the notes without an error.
+
+**"alpha" is closed testing.** The Console says "Closed testing", the API has always said alpha,
+and they are the same track. A closed track created by hand carries whatever name it was given —
+`-PplayTrack=` for that. This is the one setting that can put a tester build in front of the wrong
+audience, so read it twice before a release that matters.
+
+### The service account
+
+The upload needs a Google Cloud service account that Play trusts. It is made in the **Google Cloud
+Console**, not the Play Console — the Play Console has no page for creating one, and the only step
+that happens there is the invite in 5.
+
+Do not go looking for *Setup → API access* in the Play Console. That page is **gone**: Google
+dropped the requirement to link a developer account to a Cloud project, and took the page with it.
+Most walkthroughs still describe it, which is what makes this confusing rather than hard.
+
+Done once:
+
+1. **console.cloud.google.com** → create a project, or select one. Any project will do; it is only
+   a container. **Nothing below appears until a project is selected** — this is why *Service
+   accounts* can seem to be missing from the menu entirely.
+2. *APIs & Services → Library* → search **Google Play Android Developer API** → **Enable**. Easy
+   to skip, and skipping it fails the upload later on a permission error that never mentions it.
+3. *IAM & Admin → Service accounts* → **Create service account**. Name it anything. It needs **no
+   Cloud roles** — Play grants its own rights in 5, and the Owner role some guides tell you to add
+   and then remove is not needed at any point.
+4. On that account: *Keys → Add key → Create new key → JSON*. It downloads once and cannot be
+   fetched again — a lost key means making another. Save it as `play-service-account.json` in the
+   project root. It is gitignored and must stay that way: it can ship an update to every installed
+   phone, which makes it as sensitive as the keystore even though it signs nothing.
+5. **Play Console** → *Users and permissions* → **Invite new users** → paste the service account's
+   email (`…@….iam.gserviceaccount.com`) → grant it, for this app only: *Release to testing
+   tracks*, and *Release to production* only if you want that from here too. Give it a few minutes;
+   the grant is not instant, and a publish attempted straight away can fail once and then work.
+
+Without the file the publish tasks are simply switched off, so a clone with no credentials builds
+and tests exactly as before — same arrangement as `keystore.properties`.
+
+### It cannot create the app
+
+The Developer API can upload to an app that already exists on Play, and nothing more. **The first
+bundle has to go up by hand** through the Console, along with the listing, the content
+declarations and the closed-testing track itself. After that first manual upload, every update is
+the command above.
+
 ## Licence
 
 Copyright (c) 2026 Wim Lemkens.
