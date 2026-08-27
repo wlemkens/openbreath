@@ -35,6 +35,18 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.wlemkens.openbreath
+        # iPhone only. Left unset, Xcode defaults to "1,2" — iPhone and iPad — and a binary that
+        # claims iPad support makes App Store Connect refuse the listing until a 13" iPad set is
+        # uploaded as well: "You must upload a screenshot for 13-inch iPad displays."
+        #
+        # Nothing here has ever been laid out for a tablet. The cue is one centred sphere and the
+        # app is portrait-only, so a 13" iPad would show a phone screen stretched across a desk —
+        # both a worse app and the sort of thing review notices. Declaring 1 costs an iPad owner
+        # nothing: the app still installs and runs there, in iPhone compatibility mode.
+        #
+        # The requirement follows the binary and not the listing, so it clears from the next upload
+        # onwards. Build 70 claimed both.
+        TARGETED_DEVICE_FAMILY: 1
         # Sources/Assets.xcassets is swept up by the sources entry above; this is what makes the
         # app actually wear it. The single 1024 png is written by IconGen from the same point
         # lattice the Android launcher icon comes from, so the two cannot drift apart — regenerate
