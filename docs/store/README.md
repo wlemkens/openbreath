@@ -8,6 +8,7 @@ Everything a listing needs that lives in the repository rather than in a console
     android/*.png                     ten phone screenshots, 1080x1920 (9:16, what Play asks for)
     ios/iphone/*.png                  nine, 1320x2868 (the 6.9" set Apple asks for)
     ios/ipad/*.png                    the same nine, 2064x2752 (the 13" set it also asks for)
+    ios/*-breathing.mp4               the App Store previews, 22s of the cue, one per device class
     screenshots.py                    what took the Android set, so a release need not tap by hand
 
 `../privacypolicy.html` is the page both stores ask for the URL of. It has to be hosted; the
@@ -82,3 +83,32 @@ The log has to be seeded there too, or the achievements and milestone shots phot
 Hand that file to the phone (AirDrop, or Files) and import it through Settings ▸ Advanced ▸ Import,
 which is the route the Android run drives. It replaces presets, goals and reminders and merges the
 log, so use a phone with no practice worth keeping — the same warning as the emulator.
+
+## The App Store previews
+
+Optional — a listing goes live without them — and worth having for one screen only: the cue is an
+animation, and a still frame cannot show whether it moves.
+
+    gh workflow run build.yml --ref <branch> -f previews=true
+
+Twenty-two seconds of the default 5.5/5.5 breath, which is two whole cycles inside Apple's 15-to-30
+second window, filmed on the same two device classes as the screenshots: 886x1920 for the phone and
+1200x1600 for the iPad, which are the preview sizes and not the screenshot ones.
+
+**The sound is rendered, not recorded, and it is still the app's own.** Apple requires an audio track
+— stereo AAC, 256 kbps — and `simctl` records the display and nothing else, so `PreviewAudio` in
+desktopTest asks the shared `WaveDsp` for 22 seconds of the same wave bed a phone would play, driven
+by the same `phaseAt` easing and the same edge dip at every boundary. A silent track would have
+satisfied Apple and misrepresented the app. The video is filmed on a fresh install for the same
+reason: waves on every phase is the default, so what the soundtrack claims is what a reader hears.
+
+Three parts have to agree and each is worth knowing when one breaks:
+
+- **`simctl` cannot tap and XCUITest cannot record**, so the run is both at once: `AppPreview` taps
+  Start, then writes the host clock at the instant the first inhale begins, and the script trims the
+  capture to that number. Guessing the offset instead would mean guessing how long an install took.
+- **`-only-testing`** keeps the two test classes apart. Without it a screenshot run would also film
+  22 seconds of nothing, and a preview run would take nine pictures nobody wants.
+- **ffmpeg** does the scale, the frame rate, the trim and the mux, and is installed by the script if
+  the runner has none. The output is checked for size, duration and the presence of sound before the
+  job goes green, because a preview refused at upload costs a round trip to learn one number.

@@ -29,52 +29,13 @@ expected=(firstrun milestone session-idle session-breathe-in log achievements go
           sound-per-phase settings-options)
 
 # shoot <subdirectory> <accepted sizes> <device type name>...
-#
-# The device names are tried in order and the first one the installed Xcode has wins. Named rather
-# than matched loosely on purpose: "the newest thing that looks like a Pro Max" is a guess about
-# simctl's ordering, while a list that runs out says so in an annotation and is one line to extend.
 shoot() {
     local label="$1" dir="$out/$1" sizes="$2"; shift 2
     mkdir -p "$dir"
 
     local udid
-    #
-    # **No apostrophe may appear in the Python below.** The whole program is single-quoted for bash,
-    # so one of them ends the quoting and the rest is re-quoted into nonsense — `runtime['name']`
-    # reached Python as `runtime[name]` and died on a KeyError naming the device it had just found,
-    # which reads like a lookup bug rather than a quoting one.
-    udid=$(xcrun simctl list -j | python3 -c '
-import json, sys
-sim = json.load(sys.stdin)
-wanted = sys.argv[1:]
-
-runtimes = [r for r in sim["runtimes"] if r["isAvailable"] and "iOS" in r["name"]]
-if not runtimes:
-    sys.exit("no iOS simulator runtime installed")
-runtime = max(runtimes, key=lambda r: [int(p) for p in r["version"].split(".")])
-ios = runtime["name"]
-
-types = {t["name"]: t["identifier"] for t in sim["devicetypes"]}
-name = next((n for n in wanted if n in types), None)
-if not name:
-    have = sorted(n for n in types if "iPhone" in n or "iPad" in n)
-    sys.exit(f"none of {wanted} is available. This Xcode has: {have}")
-
-# an existing device of that type on that runtime, or a new one. Reused rather than recreated so a
-# second run is not a fresh 30-second boot for nothing.
-for d in sim["devices"].get(runtime["identifier"], []):
-    if d.get("isAvailable") and d.get("deviceTypeIdentifier") == types[name]:
-        print(d["udid"])
-        sys.stderr.write(f"using the existing {name} on {ios}\n")
-        break
-else:
-    import subprocess
-    udid = subprocess.check_output(
-        ["xcrun", "simctl", "create", "openbreath-shots", types[name], runtime["identifier"]],
-        text=True).strip()
-    print(udid)
-    sys.stderr.write(f"created an {name} on {ios}\n")
-' "$@") || { echo "::error title=No simulator to photograph::$label: see the log for what this Xcode has"; exit 1; }
+    udid=$(.github/pick-simulator.sh "$@") \
+        || { echo "::error title=No simulator to photograph::$label: see the log for what this Xcode has"; exit 1; }
 
     # Erased, not merely reinstalled: the first shot is the first-run question, which only exists
     # while nothing has ever been stored. A device carried over from a previous run has been
@@ -94,6 +55,7 @@ else:
         -configuration Debug -sdk iphonesimulator \
         -destination "platform=iOS Simulator,id=$udid" \
         -derivedDataPath build/ios-shots \
+        -only-testing:StoreScreenshots/StoreScreenshots \
         2>&1 | tee /tmp/ios-shots.log | xcbeautify || {
           .github/print-test-failures.sh /tmp/ios-shots.log; exit 1; }
 

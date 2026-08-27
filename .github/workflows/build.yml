@@ -29,6 +29,10 @@ on:
         description: Retake the App Store screenshots from a 6.9" simulator
         type: boolean
         default: false
+      previews:
+        description: Refilm the App Store preview videos of the breathing cue
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -292,6 +296,22 @@ jobs:
       - name: Take the App Store screenshots
         if: inputs.screenshots
         run: .github/ios-screenshots.sh build/store-screenshots
+
+      # The preview videos, and the same reasoning: manual, because a video of the cue is retaken
+      # when the cue changes. It films a simulator in real time — 22 seconds of breathing cannot be
+      # hurried — and installs ffmpeg if the image has none, so it is the slowest thing here.
+      - name: Film the App Store previews
+        if: inputs.previews
+        run: .github/ios-previews.sh build/store-previews
+
+      - uses: actions/upload-artifact@v7
+        # always(), so a failed run still hands over the driver's log; warn rather than error
+        # because on a failure there is legitimately no mp4, and the real cause is already annotated
+        if: always() && inputs.previews
+        with:
+          name: app-store-previews
+          path: build/store-previews
+          if-no-files-found: warn
 
       - uses: actions/upload-artifact@v7
         if: always() && inputs.screenshots

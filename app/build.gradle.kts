@@ -278,6 +278,10 @@ compose.desktop {
  */
 tasks.withType<Test>().configureEach {
     systemProperty("openbreath.icons", providers.gradleProperty("icons").getOrElse("false"))
+    // and the same arrangement for the App Store preview's soundtrack, written by PreviewAudio in
+    // desktopTest: `-Ppreview=true`. Apple requires an audio track on a preview and the simulator
+    // records none, so it is rendered from the shared WaveDsp instead of faked or left silent.
+    systemProperty("openbreath.preview", providers.gradleProperty("preview").getOrElse("false"))
 }
 
 android {
