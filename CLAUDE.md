@@ -389,10 +389,20 @@ Functionality includes:
   that file has to keep producing the *unsigned* ipa the sideloading job publishes. Command-line
   settings win, so one project file serves both.
 
-  **A `.p12` for macOS must carry a SHA-1 MAC.** OpenSSL 3 defaults to SHA-256 and macOS's
-  Security framework will not read it: `security import` fails with "MAC verification failed
-  during PKCS12 import (wrong password?)", which sends you looking at the password, which is
-  fine. Export with `-macalg sha1`; the ciphers can stay AES-256, only the MAC is the problem.
+  **A `.p12` for macOS must be the legacy PKCS#12, `openssl pkcs12 -export -legacy`.** OpenSSL 3
+  defaults to AES-256 with a SHA-256 MAC and macOS's Security framework reads neither. It fails
+  twice over, with two different messages, and both point away from the answer:
+
+  - SHA-256 MAC → "MAC verification failed during PKCS12 import (wrong password?)", when the
+    password is right.
+  - AES/PBES2 encryption → "Unknown format in import", when the file is a perfectly good p12.
+
+  `-legacy` gives 3DES for the key, RC2-40 for the certificates and a SHA-1 MAC. That is weak
+  crypto by any modern reading and it is what `security import` parses, so it is what the file has
+  to be. It sits in `signing/`, gitignored, and never leaves as anything but a GitHub secret.
+
+  Reading it back on Linux then needs `-legacy` too — which is what led to "fixing" it into a
+  modern format that macOS rejected. The local read is not the constraint; the runner is.
 
   And set the password secret with `printf '%s'` rather than from a file written by `echo`. A
   trailing newline is inside the secret, the import fails, and the message is the same one.
