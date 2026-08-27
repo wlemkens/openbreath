@@ -20,6 +20,11 @@ out="$(cd "$out" && pwd)"
 # Preference order, and it is only a preference: the newest Pro Max the installed Xcode knows about,
 # falling back a generation at a time. A name pinned here would rot the day Apple ships a phone,
 # which is the same reason record-simulator.sh asks rather than guesses.
+#
+# **No apostrophe may appear in the Python below.** The whole program is single-quoted for bash, so
+# one of them ends the quoting and the rest is re-quoted into nonsense — `runtime['name']` reached
+# Python as `runtime[name]` and died on a KeyError naming the phone it had just found, which reads
+# like a lookup bug rather than a quoting one.
 udid=$(xcrun simctl list -j | python3 -c '
 import json, sys
 sim = json.load(sys.stdin)
@@ -29,6 +34,7 @@ runtimes = [r for r in sim["runtimes"] if r["isAvailable"] and "iOS" in r["name"
 if not runtimes:
     sys.exit("no iOS simulator runtime installed")
 runtime = max(runtimes, key=lambda r: [int(p) for p in r["version"].split(".")])
+ios = runtime["name"]
 
 types = {t["name"]: t["identifier"] for t in sim["devicetypes"]}
 name = next((n for n in wanted if n in types), None)
@@ -40,7 +46,7 @@ if not name:
 for d in sim["devices"].get(runtime["identifier"], []):
     if d.get("isAvailable") and d.get("deviceTypeIdentifier") == types[name]:
         print(d["udid"])
-        sys.stderr.write(f"using the existing {name} on {runtime['name']}\n")
+        sys.stderr.write(f"using the existing {name} on {ios}\n")
         break
 else:
     import subprocess
@@ -48,8 +54,8 @@ else:
         ["xcrun", "simctl", "create", "openbreath-shots", types[name], runtime["identifier"]],
         text=True).strip()
     print(udid)
-    sys.stderr.write(f"created an {name} on {runtime['name']}\n")
-')
+    sys.stderr.write(f"created an {name} on {ios}\n")
+') || { echo "::error title=No simulator to photograph::See the log: no 6.9-inch iPhone, no iOS runtime, or the picker itself failed"; exit 1; }
 
 # Erased, not merely reinstalled: the first shot is the first-run question, which only exists while
 # nothing has ever been stored. A device carried over from a previous run has been through it.
