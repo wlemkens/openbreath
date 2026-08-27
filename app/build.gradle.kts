@@ -265,9 +265,11 @@ val generateReleaseNotes by tasks.registering {
     }
 }
 
-// The per-variant task is the one that reads the notes, and it is registered too late to be named
-// on the command line — so match by name rather than resolving it, and cover the aggregate too.
-tasks.matching { it.name == "publishBundle" || it.name == "publishReleaseBundle" }
+// `generate<Variant>PlayResources` is what actually reads the notes file, and it is registered too
+// late to be named here — so match by name rather than resolving it. Hanging this off `publishBundle`
+// instead is not enough: Gradle sees the resources task consuming an output nobody declared it needs
+// and fails the build on the implicit dependency, whatever order the two happen to run in.
+tasks.matching { it.name.startsWith("generate") && it.name.endsWith("PlayResources") }
     .configureEach { dependsOn(generateReleaseNotes) }
 
 play {
