@@ -6,7 +6,8 @@ Everything a listing needs that lives in the repository rather than in a console
     play-icon-512.png                 Play's app icon, from the same 1024 IconGen writes for iOS
     play-feature-graphic-1024x500.png required by Play; no promo video, so nothing overlays it
     android/*.png                     ten phone screenshots, 1080x1920 (9:16, what Play asks for)
-    ios/*.png                         nine, 1320x2868 (6.9", the one size Apple now asks for)
+    ios/iphone/*.png                  nine, 1320x2868 (the 6.9" set Apple asks for)
+    ios/ipad/*.png                    the same nine, 2064x2752 (the 13" set it also asks for)
     screenshots.py                    what took the Android set, so a release need not tap by hand
 
 `../privacypolicy.html` is the page both stores ask for the URL of. It has to be hosted; the
@@ -28,9 +29,16 @@ what the log is for.
 
 ## The App Store screenshots
 
-Apple takes **one** iPhone set and scales it down for smaller phones itself: 6.9", 1320x2868, or
-1290x2796 in the same slot. Anything smaller is refused at upload, so a 6.1" phone cannot produce
-them at all — and framing Android screenshots in an iPhone bezel is a rejection.
+Apple takes **one set per device family** and scales it down for smaller screens itself: 6.9" at
+1320x2868 for the phone, and 13" at 2064x2752 for the iPad. Anything smaller is refused at upload, so
+a 6.1" phone cannot produce them at all — and framing Android screenshots in an iPhone bezel is a
+rejection.
+
+**The iPad set is required because the binary says the app runs on an iPad**, which is Xcode's
+default and is now stated explicitly in `iosApp/project.yml`. Device family and this set are one
+decision: dropping to family 1 drops the requirement, and the error that asks for it —
+"You must upload a screenshot for 13-inch iPad displays" — says nothing about where it came from.
+Nothing is laid out for a tablet and nothing needs to be; a large screen gets a bigger sphere.
 
 Nine rather than the Android set's ten. There is no reminders screen on iOS to photograph, which is
 the same absence that keeps reminders out of the App Store copy.
@@ -40,14 +48,18 @@ They come off a simulator in CI, because nothing else here can tap one:
     gh workflow run build.yml -f screenshots=true
     # on a branch: --ref <branch>, or the input is "unexpected"
 
-Then download the `app-store-screenshots` artifact. The inputs are read from the workflow file on
-the ref being dispatched, and `gh` defaults to the default branch — so a run asked for from a branch
-whose workflow file is the only one that has them answers HTTP 422 rather than anything helpful. It runs in the `ios` job, boots the newest Pro
-Max the runner's Xcode knows about, erases it, hands the app the same generated log the Android run
-imports, and drives it with `iosApp/StoreScreenshots` — an XCUITest, because `simctl` can boot,
-install and photograph a simulator but not touch one. `.github/ios-screenshots.sh` is the part
-around the test, and it asserts the pixel size of every shot rather than leaving App Store Connect
-to say no.
+Then download the `app-store-screenshots` artifact.
+
+It runs in the `ios` job, and twice over: the newest Pro Max the runner's Xcode knows about, then the
+newest 13" iPad Pro. Each is erased so the first-run question exists to be photographed, handed the
+same generated log the Android run imports, and driven by `iosApp/StoreScreenshots` — an XCUITest,
+because `simctl` can boot, install and photograph a simulator but not touch one.
+`.github/ios-screenshots.sh` is the part around the test, and it asserts the pixel size of every shot
+rather than leaving App Store Connect to say no.
+
+The inputs are read from the workflow file on the ref being dispatched, and `gh` defaults to the
+default branch — so a run asked for from a branch whose workflow file is the only one that has them
+answers HTTP 422 rather than anything helpful.
 
 **It is behind an input, and so is the App Store upload.** A plain manual run does neither now.
 

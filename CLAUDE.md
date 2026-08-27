@@ -195,7 +195,13 @@ Functionality includes:
 
       gh workflow run build.yml -f screenshots=true
 
-  Nine shots rather than ten: no reminders screen. Two things it inherits from the Android script.
+  Nine shots rather than ten: no reminders screen. **Twice over**, because `TARGETED_DEVICE_FAMILY`
+  is `1,2` and App Store Connect then refuses a listing without a 13" iPad set as well as the 6.9"
+  phone one — the device family and the screenshot script are one decision, and the error that asks
+  for it says nothing about where it came from. Nothing is laid out for a tablet and nothing needs to
+  be: the cue takes the space it is given.
+
+  Two things it inherits from the Android script.
   It taps by accessibility label, so **renaming a button breaks the run rather than the app**. And
   the demo log arrives in the app's launch environment instead of through the file picker — the hook
   is in `iosMain/MainViewController.kt`, inert without the variable, and it is the one piece of
