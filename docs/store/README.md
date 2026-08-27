@@ -6,7 +6,8 @@ Everything a listing needs that lives in the repository rather than in a console
     play-icon-512.png                 Play's app icon, from the same 1024 IconGen writes for iOS
     play-feature-graphic-1024x500.png required by Play; no promo video, so nothing overlays it
     android/*.png                     ten phone screenshots, 1080x1920 (9:16, what Play asks for)
-    screenshots.py                    what took them, so the next release need not tap by hand
+    ios/*.png                         nine, 1320x2868 (6.9", the one size Apple now asks for)
+    screenshots.py                    what took the Android set, so a release need not tap by hand
 
 `../privacypolicy.html` is the page both stores ask for the URL of. It has to be hosted; the
 listing cannot be filled in without it.
