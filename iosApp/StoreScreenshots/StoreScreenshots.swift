@@ -61,11 +61,19 @@ final class StoreScreenshots: XCTestCase {
 
         shot("session-idle")
 
-        // near the top of the second inhale: the countdown, then a full breath, then half of one.
-        // The same arithmetic as the Android run, and it is the only shot that is a moment rather
-        // than a screen.
+        // The only shot that is a moment rather than a screen, and it is synchronised on the phase
+        // rather than counted in seconds. The Android script waits 4.2 + 5.5 + 5.5 — the countdown
+        // plus a breath and a half — which lands within a fifth of a second of the boundary between
+        // one breath and the next, where the sphere is at its very smallest. It photographs a cue
+        // that appears to be doing nothing. Waiting for an inhale to *begin* and then letting it
+        // run most of its length is immune to that, to how long a tap takes to be delivered, and to
+        // someone retiming the preset.
         tap("Start")
-        Thread.sleep(forTimeInterval: 4.2 + 5.5 + 5.5)
+        let inhale = element("Breathe in")
+        waitUntil(inhale, exists: true, "the sitting never reached an inhale")
+        waitUntil(inhale, exists: false, "the first inhale never ended")
+        waitUntil(inhale, exists: true, "the second inhale never came")
+        Thread.sleep(forTimeInterval: 3.6)   // of the 5.5: the sphere is near full stretch
         shot("session-breathe-in")
         tap("Reset")
 
@@ -124,6 +132,20 @@ final class StoreScreenshots: XCTestCase {
             return XCTFail("no '\(label)' on screen")
         }
         el.tap()
+    }
+
+    /// Polls until an element is there, or gone. `waitForExistence` covers only the appearing half,
+    /// and watching a label leave is how a phase boundary is found without knowing the timings.
+    private func waitUntil(
+        _ el: XCUIElement, exists: Bool, _ what: String, timeout: TimeInterval = 20
+    ) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if el.exists == exists { return }
+            Thread.sleep(forTimeInterval: 0.1)
+        }
+        print("::error title=Waited \(Int(timeout))s for nothing::\(what)")
+        XCTFail(what)
     }
 
     /// Swipes up until the label is on screen. Ten is generous for the longest list in the app and
