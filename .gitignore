@@ -22,6 +22,18 @@ media/*
 keystore.properties
 signing.properties
 
+# Apple signing material, same rule and a sharper edge: this repository is public, and an
+# App Store Connect key committed here is a key anyone can upload builds with. The .p8 is
+# downloadable exactly once, so a leak means revoke and reissue rather than rotate quietly.
+*.p8
+AuthKey_*.p8
+# everything needed to sign a release, generated locally and never committed
+signing/
+*.cer
+*.certSigningRequest
+*.mobileprovision
+*.provisionprofile
+
 # Written by generateReleaseNotes from the commit subjects on the way to a publish. Generated,
 # so not tracked — and committing it would put yesterday's notes in tomorrow's clone.
 app/src/main/play/release-notes/

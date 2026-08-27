@@ -369,6 +369,31 @@ Functionality includes:
   them with the reminders port. Anything reaching for `java.time.format` or `String.format` in
   commonMain is this seam being crossed by accident.
 
+  ### Signing, and where the pieces live
+  Stanistil VZW is the App Store publisher; Play stays under Wim Lemkens personally. Team
+  `AD8Y56HX64`, app `6805899911`, bundle id `io.github.wlemkens.openbreath`.
+
+  Nothing was signed on a Mac. The certificate was issued by posting a CSR generated with
+  `openssl` to the App Store Connect API, and the profile the same way — `signing/` holds the
+  private key, the certificate, the `.p12` and the profile, and is gitignored. **The private key
+  in `signing/distribution.key` is the half Apple cannot reissue**: lose it and the certificate is
+  waste, which costs a revoke and a new one rather than anything worse, but back it up somewhere
+  that is not this repository.
+
+  CI signs from seven repository secrets — the `.p12` and its password, the profile, the App Store
+  Connect key with its id and issuer, and the team id. The `app-store` job is **workflow_dispatch
+  only**: a build that reaches App Store Connect burns a build number that can never be reused and
+  mails every TestFlight tester, which should not happen because someone fixed a typo.
+
+  The signing settings are on the `xcodebuild` command line rather than in `project.yml`, because
+  that file has to keep producing the *unsigned* ipa the sideloading job publishes. Command-line
+  settings win, so one project file serves both.
+
+  **The `.p8` is downloadable exactly once.** A leaked one is revoked and reissued, never rotated
+  quietly, which is why `.gitignore` covers it, the `.cer`, the profile and `signing/` — the key
+  sat untracked but unignored in the root of a public repository for a while, one `git add -A`
+  from being published.
+
   ### What the App Store still wants
   `PrivacyInfo.xcprivacy` declares no tracking and no collected data, and one required-reason
   API: `NSPrivacyAccessedAPICategoryFileTimestamp` with reason `C617.1`. That is DataStore
@@ -525,9 +550,6 @@ Functionality includes:
     publishing under the VZW rests on it, and the answer is not published anywhere: the old
     country list excluded Belgium, the current page names no list at all. Enrolling as an
     organisation also needs a D-U-N-S number for the VZW, which is free but slow.
-  - **Signing.** CI builds unsigned on purpose, which is right for sideloading and useless for
-    the store: a distribution certificate, an App Store provisioning profile and a
-    `DEVELOPMENT_TEAM` are all still missing, and none can exist before the account does.
   - **The App Store Connect record**: bundle id, name, category, age rating, description,
     keywords, support URL, privacy policy URL, screenshots at Apple's sizes.
   - **The rate link.** `IosPlatform.canRate` is false because the numeric App Store id does not
