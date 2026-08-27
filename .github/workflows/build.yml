@@ -297,8 +297,12 @@ jobs:
         if: always() && inputs.screenshots
         with:
           name: app-store-screenshots
-          path: build/store-screenshots/*.png
-          if-no-files-found: warn
+          # the directory rather than a glob: the shots are one level down, in iphone/ and ipad/,
+          # and `*.png` matched nothing while the step that made them reported success
+          path: build/store-screenshots
+          # error, not warn. A screenshot run whose whole product is an artifact should be red when
+          # there is no artifact.
+          if-no-files-found: error
 
       - uses: actions/upload-artifact@v7
         if: always()
