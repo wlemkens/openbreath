@@ -153,6 +153,22 @@ kotlin {
             implementation("androidx.activity:activity-compose:1.13.0")
         }
         val desktopMain by getting
+        /**
+         * So the window can wear the icon too, and not only the installer.
+         *
+         * `nativeDistributions.<os>.iconFile` below is read by jpackage at packaging time and is
+         * invisible to `:app:run`, which then shows AWT's default Java cup — and to anything that
+         * launches the jar directly. Putting the directory on the classpath lets Main.kt load the
+         * png at runtime and hand it to `Window(icon = …)`, which covers both.
+         *
+         * The same directory rather than a second copy of the png: an icon that exists twice is an
+         * icon that will differ, and IconGen writes one of them.
+         *
+         * ponytail: this also packages icon.ico and icon.icns into the jar, ~195 KB nobody reads,
+         * because the KMP resources DSL has no include filter worth the lines. Split the png out if
+         * the installer size ever matters.
+         */
+        desktopMain.resources.srcDir("desktopIcons")
         desktopMain.dependencies {
             // resolves to the skiko build for whichever machine is compiling, which is exactly
             // right: an installer is only ever built on the OS it installs on
