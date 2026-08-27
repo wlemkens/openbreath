@@ -564,15 +564,26 @@ Functionality includes:
     revisited: local notifications need no App Store id and no entitlement, so this *could* be
     built sooner — the timing is a choice about effort, not a technical gate. Until it lands, the
     store listing must not promise reminders.
-  - **Ask Apple whether a Belgian VZW is eligible for the fee waiver.** Everything about
-    publishing under the VZW rests on it, and the answer is not published anywhere: the old
-    country list excluded Belgium, the current page names no list at all. Enrolling as an
-    organisation also needs a D-U-N-S number for the VZW, which is free but slow.
-  - **The App Store Connect record**: bundle id, name, category, age rating, description,
-    keywords, support URL, privacy policy URL, screenshots at Apple's sizes.
-  - **The rate link.** `IosPlatform.canRate` is false because the numeric App Store id does not
-    exist until first submission. Fill it in once it does — that one really is gated on
-    submitting.
+  - ~~**Ask Apple whether a Belgian VZW is eligible for the fee waiver.**~~ Answered: yes.
+    Stanistil VZW is enrolled as an organisation, team `AD8Y56HX64`, D-U-N-S 37-171-7333, KBO
+    0719.384.464. **Still worth confirming once that the waiver was actually applied** rather
+    than the fee merely deferred — membership details will say, and it is the sort of thing that
+    surfaces as a charge a year later.
+
+    The condition it carries is standing, not one-off: the waiver requires that the Paid
+    Applications Agreement has *never* been signed. Accepting it in App Store Connect — which
+    the UI offers freely — voids the waiver. The free apps agreement is the only one wanted.
+  - **The App Store listing.** The record exists — app `6805899911`, bundle
+    `io.github.wlemkens.openbreath`, and build 70 uploaded and VALID, so the pipeline is proven.
+    What a submission still wants is all copy and pictures: category, age rating, description and
+    keywords, support URL, the privacy policy URL (live, above), screenshots at Apple's sizes, and
+    the App Privacy answers — which are "no data collected", matching `PrivacyInfo.xcprivacy`.
+
+    The description may only name what iOS actually has. Reminders are not it.
+  - **The rate link, on release day.** The id was there all along — Apple assigns it when the
+    record is created, not at submission — so `IosPlatform` now holds it and builds the URL. What
+    it waits for is the listing being live, because an App Store page 404s until then. One
+    constant: `LISTING_IS_LIVE` to true.
   - ~~**Publish the privacy policy.**~~ Live at
     https://wlemkens.github.io/openbreath/privacypolicy.html, which is the URL to give both
     stores — they ask for one and Play checks it resolves. Not `raw.githubusercontent.com`: it
