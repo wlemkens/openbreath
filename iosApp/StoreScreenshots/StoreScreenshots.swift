@@ -1,0 +1,149 @@
+import XCTest
+
+/// The App Store screenshots, taken by driving a simulator.
+///
+/// The twin of `docs/store/screenshots.py`, which does the same job on an Android emulator through
+/// uiautomator, and the two take deliberately the same nine pictures of the same screens in the
+/// same order. Read that file alongside this one; where they differ, the difference is a fact about
+/// the platform and is commented here.
+///
+/// Two things it needs from the environment, both set by `.github/ios-screenshots.sh`:
+///
+///   SCREENSHOT_DIR  where to write the PNGs — a path on the *host*, which a simulator process can
+///                   write to because a simulator is not a virtual machine.
+///   DEMO_JSON       the generated practice log, handed to the app in its launch environment. The
+///                   Android script imports it by driving the file picker; on iOS the picker would
+///                   need the file somewhere it can browse to, so the app takes it directly.
+///
+/// It is not run on every push. Screenshots are retaken when a screen changes, which is a decision
+/// someone makes, so the job is workflow_dispatch — the same shape as the Android command.
+final class StoreScreenshots: XCTestCase {
+
+    private var app: XCUIApplication!
+    private var shots: URL!
+    private var demo: String!
+
+    override func setUpWithError() throws {
+        continueAfterFailure = false
+
+        let env = ProcessInfo.processInfo.environment
+        let dir = try XCTUnwrap(env["SCREENSHOT_DIR"], "SCREENSHOT_DIR is not set")
+        shots = URL(fileURLWithPath: dir, isDirectory: true)
+        try FileManager.default.createDirectory(at: shots, withIntermediateDirectories: true)
+
+        let json = try XCTUnwrap(env["DEMO_JSON"], "DEMO_JSON is not set")
+        demo = try String(contentsOf: URL(fileURLWithPath: json), encoding: .utf8)
+
+        app = XCUIApplication()
+    }
+
+    /// One test method rather than nine, because the order is the point: the first-run question can
+    /// only be photographed before anything is stored, and the milestone only in the moment the
+    /// imported log crosses a hundred days.
+    func testTakeTheStoreScreenshots() throws {
+        // A fresh install, so nothing has ever been stored and the first-run question appears. The
+        // shell script erases the device for the same reason.
+        app.launch()
+        shot("firstrun")
+        tap("Continue")
+
+        // Relaunched with the log in the environment. Android taps Settings ▸ Advanced ▸ Import
+        // here; the effect is the same and the wait is for the import to land.
+        app.terminate()
+        app.launchEnvironment["OPENBREATH_IMPORT_JSON"] = demo
+        app.launch()
+
+        // a hundred days of practice has just arrived, so the milestone shows itself
+        let onwards = element("Onwards")
+        XCTAssertTrue(onwards.waitForExistence(timeout: 30), "the milestone never appeared — did the import fail?")
+        shot("milestone")
+        onwards.tap()
+
+        shot("session-idle")
+
+        // near the top of the second inhale: the countdown, then a full breath, then half of one.
+        // The same arithmetic as the Android run, and it is the only shot that is a moment rather
+        // than a screen.
+        tap("Start")
+        Thread.sleep(forTimeInterval: 4.2 + 5.5 + 5.5)
+        shot("session-breathe-in")
+        tap("Reset")
+
+        // Reminders is Android's alone, so this is three items where the Android run has four —
+        // and that absence is the reason the App Store copy may not promise them either.
+        for screen in ["Log", "Achievements", "Goals"] {
+            tap("⋮")
+            tap(screen)
+            shot(screen.lowercased())
+            tap("Done")
+        }
+
+        tap("⋮")
+        tap("Settings")
+        tap("Advanced")
+        // scrolled to rather than swiped a counted number of times: XCUITest's swipe has its own
+        // velocity and would not land where adb's does, and a screenshot of the wrong part of a
+        // list is not obviously wrong in a diff
+        let marker = scroll(to: "Marker")
+        marker.tap()
+        shot("sound-per-phase")
+        app.swipeUp()
+        app.swipeUp()
+        shot("settings-options")
+    }
+
+    // MARK: - the four things this needs
+
+    /// A screenshot of the whole screen, at the simulator's own pixel size. `XCUIScreen` rather
+    /// than `app.screenshot()`: the app's own bounds exclude the status bar, and Apple wants the
+    /// device's full resolution or it refuses the upload.
+    private func shot(_ name: String) {
+        let png = XCUIScreen.main.screenshot().pngRepresentation
+        let file = shots.appendingPathComponent("\(name).png")
+        XCTAssertNoThrow(try png.write(to: file), "could not write \(file.path)")
+        print("wrote \(name).png (\(png.count) bytes)")
+    }
+
+    /// Compose exposes its semantics to iOS accessibility, so a label is findable — but as whatever
+    /// element type Compose chose, which is why this asks for any descendant with the label rather
+    /// than for a button. Matching on `label` alone would also match a longer string containing it,
+    /// hence the exact predicate.
+    private func element(_ label: String) -> XCUIElement {
+        app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", label))
+            .firstMatch
+    }
+
+    private func tap(_ label: String, timeout: TimeInterval = 10) {
+        let el = element(label)
+        guard el.waitForExistence(timeout: timeout) else {
+            // an annotation rather than a bare failure: a job log needs a token to read, and this
+            // is the failure that will actually happen — a renamed button breaks the run, not the
+            // app, and the fix is to rename it here too
+            print("::error title=No '\(label)' on screen::Renamed? The screenshot driver taps by label. On screen: \(visible())")
+            return XCTFail("no '\(label)' on screen")
+        }
+        el.tap()
+    }
+
+    /// Swipes up until the label is on screen. Ten is generous for the longest list in the app and
+    /// short enough to fail rather than swipe forever.
+    private func scroll(to label: String) -> XCUIElement {
+        let el = element(label)
+        for _ in 0..<10 {
+            if el.exists && el.isHittable { return el }
+            app.swipeUp()
+        }
+        print("::error title=Never scrolled to '\(label)'::On screen: \(visible())")
+        XCTFail("never scrolled to '\(label)'")
+        return el
+    }
+
+    private func visible() -> String {
+        app.descendants(matching: .any).allElementsBoundByIndex
+            .compactMap { $0.exists ? $0.label : nil }
+            .filter { !$0.isEmpty }
+            .prefix(40)
+            .joined(separator: " | ")
+    }
+}

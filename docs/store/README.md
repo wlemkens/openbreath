@@ -25,9 +25,47 @@ Play takes two to eight phone screenshots. Of these ten, the four that carry the
 shows that nothing is decided for you, and `milestone` because it is the only screen that says
 what the log is for.
 
-## What is not here
+## The App Store screenshots
 
-**The App Store screenshots.** Apple wants one 6.9" iPhone set (1320x2868), and there is no way to
-take them from Linux: `simctl` can boot and film a simulator but cannot tap one, and the cue is
-still until Start is pressed. So they need a Mac with Xcode 26 — the same constraint as linking
-the app at all — or a phone. Framing Android screenshots in an iPhone bezel is a rejection.
+Apple takes **one** iPhone set and scales it down for smaller phones itself: 6.9", 1320x2868, or
+1290x2796 in the same slot. Anything smaller is refused at upload, so a 6.1" phone cannot produce
+them at all — and framing Android screenshots in an iPhone bezel is a rejection.
+
+Nine rather than the Android set's ten. There is no reminders screen on iOS to photograph, which is
+the same absence that keeps reminders out of the App Store copy.
+
+They come off a simulator in CI, because nothing else here can tap one:
+
+    gh workflow run build.yml -f screenshots=true
+    # on a branch: --ref <branch>, or the input is "unexpected"
+
+Then download the `app-store-screenshots` artifact. The inputs are read from the workflow file on
+the ref being dispatched, and `gh` defaults to the default branch — so a run asked for from a branch
+whose workflow file is the only one that has them answers HTTP 422 rather than anything helpful. It runs in the `ios` job, boots the newest Pro
+Max the runner's Xcode knows about, erases it, hands the app the same generated log the Android run
+imports, and drives it with `iosApp/StoreScreenshots` — an XCUITest, because `simctl` can boot,
+install and photograph a simulator but not touch one. `.github/ios-screenshots.sh` is the part
+around the test, and it asserts the pixel size of every shot rather than leaving App Store Connect
+to say no.
+
+**It is behind an input, and so is the App Store upload.** A plain manual run does neither now.
+
+The two ways this breaks are worth knowing before reading a red log. It taps by accessibility label,
+so **renaming a button breaks the run rather than the app** — exactly as the Android script does, and
+the annotation says which label vanished. And the demo log arrives in the app's launch environment
+rather than through the file picker, because a picker needs the file somewhere it can browse to; the
+hook that reads it is in `iosMain/MainViewController.kt` and does nothing without the variable.
+
+### By hand on a phone, if it comes to that
+
+It has to be a Pro Max or Plus for the size above. A smaller phone can be upscaled into the slot —
+an iPhone 15 is 1179x2556, 9% under 1290x2796 — which uploads and passes review, and softens every
+letter on the listing. An escape hatch, not a preference.
+
+The log has to be seeded there too, or the achievements and milestone shots photograph an empty app:
+
+    python3 docs/store/screenshots.py --demo-json /tmp/openbreath-demo.json
+
+Hand that file to the phone (AirDrop, or Files) and import it through Settings ▸ Advanced ▸ Import,
+which is the route the Android run drives. It replaces presets, goals and reminders and merges the
+log, so use a phone with no practice worth keeping — the same warning as the emulator.

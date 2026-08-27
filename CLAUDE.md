@@ -188,9 +188,19 @@ Functionality includes:
   it, and the App Store half may only name what iOS actually has — reminders and the silencing of
   notifications are still Android's alone.
 
-  The iOS screenshots are the ones that will rot, because they cannot be taken from here: `simctl`
-  cannot tap a simulator, so Apple's set is hand-taken on a Mac and nothing reminds anyone. When a
-  shared screen changes, say out loud that the iOS set is now stale.
+  **The iOS set is taken the same way now**, which it was not: it used to be hand-taken on a Mac
+  because `simctl` cannot tap a simulator, and the tapping is an XCUITest — `iosApp/StoreScreenshots`
+  driven by `.github/ios-screenshots.sh` — so it runs in CI on a 6.9" simulator and the rule above
+  covers both stores:
+
+      gh workflow run build.yml -f screenshots=true
+
+  Nine shots rather than ten: no reminders screen. Two things it inherits from the Android script.
+  It taps by accessibility label, so **renaming a button breaks the run rather than the app**. And
+  the demo log arrives in the app's launch environment instead of through the file picker — the hook
+  is in `iosMain/MainViewController.kt`, inert without the variable, and it is the one piece of
+  shipping code that exists for the screenshots. Deleting it silently empties the log, achievements
+  and milestone shots.
 
   ## The iOS port
   The module is Kotlin Multiplatform with Compose Multiplatform, targeting `androidTarget()`
@@ -381,9 +391,12 @@ Functionality includes:
   that is not this repository.
 
   CI signs from seven repository secrets — the `.p12` and its password, the profile, the App Store
-  Connect key with its id and issuer, and the team id. The `app-store` job is **workflow_dispatch
-  only**: a build that reaches App Store Connect burns a build number that can never be reused and
-  mails every TestFlight tester, which should not happen because someone fixed a typo.
+  Connect key with its id and issuer, and the team id. The `app-store` job needs
+  **`-f app_store=true` on a manual run**: a build that reaches App Store Connect burns a build
+  number that can never be reused and mails every TestFlight tester, which should not happen because
+  someone fixed a typo. It was every `workflow_dispatch` until the screenshots gave a second reason
+  to run the workflow by hand, at which point "manual" stopped being enough of a statement of intent
+  — both are now inputs that default to false.
 
   The signing settings are on the `xcodebuild` command line rather than in `project.yml`, because
   that file has to keep producing the *unsigned* ipa the sideloading job publishes. Command-line
@@ -613,6 +626,8 @@ Functionality includes:
     **the plugin is pinned to 3.13.0 because every 4.x needs Gradle 9.1**, while this build is on
     8.14.3 for AGP and Kotlin; the pin is a toolchain fact, not a preference, so it moves when
     Gradle does and not before.
-  - **Screenshots for the App Store.** `docs/store/screenshots.py` drives the Android emulator by
-    the labels uiautomator can see. The iOS set needs a 6.9" simulator on a Mac with Xcode 26, or
-    an iPhone: simctl cannot tap, and Apple's sizes are its own.
+  - ~~**Screenshots for the App Store.**~~ Done, and by the same discipline as Android's:
+    `gh workflow run build.yml -f screenshots=true` drives a 6.9" simulator through
+    `iosApp/StoreScreenshots` and downloads as the `app-store-screenshots` artifact. **Never run and
+    therefore never yet proven** — the first run is the one that finds out whether Compose exposes
+    every label the test taps, and it says which one it could not find when it does not.

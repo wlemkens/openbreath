@@ -191,6 +191,93 @@ Both live in `$ANDROID_HOME/cmdline-tools/latest/bin`. Take the `google_apis` im
 bare one — the plain AOSP image has no Play services and boots into a launcher that hides half the
 Settings screens you need for notification-policy access.
 
+## Installing the test build on an iPhone
+
+Two routes, and the first is better for anyone who has the team credentials. Sideloading is for
+handing a build to someone who does not.
+
+### TestFlight, if you are on the team (the one to use)
+
+Nothing about this waits for the App Store listing. **Internal testers need no App Review** — that
+is only external testers — so the App Store Connect users on team `AD8Y56HX64` can install a build
+the moment it is uploaded and processed. No pairing file, no VPN, no seven-day refresh, no cable.
+
+1. Run the build workflow by hand with the upload asked for — `gh workflow run build.yml -f
+   app_store=true`, or the checkbox in the Actions tab. It defaults to off because this is the only
+   thing here that burns a build number.
+2. Wait for the build to leave "Processing" in App Store Connect → TestFlight. Export compliance is
+   already answered by `ITSAppUsesNonExemptEncryption` in the Info.plist, so it should not stop to
+   ask.
+3. TestFlight → **Internal Testing** → a group → add yourself, then install TestFlight from the App
+   Store on the phone and accept.
+
+Two things to know. A build **expires 90 days** after upload, so a phone that has sat unused wants
+the workflow run again rather than debugging. And do not accept the Paid Applications Agreement that
+App Store Connect keeps offering — it voids the fee waiver, and TestFlight does not need it.
+
+### TestFlight on someone else's phone: external, not internal
+
+An **internal** tester is a user on the App Store Connect account, and inviting one means the phone's
+owner has to accept an App Store Connect invitation, hold an Apple Account for exactly the invited
+address, and have two-factor set up on it. When that Apple Account is not ready the sign-in page
+simply returns to itself, which reads as a broken invite and is really an unfinished account. It also
+gives a tester access to the account, which is the wrong trade for someone who only wants to try the
+app.
+
+**External testers need none of that** — no team access, no App Store Connect login, just an email,
+the TestFlight app and a tap. Add a group under TestFlight → External Testing, fill the Test
+Information (feedback email, what to test, beta description), and submit the build for **Beta App
+Review**: about a day, per version rather than per build, and far lighter than App Store review. Up
+to 10,000 testers.
+
+So internal is for the phones of people who already have the credentials, and external is for
+everyone else. If an internal invite is already stuck, remove the tester from Users as well as from
+the group before re-inviting them externally.
+
+### Sideloading, for a phone with no team access
+
+CI publishes everything this needs. Every push builds an unsigned `.ipa` and writes a
+SideStore/AltStore *source* beside it on the rolling `latest` prerelease, at two URLs that never
+change:
+
+- source: `https://github.com/wlemkens/openbreath/releases/download/latest/apps.json`
+- ipa: the same tag, `OpenBreath-<version>.ipa`
+
+The ipa is unsigned on purpose; a sideloader re-signs it with the Apple ID it is given, so a free one
+is enough and no Mac is involved. Add the source URL once in [SideStore](https://sidestore.io/) or
+[AltStore](https://altstore.io/), and every later push appears there as an update.
+
+**Linux installs SideStore fine**, which is worth knowing because most guides assume Windows or a
+Mac. [iloader](https://github.com/nab138/iloader/releases) ships a deb, an rpm and an AppImage for
+x86_64 and aarch64, and it makes the pairing file itself:
+
+```sh
+sudo apt install usbmuxd fuse curl
+sudo dpkg -i iloader-*.deb
+```
+
+Then USB, trust the computer, sign in with an Apple Account, install SideStore. The phone needs a
+passcode and iOS 15+. The helper VPN has to be connected any time SideStore installs or refreshes
+anything.
+
+**This route rots, and not on our side.** Every step above is something Apple can break, and has:
+the helper VPN was StosVPN until it was pulled from the App Store, then StikDebug, and the docs now
+say **LocalDevVPN** — so check [SideStore's own
+prerequisites](https://docs.sidestore.io/docs/installation/prerequisites) rather than this paragraph,
+which is a snapshot of August 2026 and nothing more. AltStore wants AltServer reachable on the same
+network, and an iOS update can knock over either. A free Apple ID also expires the app after **seven
+days** and allows only three sideloaded apps at once. If the phone says the store is unavailable or
+refuses to refresh, suspect the chain before the ipa.
+
+**Turn off Offload Unused Apps** — Settings → Apps → App Store on iOS 18+, where it moved from the
+top level, and also under General → iPhone Storage. Offloading deletes the binary and leaves the
+icon, which then tries to re-download from the App Store; a sideloaded app is not there, so tapping
+it says the app is no longer available. There is no recovery but installing again, and it applies to a
+sideloaded OpenBreath exactly as it does to the sideloader itself.
+
+`gh release download latest --pattern 'OpenBreath-*.ipa'` gets the ipa directly, for Sideloadly, or
+for `ideviceinstaller` over USB from Linux once it is signed with a development profile.
+
 ## Release builds
 
 Every APK must be signed before a device will install it. Debug builds are signed automatically

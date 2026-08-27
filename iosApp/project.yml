@@ -109,3 +109,34 @@ targets:
           cd "$SRCROOT/.."
           ./gradlew :app:embedAndSignAppleFrameworkForXcode
         basedOnDependencyAnalysis: false
+
+    # so `xcodebuild test -scheme iosApp` runs the screenshot driver. Without this the target
+    # builds and is never executed, which looks exactly like a run that took no pictures.
+    scheme:
+      testTargets:
+        - StoreScreenshots
+
+  # The App Store screenshots, taken by driving the app rather than by hand on a phone.
+  #
+  # It is a test target because XCUITest is the only thing that can tap a simulator — `simctl` can
+  # boot one, install to it and photograph it, but not touch it, which is what kept Apple's set
+  # hand-taken and rotting. Nothing here asserts anything about the app; it navigates and saves
+  # PNGs, and the assertions it does make are about the screenshots being the size Apple accepts.
+  StoreScreenshots:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: StoreScreenshots
+    dependencies:
+      - target: iosApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.wlemkens.openbreath.screenshots
+        TEST_TARGET_NAME: iosApp
+        # an XCTest bundle without an Info.plist does not load, and there is no plist here worth
+        # writing by hand — the generated one says everything a test bundle has to say
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
+        EXCLUDED_ARCHS[sdk=iphonesimulator*]: x86_64

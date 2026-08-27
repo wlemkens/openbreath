@@ -15,7 +15,20 @@ on:
     # for a merge. A branch not listed here still builds through pull_request
     branches: [main, ios-port, desktop-port]
   pull_request:
+  # Both of these are off by default, and that is the point of them existing. A manual run used to
+  # mean "upload to App Store Connect", which burns a build number that can never be reused and
+  # mails every TestFlight tester — so the moment there was a second reason to run this by hand,
+  # the reason had to be said rather than assumed.
   workflow_dispatch:
+    inputs:
+      app_store:
+        description: Sign a Release build and upload it to App Store Connect
+        type: boolean
+        default: false
+      screenshots:
+        description: Retake the App Store screenshots from a 6.9" simulator
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -272,6 +285,21 @@ jobs:
       - name: Run it and film it
         run: .github/record-simulator.sh build/ios-sim/Build/Products/Debug-iphonesimulator/OpenBreath.app
 
+      # The App Store screenshots, and workflow_dispatch only — for the same reason the Android set
+      # is a command someone types. A screenshot is a claim about what the app looks like, so it is
+      # retaken when a screen changes, which is a decision rather than a consequence of a push. It
+      # also boots and drives a simulator for a couple of minutes on the priciest runner there is.
+      - name: Take the App Store screenshots
+        if: inputs.screenshots
+        run: .github/ios-screenshots.sh build/store-screenshots
+
+      - uses: actions/upload-artifact@v7
+        if: always() && inputs.screenshots
+        with:
+          name: app-store-screenshots
+          path: build/store-screenshots/*.png
+          if-no-files-found: warn
+
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -434,7 +462,7 @@ jobs:
   app-store:
     name: Upload to App Store Connect
     runs-on: macos-15
-    if: github.event_name == 'workflow_dispatch'
+    if: inputs.app_store
 
     env:
       VERSION: 1.0.${{ github.run_number }}
