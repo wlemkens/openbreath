@@ -109,6 +109,9 @@ data class Preset(
         Phase.HOLD_OUT -> copy(holdOutMs = ms)
     }
 
+    /** "5.5 – 5.5", the same phrasing the log uses for a sitting already breathed. */
+    val pattern: String get() = phasePattern(inhaleMs, holdInMs, exhaleMs, holdOutMs)
+
     /** Falls back to the default rather than throwing on a stored preset that adds up to zero. */
     val timing: Timing
         get() = runCatching { Timing(inhaleMs, holdInMs, exhaleMs, holdOutMs) }.getOrElse { Timing() }
@@ -131,10 +134,18 @@ data class Config(
      * leaves you sitting there wondering.
      */
     val endSound: Boolean = true,
-    /** The three progress readouts, each independently hideable for a barer screen. */
-    val showTime: Boolean = true,
+    /**
+     * The three progress readouts, each independently hideable for a barer screen. Only the
+     * dots to begin with: they say how far in you are without giving you anything to read, and
+     * a number counting down is a thing to watch instead of a breath to take. Both others are
+     * one switch away in Settings for anyone who wants them.
+     *
+     * Defaults, so they change nothing for a phone that has ever saved its settings — a stored
+     * config carries all three explicitly, `encodeDefaults` being on.
+     */
+    val showTime: Boolean = false,
     val showDots: Boolean = true,
-    val showBreaths: Boolean = true,
+    val showBreaths: Boolean = false,
     val cue: CueStyle = CueStyle.CLOUD,
     /** Opaque ARGB. The bright end of the cue, and the colour of the breath dots. */
     val cueColor: Int = DEFAULT_CUE_COLOR,
@@ -142,6 +153,12 @@ data class Config(
     val vividCue: Boolean = false,
     /** Which half of the settings screen was last open, so it opens there again. */
     val advancedSettings: Boolean = false,
+    /**
+     * Counted down after Start and before the first inhale, so the phone can be put down and
+     * the eyes shut. Not part of the session: it is neither breathed nor logged, and pausing
+     * during it leaves nothing behind. 0 begins immediately.
+     */
+    val leadInMs: Int = 4000,
 ) {
     val active: Preset get() = presets[activeIndex]
 
@@ -159,8 +176,14 @@ data class Config(
 /** The teal the app shipped with. */
 const val DEFAULT_CUE_COLOR: Int = 0xFF5FD6C8.toInt()
 
+// "Custom" is first, so the default activeIndex of 0 selects it: the Timing sliders are the only
+// preset control Standard shows, and someone dragging them there is naming their own pattern
+// rather than quietly redefining what "Box 4" means. Picking a named one in Advanced is the
+// deliberate act that makes the sliders edit that instead.
 internal val DEFAULT_PRESETS = listOf(
+    Preset("Custom", 5500, 0, 5500, 0),
     Preset("Coherence 5.5", 5500, 0, 5500, 0),
+    Preset("4-6", 4000, 0, 6000, 0),
     Preset("4-7-8", 4000, 7000, 8000, 0),
     Preset("Box 4", 4000, 4000, 4000, 4000),
 )
@@ -198,14 +221,20 @@ data class Entry(
     val cycles: Int = 0,
 ) {
     /** "5.5 – 5.5" or "4 – 7 – 8", in seconds. Empty for an entry logged before timings were. */
-    val pattern: String
-        get() = listOf(inhaleMs, holdInMs, exhaleMs, holdOutMs)
-            // a zero-length phase is one the breath never had, not one that took no time
-            .filter { it > 0 }
-            // whole seconds written whole; a decimal separator is the locale's business, so
-            // trimming a trailing ".0" off the formatted string is not the way to do it
-            .joinToString(" – ") { if (it % 1000 == 0) "${it / 1000}" else formatOneDecimal(it / 1000f) }
+    val pattern: String get() = phasePattern(inhaleMs, holdInMs, exhaleMs, holdOutMs)
 }
+
+/**
+ * The four phase lengths said in seconds — "5.5 – 5.5", "4 – 7 – 8". Shared by the log, which
+ * says what was breathed, and the idle session screen, which says what is about to be.
+ */
+internal fun phasePattern(inhaleMs: Int, holdInMs: Int, exhaleMs: Int, holdOutMs: Int): String =
+    listOf(inhaleMs, holdInMs, exhaleMs, holdOutMs)
+        // a zero-length phase is one the breath never had, not one that took no time
+        .filter { it > 0 }
+        // whole seconds written whole; a decimal separator is the locale's business, so
+        // trimming a trailing ".0" off the formatted string is not the way to do it
+        .joinToString(" – ") { if (it % 1000 == 0) "${it / 1000}" else formatOneDecimal(it / 1000f) }
 
 /** What to log for a sitting of [durationMs] on [preset], started at [at]. */
 internal fun entryFor(at: Long, durationMs: Long, preset: Preset) = Entry(
@@ -278,6 +307,24 @@ data class Goal(
     /** A target stored against one metric is nonsense against another. */
     fun sane() = copy(target = target.coerceIn(metric.min, metric.max))
 }
+
+/**
+ * What "Add a goal" starts from: one sitting a day.
+ *
+ * Deliberately not [Goal]'s own default values. Those are what a *stored* goal falls back to for
+ * a field it does not carry, so moving them would quietly re-read an old goal as something else
+ * — the same trap as renaming a stored enum constant. This only ever affects a goal being made
+ * now.
+ *
+ * One sitting a day rather than ten minutes a day because it is the smaller promise, and the
+ * first goal someone sets is the one most worth being able to keep.
+ */
+internal fun newGoal(existing: List<Goal>) = Goal(
+    id = (existing.maxOfOrNull { it.id } ?: 0) + 1,
+    metric = GoalMetric.SITTINGS,
+    period = GoalPeriod.DAY,
+    target = 1,
+)
 
 /** What these sittings add up to in [metric]'s own unit. */
 internal fun List<Entry>.tally(metric: GoalMetric): Int = when (metric) {

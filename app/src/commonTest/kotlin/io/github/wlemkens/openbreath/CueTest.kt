@@ -2,9 +2,9 @@ package io.github.wlemkens.openbreath
 
 import kotlin.math.abs
 import kotlin.math.sqrt
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Test
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class CueTest {
     private val pts = cuePoints()
@@ -35,7 +35,8 @@ class CueTest {
     fun `repacks from a core to a full sphere as the breath fills`() {
         val rest = factors(3)
         val full = factors(5)
-        assertTrue("rest should be core-heavy", rest.average() < full.average() - 0.15)
+        // kotlin.test takes the message last, where JUnit took it first
+        assertTrue(rest.average() < full.average() - 0.15, "rest should be core-heavy")
         // the two radii are drawn independently, so a fair share of points move inward while the
         // cloud as a whole opens out — that swap is what separates this from a plain scale-up
         assertTrue(rest.zip(full).count { (a, b) -> a > b } > rest.size / 10)

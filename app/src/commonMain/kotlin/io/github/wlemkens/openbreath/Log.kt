@@ -17,22 +17,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
 
 /** Every sitting worth the name, newest first, under the day it happened on. */
 @Composable
 fun LogScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
+    val platform = LocalPlatform.current
     val store = LocalStore.current
     val history by remember { store.historyFlow() }.collectAsState(initial = emptyList())
     // the store keeps them in the order they were last written; a log reads newest first
     val byDay = remember(history) {
-        history.sortedByDescending { it.at }.groupBy { it.at.zoned().toLocalDate() }
+        history.sortedByDescending { it.at }.groupBy { it.at.zoned().date }
     }
 
     LazyColumn(
@@ -69,13 +67,13 @@ fun LogScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         }
 
         byDay.forEach { (day, sittings) ->
-            item(key = "day-$day") { SectionLabel(day.format(dayFormat)) }
+            item(key = "day-$day") { SectionLabel(platform.formats.dayLabel(day)) }
             items(sittings, key = { it.at }) { entry ->
                 Column(Modifier.padding(bottom = 6.dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         val began = entry.at.zoned()
                         Text(
-                            context.clockTime(began.hour, began.minute),
+                            platform.formats.clockTime(began.hour, began.minute),
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Text(
@@ -102,12 +100,12 @@ fun LogScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-private fun Long.zoned() = Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault())
+private fun Long.zoned() =
+    Instant.fromEpochMilliseconds(this).toLocalDateTime(TimeZone.currentSystemDefault())
 
-// localized rather than a hand-written pattern: the log is read at a glance, in the reader's own
-// conventions for date order. The time of day goes through Context.clockTime instead, which also
-// honours the phone's 24-hour setting
-private val dayFormat = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
+// the day heading and the time of day both go through Formats, and for the same reason: a log is
+// read at a glance and wants the reader's own conventions for date order and for whether a clock
+// says 14:00 or 2 PM. kotlinx-datetime answers neither — it carries no locale data at all
 
 private fun hoursMinutes(ms: Long): String {
     val minutes = ms / 60_000

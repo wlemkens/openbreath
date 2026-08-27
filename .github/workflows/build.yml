@@ -1,0 +1,292 @@
+# The check that nothing has broken, for both platforms.
+#
+# Android is the regression gate CLAUDE.md names, and it runs on Linux because nothing about it
+# needs a Mac. iOS cannot be built anywhere but a Mac — the Kotlin/Native link step needs Xcode —
+# and it cannot be built on an Intel one either, since Compose Multiplatform stopped publishing
+# an ios_x64 variant after 1.9.3. macos-15 runners are Apple Silicon with Xcode 16, which is why
+# the iOS job lives here rather than on a developer's laptop.
+
+name: build
+
+on:
+  push:
+    # the port branch as well as main: the iOS half cannot be checked on the machine it is
+    # written on, so it needs to reach a runner without waiting for a merge
+    branches: [main, ios-port]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+
+    env:
+      # the same run number the iOS job stamps, so a build of one commit reports the same version
+      # on both phones. Unset outside CI, where the build falls back to what shipped rather than
+      # letting a laptop build claim to be a release
+      OPENBREATH_BUILD: ${{ github.run_number }}
+
+    steps:
+      # lfs, because .gitattributes puts every mp3 in LFS and checkout does not fetch it by
+      # default — without this the APK ships 130-byte pointer files in place of the bowls
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Check the bundled audio is audio
+        run: .github/check-media.sh
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # verifies gradle-wrapper.jar against the published checksums before running it
+      - uses: gradle/actions/wrapper-validation@v6
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      # the runner image carries an Android SDK but does not put sdkmanager on PATH, so calling it
+      # directly exits 127. This action installs the packages and accepts the licences itself.
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: 'platforms;android-36 build-tools;36.0.0'
+
+      - name: Test and assemble
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug 2>&1 | tee /tmp/android.log
+
+      - name: Say what failed
+        if: failure()
+        run: .github/print-test-failures.sh /tmp/android.log
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-test-report
+          path: app/build/reports/tests/
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+  ios:
+    runs-on: macos-15
+
+    # to publish the rolling `latest` release the phone updates from. Naming it here rather than at
+    # the top of the file keeps the Android job read-only.
+    permissions:
+      contents: write
+
+    env:
+      # One monotonic number for both, from the run counter, so a push always advertises a version
+      # higher than the one on the phone. It has to reach the ipa *and* the source JSON identically:
+      # SideStore compares the source against the installed bundle, and a mismatch either hides the
+      # update forever or offers it forever.
+      VERSION: 1.0.${{ github.run_number }}
+      BUILD: ${{ github.run_number }}
+
+    steps:
+      # lfs, because .gitattributes puts every mp3 in LFS and checkout does not fetch it by
+      # default — without this the APK ships 130-byte pointer files in place of the bowls
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Check the bundled audio is audio
+        run: .github/check-media.sh
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      # Compose Multiplatform 1.11.1 is built against the iOS 26 SDK: ui-uikit references
+      # UIViewLayoutRegion, which does not exist in Xcode 16, and the link dies on an undefined
+      # Objective-C class rather than on anything in this repository. The runner image ships
+      # several Xcode 26.x but still defaults to 16.4, so it has to be chosen.
+      # newest available rather than a named version, with 26 as the floor: matching Xcode_26*
+      # by name would stop finding anything the day the image ships Xcode 27, and a pipeline that
+      # breaks on someone else's release schedule is one that breaks while an OS update has
+      # already knocked the app off the store.
+      - name: Use an Xcode new enough for Compose Multiplatform
+        run: .github/select-xcode.sh 26
+
+      # the Kotlin/Native distribution is ~1 GB and unpacks per Kotlin version, so it is worth
+      # keeping between runs; the key is the Kotlin version the root build script pins
+      - uses: actions/cache@v6
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('build.gradle.kts') }}
+          restore-keys: konan-${{ runner.os }}-
+
+      # compiling needs no Xcode, but linking a framework and booting a simulator do
+      # tee'd, because "Say what failed" can only annotate a log that exists. Without this a
+      # compile error reaches the job log and nowhere else — and the job log is the one thing
+      # that needs a token to read, so the failure becomes invisible from outside CI
+      - name: Compile the shared code for a phone
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:compileKotlinIosArm64 :app:compileTestKotlinIosArm64 2>&1 \
+            | tee /tmp/ios.log
+
+      # the real point of the job: StorageTest and SessionTest executed by the iOS compiler, so a
+      # backup written on Android is proven to open on an iPhone rather than assumed to
+      - name: Run the shared tests on the iOS simulator
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:iosSimulatorArm64Test 2>&1 | tee /tmp/ios.log
+
+      - name: Say what failed
+        if: failure()
+        run: .github/print-test-failures.sh /tmp/ios.log
+
+      # XcodeGen from a pinned release rather than brew: brew update is minutes of nothing, and a
+      # pinned binary means the project generated today is the project generated next year
+      - name: Install XcodeGen
+        run: |
+          curl -fsSL -o /tmp/xcodegen.zip \
+            https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip
+          unzip -q /tmp/xcodegen.zip -d /tmp/xcodegen
+          # the zip nests a xcodegen/ directory, and the binary needs its sibling share/ beside it
+          bin=$(find /tmp/xcodegen -type f -path '*/bin/xcodegen' | head -1)
+          [ -n "$bin" ] || { echo "::error title=XcodeGen missing::not found in the release zip"; exit 1; }
+          echo "XCODEGEN=$bin" >> "$GITHUB_ENV"
+          "$bin" --version
+
+      - name: Generate the Xcode project
+        working-directory: iosApp
+        run: |
+          "$XCODEGEN" generate
+          ls -d iosApp.xcodeproj
+
+      # a real app bundle for a real arm64 phone, unsigned. AltStore and SideStore re-sign it with
+      # a free Apple ID, so this is installable without a paid membership or a modern Mac.
+      - name: Build the app for a device
+        run: |
+          set -o pipefail
+          xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+            -configuration Debug -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build/ios-device \
+            MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$BUILD" \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tee /tmp/ios-device.log | xcbeautify || {
+              .github/print-test-failures.sh /tmp/ios-device.log; exit 1; }
+
+      - name: Wrap it as an ipa
+        run: |
+          .github/package-ipa.sh \
+            build/ios-device/Build/Products/Debug-iphoneos/OpenBreath.app \
+            build/OpenBreath-unsigned.ipa
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: OpenBreath-unsigned-ipa
+          path: build/OpenBreath-unsigned.ipa
+
+      # Everything below turns a push into a tap on the phone. An artifact cannot do it: downloading
+      # one needs a GitHub login, and SideStore has none. A release asset is public, so the source
+      # JSON and the ipa both live on one tag whose URLs never change.
+      #
+      # Not on pull requests: a fork's token cannot write, and a PR build has no business replacing
+      # what the phone is being offered.
+      - name: Publish the ipa and the source for over-the-air updates
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # The ipa carries its version in the filename, and that is the whole trick: SideStore
+          # caches the source and checks the version it downloaded against the version it was
+          # promised. One fixed ipa URL whose contents keep changing fails that check on every
+          # phone whose cache is a build or two behind — "expected 30, got 32". A per-version name
+          # means a stale cache asks for the build it still believes in, gets exactly that, and
+          # installs; the newer one is offered on the next refresh instead of erroring now.
+          #
+          # apps.json keeps its fixed name, because that URL is typed into the phone once.
+          ipa="OpenBreath-$VERSION.ipa"
+          cp build/OpenBreath-unsigned.ipa "build/$ipa"
+
+          .github/make-source.sh \
+            "build/$ipa" "$VERSION" "$BUILD" \
+            "https://github.com/$REPO/releases/download/latest/$ipa" \
+            build/apps.json
+
+          # one rolling prerelease rather than a tag per build: the source URL has to stay put, and
+          # a year of test builds is not release history worth keeping
+          gh release view latest >/dev/null 2>&1 || gh release create latest \
+            --prerelease \
+            --title "Latest test build" \
+            --notes "Rolling builds for sideloading. Not a release."
+
+          gh release upload latest "build/$ipa" build/apps.json --clobber
+
+          # The old ipas are what stale caches resolve against, so several are kept on purpose; left
+          # unbounded they are 18 MB per push forever.
+          #
+          # Counted rather than `head -n -5`, which is a GNU extension: this job runs on macOS, where
+          # BSD head answers "illegal line count". And `|| true` because a grep that matches nothing
+          # exits 1, which under pipefail would fail the build over there being nothing to tidy.
+          keep=5
+          names="$(gh release view latest --json assets --jq '.assets[].name' \
+            | grep -E '^OpenBreath-.*\.ipa$' | sort -V || true)"
+          total="$(printf '%s' "$names" | grep -c . || true)"
+          if [ "${total:-0}" -gt "$keep" ]; then
+            printf '%s\n' "$names" | sed -n "1,$((total - keep))p" | while read -r stale; do
+              [ -n "$stale" ] || continue
+              echo "pruning $stale"
+              gh release delete-asset latest "$stale" --yes
+            done
+          fi
+
+          echo "### Sideloading" >> "$GITHUB_STEP_SUMMARY"
+          echo "Version \`$VERSION\` is live. SideStore source URL:" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "https://github.com/$REPO/releases/download/latest/apps.json" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      # and the same app actually running, for when there is no phone to hand: a breathing cue is
+      # an animation, and a still frame cannot show whether it moves
+      - name: Build for the simulator
+        run: |
+          set -o pipefail
+          xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+            -configuration Debug -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build/ios-sim \
+            build 2>&1 | tee /tmp/ios-sim.log | xcbeautify || {
+              .github/print-test-failures.sh /tmp/ios-sim.log; exit 1; }
+
+      - name: Run it and film it
+        run: .github/record-simulator.sh build/ios-sim/Build/Products/Debug-iphonesimulator/OpenBreath.app
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ios-simulator-recording
+          path: |
+            build/recording/*.png
+            build/recording/*.mp4
+            build/recording/*.log
+            build/recording/*.ips
+          if-no-files-found: warn
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ios-test-report
+          path: |
+            app/build/reports/tests/
+            app/build/test-results/
+          if-no-files-found: ignore

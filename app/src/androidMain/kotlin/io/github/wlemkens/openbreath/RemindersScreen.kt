@@ -157,6 +157,23 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
+/**
+ * Arms a reminder made somewhere other than this screen, asking for the notification permission
+ * on the way — the two lines "Add a reminder" does, for the one reminder the first-run question
+ * can make.
+ */
+@Composable
+internal fun rememberReminderScheduler(): (Reminder) -> Unit {
+    val context = LocalContext.current
+    val askNotify = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    return { reminder ->
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            askNotify.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        context.scheduleReminder(reminder)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun ReminderDialog(

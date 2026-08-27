@@ -3,6 +3,7 @@ package io.github.wlemkens.openbreath
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -71,6 +72,21 @@ class Store(private val data: DataStore<Preferences>) {
         data.edit { it[REMINDERS] = encoded }
     }
 
+    /**
+     * Whether nothing has ever been stored here, which is what a first run means — see
+     * [FirstRunSetup].
+     *
+     * Deliberately the whole file rather than a flag of its own: a phone updating from a version
+     * that predates the question has no flag either, and asking someone with a year of sittings
+     * whether they would like to start is worse than never asking at all.
+     */
+    fun untouchedFlow(): Flow<Boolean> = data.data.map { it.asMap().isEmpty() }
+
+    /** The first-run question answered — including with two noes, which is still an answer. */
+    suspend fun markSetupDone() {
+        data.edit { it[SETUP_DONE] = true }
+    }
+
     /** Everything, for writing out to a file the user keeps. */
     suspend fun exportBackup(exportedAt: Long): Backup {
         val prefs = data.data.first()
@@ -117,6 +133,9 @@ class Store(private val data: DataStore<Preferences>) {
         /** The longest milestone already shown, so a run is celebrated once rather than every launch. */
         val CELEBRATED = intPreferencesKey("celebrated")
         val REMINDERS = stringPreferencesKey("reminders")
+
+        /** Only ever written, never read: its presence is what stops [untouchedFlow]. */
+        val SETUP_DONE = booleanPreferencesKey("setupDone")
     }
 }
 

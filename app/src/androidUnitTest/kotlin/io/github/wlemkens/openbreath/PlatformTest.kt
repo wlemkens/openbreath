@@ -2,6 +2,7 @@ package io.github.wlemkens.openbreath
 
 import android.app.NotificationManager.INTERRUPTION_FILTER_ALARMS
 import android.app.NotificationManager.INTERRUPTION_FILTER_ALL
+import android.app.NotificationManager.INTERRUPTION_FILTER_NONE
 import android.app.NotificationManager.INTERRUPTION_FILTER_PRIORITY
 import android.app.NotificationManager.INTERRUPTION_FILTER_UNKNOWN
 import org.junit.Assert.assertEquals
@@ -19,6 +20,18 @@ class PlatformTest {
         assertEquals(INTERRUPTION_FILTER_ALL, restorableFilter(INTERRUPTION_FILTER_ALL))
         assertEquals(INTERRUPTION_FILTER_PRIORITY, restorableFilter(INTERRUPTION_FILTER_PRIORITY))
         assertEquals(INTERRUPTION_FILTER_ALARMS, restorableFilter(INTERRUPTION_FILTER_ALARMS))
+    }
+
+    @Test
+    fun `a phone already in DND is left alone, so its own rule still ends in the morning`() {
+        assertEquals(true, shouldSilence(INTERRUPTION_FILTER_ALL))
+        // an evening schedule owns these; taking them over replaces the rule with a manual
+        // override that nothing ever lifts
+        assertEquals(false, shouldSilence(INTERRUPTION_FILTER_PRIORITY))
+        assertEquals(false, shouldSilence(INTERRUPTION_FILTER_ALARMS))
+        assertEquals(false, shouldSilence(INTERRUPTION_FILTER_NONE))
+        // a filter the system will not name is not a phone we know to be silent
+        assertEquals(true, shouldSilence(INTERRUPTION_FILTER_UNKNOWN))
     }
 
     private fun at(phase: Phase, progress: Float) = PhaseState(phase, progress, 0, 5000)

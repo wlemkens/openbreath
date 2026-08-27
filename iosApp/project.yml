@@ -1,0 +1,111 @@
+# The Xcode project, as thirty readable lines rather than a three-hundred-line pbxproj.
+#
+# XcodeGen turns this into iosApp.xcodeproj, which is generated and not committed — a pbxproj is
+# unreviewable, conflicts on every touch, and would have had to be written here by someone with no
+# Xcode to validate it against. Run `xcodegen generate` in this directory before opening the
+# project; CI does the same before building.
+
+name: iosApp
+
+options:
+  bundleIdPrefix: io.github.wlemkens
+  deploymentTarget:
+    # 15, and the floor is SwiftUI rather than Compose: the App/Scene lifecycle that OpenBreathApp
+    # is built on did not exist before iOS 14, so 13 does not compile at all. 15 rather than 14
+    # because there is no one to serve between them — an iPhone that cannot reach 15 is a 6s — and
+    # every year below costs availability annotations to no purpose.
+    #
+    # For scale against the other platform: minSdk 26 is Android 8, from 2017. iOS 15 is 2021, so
+    # this is the stricter of the two, not the looser.
+    iOS: "15.0"
+  createIntermediateGroups: true
+
+targets:
+  iosApp:
+    type: application
+    platform: iOS
+
+    sources:
+      - path: Sources
+      # a manifest that is not in the bundle is a manifest Apple never sees, and the rejection
+      # names the missing file rather than the build setting that dropped it
+      - path: Sources/PrivacyInfo.xcprivacy
+        buildPhase: resources
+
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.wlemkens.openbreath
+        # Sources/Assets.xcassets is swept up by the sources entry above; this is what makes the
+        # app actually wear it. The single 1024 png is written by IconGen from the same point
+        # lattice the Android launcher icon comes from, so the two cannot drift apart — regenerate
+        # with `./gradlew :app:testDebugUnitTest`, never by hand.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        PRODUCT_NAME: OpenBreath
+        # the app is called OpenBreath but its Swift module must not be, because the Kotlin
+        # framework already is. Left to default, PRODUCT_MODULE_NAME follows PRODUCT_NAME, the app
+        # ends up in a module named OpenBreath, and `import OpenBreath` is then a self-import:
+        #   warning: file 'OpenBreathApp.swift' is part of module 'OpenBreath'; ignoring import
+        #   error: cannot find 'MainViewControllerKt' in scope
+        # A warning for the cause and an error somewhere else entirely, which is why it is spelled
+        # out here rather than left as a mysterious one-liner.
+        PRODUCT_MODULE_NAME: OpenBreathApp
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: "1.0"
+        # the Kotlin framework is built into this directory by the gradle phase below, and is a
+        # static framework, so it is linked rather than embedded
+        FRAMEWORK_SEARCH_PATHS:
+          - $(inherited)
+          - $(SRCROOT)/../app/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
+        OTHER_LDFLAGS:
+          - $(inherited)
+          - -framework
+          - OpenBreath
+          # Compose's UIKit layer auto-links this and the linker has to be told where to look
+          - -ObjC
+        # There is no Intel simulator slice and there never will be: Compose Multiplatform stopped
+        # publishing an ios_x64 variant after 1.9.3, so the Kotlin build phase answers
+        #   error: Unknown iOS simulator arch: 'x86_64'
+        # to anything that asks for one — which a generic simulator destination does by default.
+        EXCLUDED_ARCHS[sdk=iphonesimulator*]: x86_64
+
+        # sideloading re-signs the app anyway, and CI has no certificates; a signed build is the
+        # business of whoever has an account, not of the thing that proves it compiles
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
+
+    info:
+      path: Sources/Info.plist
+      properties:
+        CFBundleDisplayName: OpenBreath
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        # Compose refuses to start without this, and is right to: left out, iOS caps the app at
+        # 60Hz on a ProMotion phone. This app is one slowly expanding sphere, which is precisely
+        # the content where a halved frame rate shows as visible stepping.
+        #   Uncaught Kotlin exception: kotlin.IllegalStateException: Error: `Info.plist` doesn't
+        #   have a valid `CADisableMinimumFrameDurationOnPhone` entry
+        CADisableMinimumFrameDurationOnPhone: true
+        # portrait-only is only allowed to mean portrait-only if the app also says it wants the
+        # whole screen; without this the build warns that every orientation must be supported
+        UIRequiresFullScreen: true
+        # portrait only: the cue is a circle centred in the screen and a landscape phone gives it
+        # nothing but a shorter axis to be cropped by
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIUserInterfaceStyle: Dark
+        # No encryption of any kind, so the export-compliance question is answered once here
+        # rather than by hand on every single upload. It is only false because it is true: the
+        # app makes no network call at all. Anything that later encrypts, or talks to a server
+        # over TLS beyond the exempt uses, has to revisit this rather than inherit it.
+        ITSAppUsesNonExemptEncryption: false
+
+    preBuildScripts:
+      # builds the Kotlin framework for whichever SDK and architecture Xcode is currently after,
+      # which is why it cannot simply be a dependency: the same task serves device and simulator
+      - name: Build the Kotlin framework
+        script: |
+          cd "$SRCROOT/.."
+          ./gradlew :app:embedAndSignAppleFrameworkForXcode
+        basedOnDependencyAnalysis: false

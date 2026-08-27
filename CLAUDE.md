@@ -29,13 +29,13 @@ Functionality includes:
   which is fine one-way into GPLv3. Adding anything under a proprietary or GPL-incompatible
   licence would make the combined app undistributable, so check before pulling one in.
 
-  The bundled audio is **not** covered by that grant. `app/src/main/res/raw/*.mp3` are cuts
+  The bundled audio is **not** covered by that grant. `app/src/commonMain/composeResources/files/*.mp3` are cuts
   of files in `media/` from the `freesound_community` Pixabay account, released under
   **CC0 1.0** (public domain dedication). CC0 requires no attribution, so nothing has to
   ship in the app, but we credit the source anyway in README and here:
 
-  - `res/raw/session_end.mp3` — cut from `media/freesound_community-025535_singing-bowl-60767.mp3`
-  - `res/raw/singing_bowl.mp3` — cut from `media/freesound_community-singing-bowl-hit-3-33366.mp3`
+  - `files/session_end.mp3` — cut from `media/freesound_community-025535_singing-bowl-60767.mp3`
+  - `files/singing_bowl.mp3` — cut from `media/freesound_community-singing-bowl-hit-3-33366.mp3`
 
   `media/alex_jauk-zen-gong-199844.mp3` is by a different Pixabay uploader and is **not**
   shipped in the APK. Confirm its terms separately before using it.
@@ -58,6 +58,44 @@ Functionality includes:
   Support screen, the store listing, or anything resembling a perk is touched, say out loud
   whether it still holds — and if a paid tier is ever genuinely wanted, that is Play Billing,
   not a link.
+
+  ### The same link on the App Store
+  The rule that governs it is **3.2.1(vii)**, the monetary-gift one, and not the charitable
+  donation rules — a tip to the developer is a gift between people, not a fundraiser for a cause:
+
+  > Apps may enable individual users to give a monetary gift to another individual without using
+  > in-app purchase, provided that (a) the gift is a completely optional choice by the giver, and
+  > (b) 100% of the funds go to the receiver of the gift. However, a gift that is connected to or
+  > associated at any point in time with receiving digital content or services must use in-app
+  > purchase.
+
+  Read the two conditions and then read the Monetisation rule above: they are the same rule.
+  Optional, all of it to the receiver, nothing given back. Play's peer-to-peer exemption asks for
+  exactly this, word for word in places, which is why one standing check covers both stores.
+
+  Two things follow that are specific to iOS.
+
+  **A gift is to an individual.** If the VZW ever publishes the app and the money goes to the
+  VZW, this guideline stops applying — an organisation is not "another individual" — and the app
+  lands in 3.2.1(vi)/3.2.2(iv) charity territory instead, which needs approved-nonprofit status,
+  Apple Pay support, a disclosure of how funds are used and donor tax receipts. The publisher
+  decision and the Support screen are therefore the same decision. See the iOS port notes.
+
+  **Outside the US storefront**, 3.1.1(a) bars "buttons, external links, or other calls to action
+  that direct customers to purchasing mechanisms other than in-app purchase". A gift is not a
+  purchase and 3.2.1(vii) permits it without in-app purchase, so the link stands — but this is
+  the one sentence a reviewer could reach for, and it is worth knowing before an appeal rather
+  than during one.
+
+  In-app purchase is *also* allowed for tipping — 3.1.1 says apps "may use in-app purchase
+  currencies to enable customers to 'tip' the developer". It is not wanted here: Apple would take
+  its cut, so 100% would no longer reach the receiver, and the Play side rests on that 100%.
+
+  What must not happen is a payment sheet of our own inside the app. The moment money is taken
+  in the app by any mechanism that is not Apple's, both stores stop reading it as a gift.
+
+  Guideline numbers move between revisions — check the text rather than the number, at
+  https://developer.apple.com/app-store/review/guidelines/
 
   ## Technical
   - History, especcialy goals and progress should always be kept intact over updates.
@@ -109,16 +147,95 @@ Functionality includes:
   Import is one `edit` for the lot. A half-applied import that took the settings and lost the
   log is the worst outcome the app can produce, so it is all of it or none.
 
+  ### The first run
+  `FirstRun.kt` asks once whether to set a goal of one sitting a day and an evening reminder for
+  the days it has not happened. Both switches start **off**: the recommendation is said, not
+  applied, and an app that sets goals for someone who never asked has decided how they practise.
+
+  A first run is "nothing has ever been stored in this DataStore" — `Store.untouchedFlow()` — and
+  not a flag of its own, because a phone updating from a version that predates the question has no
+  flag either, and asking someone with a year of sittings whether they would like to begin is
+  worse than never asking. The `setupDone` key exists only to be written; nothing reads it.
+
+  The two offers are one offer. The reminder is `onlyIfBehind`, which is worth having because the
+  goal defines behind; declining the goal leaves it a plain evening reminder, which is the honest
+  reading. A test in `SessionTest` holds them together.
+
+  ### The store screenshots follow the interface
+  `docs/store/android/*.png` are what the listing shows, and a screenshot is a claim about what the
+  app looks like — the one part of a listing a reader believes without reading. So **any change to a
+  screen that appears there is not finished until the screenshot is retaken**, in the same commit
+  as the change. The ten shots and which screens they are are listed in `docs/store/README.md`.
+
+  It costs one command, which is the whole reason the rule can be absolute:
+
+      ./gradlew :app:installDebug && python3 docs/store/screenshots.py
+
+  It clears the app's data and imports a generated log, so run it on an emulator and never on a
+  phone that holds real practice. It drives the UI by the labels `uiautomator` reports, which means
+  **renaming a button can break the run rather than the app** — if it exits with `no 'X' on
+  screen`, the script is out of date with the interface it photographs, and that is the same rule
+  asking to be applied.
+
+  The copy is a claim too. Adding or dropping a feature means `docs/store/listing.md` changes with
+  it, and the App Store half may only name what iOS actually has — reminders and the silencing of
+  notifications are still Android's alone.
+
+  The iOS screenshots are the ones that will rot, because they cannot be taken from here: `simctl`
+  cannot tap a simulator, so Apple's set is hand-taken on a Mac and nothing reminds anyone. When a
+  shared screen changes, say out loud that the iOS set is now stale.
+
   ## The iOS port
   The module is Kotlin Multiplatform with Compose Multiplatform, targeting `androidTarget()`
   plus `iosArm64` and `iosSimulatorArm64`. There is no `iosX64`: Compose Multiplatform stopped
   publishing it at 1.11, so the Intel-Mac simulator is gone. Sources live in `src/commonMain`,
-  `src/androidMain`, `src/iosMain` and `src/androidUnitTest` — the old `src/main/java` and
-  `src/test/java` are gone, and an editor left open on a moved file will happily recreate it.
+  `src/androidMain`, `src/iosMain`, `src/commonTest` and `src/androidUnitTest` — the old
+  `src/main/java` and `src/test/java` are gone, and an editor left open on a moved file will
+  happily recreate it.
 
-  Nothing iOS can be compiled on Linux: the Kotlin/Native link step needs Xcode. The check that
-  the port has not broken anything is therefore still the Android one —
-  `./gradlew :app:testDebugUnitTest :app:assembleDebug`.
+  **Kotlin must stay at 2.3.20 or above, and that is an iOS constraint alone.** Every Compose
+  Multiplatform 1.11.1 klib — runtime, ui, foundation, animation — is ABI 2.3.0, built by the
+  2.3.20 compiler, and a Kotlin below that refuses to read them. Android is unaffected because it
+  consumes the `.aar`, where JVM bytecode carries no such gate, which is exactly why the mismatch
+  sat in the build file unnoticed for as long as the iOS targets were declared but never once
+  compiled. Downgrading Kotlin, or upgrading Compose past what the Kotlin version can read, breaks
+  the phone build and nothing else — so it fails only in the job most likely to be skipped.
+
+  Compiling for iOS does **not** need Xcode: Kotlin/Native ships a prebuilt
+  `kotlin-native-prebuilt-macos-*` distribution, so `compileKotlinIosArm64` and
+  `compileTestKotlinIosArm64` run on a Mac with only the Command Line Tools — an Intel one
+  included. Only *linking* a framework and running a simulator need Xcode. Type-check iOS code
+  locally with those two tasks; do not wait for CI to find a typo.
+
+  **Linking needs Xcode 26, not merely some Xcode.** Compose Multiplatform 1.11.1 is built
+  against the iOS 26 SDK: `ui-uikit` references `UIViewLayoutRegion`, which does not exist in
+  Xcode 16, and the link fails on an undefined Objective-C class inside a Compose object file
+  rather than on anything here. GitHub's macos-15 image carries several Xcode 26.x but still
+  defaults to 16.4, so the workflow selects one.
+
+  That is what finally settles the hardware question. Xcode 26 needs macOS 15, which no Intel Mac
+  before 2019 can run, so the split is not a preference: type-check locally on whatever Mac is to
+  hand, link and test on CI. An Apple Silicon machine collapses the two, and nothing else does.
+
+  Kotlin/Native builds Apple targets on a macOS host **only** — on Linux the targets are not
+  merely broken, they are absent, so there is no iOS feedback there at all.
+
+  The check that the port has not broken anything:
+
+      ./gradlew :app:testDebugUnitTest :app:assembleDebug \
+                :app:compileKotlinIosArm64 :app:compileTestKotlinIosArm64
+
+  The Android half alone is not enough any more. `compileTestKotlinIosArm64` is what catches
+  shared code reaching into `androidMain` — `commonTest` compiled against Android resolves such a
+  call happily and says nothing.
+
+  Two Kotlin/Native rules that only bite in `commonTest`, both of which cost a red build here:
+
+  - **A backtick test name cannot contain a comma.** They become Objective-C symbols. `"` is
+    likewise flagged, for Windows. Eight names had to be rewritten when the tests moved.
+  - **`kotlin.test` takes its message last, where JUnit took it first.** `assertEquals(msg, a, b)`
+    silently becomes `assertEquals(expected = msg, …)`. Grep for the multi-line calls too — an
+    `assertEquals(` alone on its line hides the string on the next one.
 
   commonMain holds the session engine, the cue, every stored type and the whole of the goal
   arithmetic (`Model.kt`), all reads and writes (`Store.kt`), the two shared widgets, and the
@@ -135,19 +252,135 @@ Functionality includes:
     the store; where a screen still takes one it is for something else, and that is the signal
     it cannot move yet.
 
+  ### The sound
+  The sound and the playing of it are separate, and have to stay that way. `WaveDsp.kt` and
+  `MarkerSynth.kt` in commonMain hold every filter, every ear-picked constant and both syntheses;
+  `androidMain/Audio.kt` and `iosMain/IosAudio.kt` hold only where the samples go. Forty tuning
+  constants in two copies would have drifted, and a drift in a constant picked by ear is a bug
+  invisible in a diff.
+
+  **The sample rate is a parameter, never a constant.** It was 44100 baked into five filter
+  coefficients while AudioTrack was the only sink; iOS returns whatever its output node runs at,
+  commonly 48000. A synth built for one played at the other is the same sound a semitone sharp
+  with its filter corners moved to match.
+
+  iOS schedules buffers instead of installing an `AVAudioSourceNode`. A source node's render block
+  runs on the realtime audio thread and Kotlin/Native's runtime does not belong there — a
+  collection inside a render callback is a dropout you can hear.
+
+  Still owed on iOS: the two recorded bowls and a user's own mp3. They are deliberately **silent**
+  rather than falling back to the synthesised bell — pick the bowl, hear a bell, and there is no
+  way to tell which of the two is the bug.
+
+  ### The two bowls are resources, not res/raw
+  `commonMain/composeResources/files/*.mp3`, read on both platforms through the generated `Res`
+  in `Bowls.kt`. They were Android resources, which is the whole reason the gong was silent on
+  iOS: `res/raw` is Android machinery and Kotlin/Native has no way into it.
+
+  They are the only sounds that are not arithmetic. The bell and the tick are synthesised from
+  `MarkerSynth.kt` on both platforms and cost nothing to share; a recording has to be bundled
+  somewhere both can read. Android cannot hand SoundPool bytes, so it spills them to its cache
+  once and loads the path — the cache is right, since losing the copy costs one decode and the
+  resource is still in the APK.
+
+  `GONG_FADE_START_MS` and `GONG_FADE_MS` live in `Bowls.kt` for the reason every other ear-picked
+  constant does: two copies drift, and a drift you can hear is invisible in a diff.
+
+  ### Importing an Objective-C method in Kotlin/Native
+  This has cost three round trips, each one a single wrong import line, so it is worth stating
+  properly rather than guessing again.
+
+  Whether a method needs an import depends on where Objective-C declares it, not on whether it is
+  an instance method:
+
+  - **Declared in a category** — most of Foundation — becomes a Kotlin *extension* and must be
+    imported: `NSData.writeToFile`, `NSData.dataWithContentsOfFile`, `NSString.writeToURL`,
+    `NSURL.URLByAppendingPathComponent`, `NSData.create`.
+  - **Declared on the class interface itself** — most of AVFoundation — becomes a *member* and
+    must not be: `AVAudioPlayer.setVolume`, `AVCaptureDevice.lockForConfiguration`,
+    `AVCaptureDevice.unlockForConfiguration`.
+
+  Guessing which is which is a waste of a fifteen-minute CI round trip, and the compiler is
+  unambiguous about it if you read *which line* the error is on. `Unresolved reference` on the
+  call means the import is missing; the same words on the `import` line mean it should not be
+  there. Both are one-line fixes in opposite directions.
+
+  ### Reading a CI failure without a token
+  Job logs are a 403 without authentication, even on a public repository. Annotations are not:
+
+      # the check runs for a commit, then the annotations on the failing one
+      curl -s https://api.github.com/repos/wlemkens/openbreath/commits/<sha>/check-runs
+      curl -s https://api.github.com/repos/wlemkens/openbreath/check-runs/<id>/annotations
+
+  That is the whole reason the scripts in `.github` print `::error title=…::` rather than plain
+  text on failure: a workflow-command line becomes an annotation, and an annotation can be read
+  back by anyone. `print-test-failures.sh` and `record-simulator.sh` both put the part worth
+  reading — the failing assertions, the app's console tail — through that channel deliberately.
+  Keep doing it; a failure that only exists in the job log cannot be diagnosed from here.
+
+  The unauthenticated API allows 60 requests an hour per IP, which a polling loop eats quickly.
+  Poll on the order of minutes, not seconds.
+
+  A step whose output is not tee'd to a file cannot be annotated, because `print-test-failures.sh`
+  reads a log rather than the console. That is how a Kotlin compile failure once reached the job
+  log and nowhere else — the one place a token is needed. Every step that can fail interestingly
+  pipes through `tee`.
+
+  ### The bundled audio is in Git LFS
+  `.gitattributes` puts every audio format in LFS, and **anything that clones or checks out without
+  git-lfs gets a 130-byte pointer file instead of the mp3.** The build succeeds, the APK packages
+  the pointer, and the only symptom is that the bowls never sound — which `Audio.kt` itself calls
+  the failure that is "invisible without this". Every APK CI built before this was noticed had it.
+
+  So `actions/checkout` sets `lfs: true` and `.github/check-media.sh` fails the build if any
+  bundled mp3 is still a pointer. If you clone this and the bowls are silent, that is the first
+  thing to check — `git lfs pull`.
+
   Still Android-only, and why:
 
-  - **`Audio.kt`** — AudioTrack/SoundPool. The DSP is portable; only the sink swaps for
-    AVAudioEngine.
-  - **`Reminders.kt`** — AlarmManager and a BroadcastReceiver → UNUserNotificationCenter.
-  - **`Platform.kt`** — vibration → CoreHaptics, torch → AVCaptureDevice.
-  - **`Settings.kt`, `RemindersScreen.kt`** — the file picker, permission prompts and intents.
-  - **`Log.kt`** — only `clockTime`, which asks Android whether this user reads 14:00 or 2 PM.
-    That is a genuine platform question, so it wants an expect/actual, not a rewrite.
+  - **`Reminders.kt`, `RemindersScreen.kt`** — AlarmManager and a BroadcastReceiver →
+    UNUserNotificationCenter, plus the permission prompt.
+  Settings has since moved to commonMain, and with it the mp3 picker, the colour picker and
+  backup export and import — `IosFiles` answers all three, so an iPhone reads a backup written on
+  Android. Reminders is the only screen left behind.
 
-  kotlinx-datetime carries no locale data, so the week's first day is `expect firstDayOfWeek()`
-  — Android reads the locale, iOS will read NSCalendar. It is the only calendar fact the
-  library would not answer.
+  **Locale data is the recurring seam.** kotlinx-datetime carries none, on purpose, so every
+  question about how a reader writes something goes to the platform. `firstDayOfWeek()` is an
+  `expect` because it is a plain value; the day heading and the time of day are on the `Formats`
+  interface instead, because Android cannot answer either without a Context. `uses24Hour` joins
+  them with the reminders port. Anything reaching for `java.time.format` or `String.format` in
+  commonMain is this seam being crossed by accident.
+
+  ### What the App Store still wants
+  `PrivacyInfo.xcprivacy` declares no tracking and no collected data, and one required-reason
+  API: `NSPrivacyAccessedAPICategoryFileTimestamp` with reason `C617.1`. That is DataStore
+  reading the metadata of its own file in the app container to write atomically — nobody thinks
+  of it as a privacy API, which is exactly why it is the one that gets a submission rejected.
+  `ITSAppUsesNonExemptEncryption: false` answers export compliance once instead of on every
+  upload; it is only true because the app makes no network call at all.
+
+  **A picked mp3 is copied in, not bookmarked.** Android keeps a `content://` URI alive with a
+  persistable permission grant; iOS could do the same with a security-scoped bookmark and
+  deliberately does not. A bookmark still points at someone else's file, so the marker goes silent
+  the day they move it, delete it, or leave it in an iCloud folder that is not on the phone when a
+  phase ends. The copy lives in `Documents/markers`, beside the log and for the same reason —
+  Caches is emptied whenever the system likes.
+
+  **A file that is gone falls back to the phase's tone**, on both platforms — usually the bell,
+  since that is the default and the tone chips are hidden while a file is chosen. Android has
+  always done this (`play` looks the URI up in the loaded samples and drops through), and iOS now
+  matches. It matters more than it sounds: a preset can name a file this phone never had, because
+  a backup carried from Android names `content://` URIs that mean nothing on an iPhone, and a
+  boundary that makes no sound at all reads as a broken app rather than a missing file.
+
+  The tone is therefore prepared even for a phase pointing at a file, on both sides. Otherwise the
+  fallback would be the strike that builds itself, which is the bug the marker-readiness fix was
+  about.
+
+  **The torch needs no camera permission — tested on a device, no prompt appears.** Torch control
+  is configuration on the capture device rather than capture, so no `AVCaptureSession` is created
+  and `NSCameraUsageDescription` is not required. If a prompt ever does appear, something has
+  started a session and the cause is that, not the torch.
 
   Do-not-disturb has no iOS equivalent and is not getting one — no public API sets a Focus.
   That feature is Android-only by nature, not by omission.
@@ -158,6 +391,53 @@ Functionality includes:
   The base sound is waves coming ashore. During the breath in, the pitch goes up, during breathing out, the pitch goes down.
 
   # TODO
-  - Generate the release keystore (see README) so `bundleRelease` produces something Play will
-    take. The Gradle wiring is in place and falls back to unsigned until the key exists.
-  
+  - **Reminders on iOS.** The last unported screen: AlarmManager and a BroadcastReceiver become
+    UNUserNotificationCenter, plus the permission prompt and `uses24Hour` for the picker.
+    Deliberately deferred until after the first App Store submission. Worth knowing when that is
+    revisited: local notifications need no App Store id and no entitlement, so this *could* be
+    built sooner — the timing is a choice about effort, not a technical gate. Until it lands, the
+    store listing must not promise reminders.
+  - **Ask Apple whether a Belgian VZW is eligible for the fee waiver.** Everything about
+    publishing under the VZW rests on it, and the answer is not published anywhere: the old
+    country list excluded Belgium, the current page names no list at all. Enrolling as an
+    organisation also needs a D-U-N-S number for the VZW, which is free but slow.
+  - **Signing.** CI builds unsigned on purpose, which is right for sideloading and useless for
+    the store: a distribution certificate, an App Store provisioning profile and a
+    `DEVELOPMENT_TEAM` are all still missing, and none can exist before the account does.
+  - **The App Store Connect record**: bundle id, name, category, age rating, description,
+    keywords, support URL, privacy policy URL, screenshots at Apple's sizes.
+  - **The rate link.** `IosPlatform.canRate` is false because the numeric App Store id does not
+    exist until first submission. Fill it in once it does — that one really is gated on
+    submitting.
+  - ~~**Publish the privacy policy.**~~ Live at
+    https://wlemkens.github.io/openbreath/privacypolicy.html, which is the URL to give both
+    stores — they ask for one and Play checks it resolves. Not `raw.githubusercontent.com`: it
+    serves `text/plain`, so a reviewer would see the markup rather than the page. Either store's
+    URL can be changed later, so this does not foreclose stanistil.be.
+
+    **GitHub Pages serves it from the `ios-port` branch, `/docs` — and `main` has no `docs/`
+    at all.** Merging and deleting that branch takes the privacy policy off the web, and the
+    first sign of it is a store record pointing at a 404. Move the source in the same breath as
+    the merge:
+
+        gh api -X PUT repos/wlemkens/openbreath/pages -f 'source[branch]=main' -f 'source[path]=/docs'
+
+    Publishing `/docs` puts `docs/store/` on the web too, which costs nothing on a public
+    repository.
+  - **The Play listing.** Copy for both stores is in `docs/store/listing.md`, the phone
+    screenshots and the two Play graphics beside it. The keystore now exists. Still missing: the
+    Play Console record itself, and — for a personal developer account — the 12-tester, 14-day
+    closed test that has to run before production opens.
+
+    Uploading is wired: gradle-play-publisher, `./gradlew :app:publishBundle`, README has the
+    service-account setup. Release notes are generated from the commit subjects on the way, which
+    makes a commit subject user-facing copy — one more reason they are written the way they are.
+    They land in `app/src/main/play/`, which is AGP's source-set name and not the KMP one, and is
+    the only thing left under `src/main` now that the code has moved. Two things that constrain it. **The API cannot create the app** — the
+    first bundle, the listing and the track go up by hand, and only updates come from here. And
+    **the plugin is pinned to 3.13.0 because every 4.x needs Gradle 9.1**, while this build is on
+    8.14.3 for AGP and Kotlin; the pin is a toolchain fact, not a preference, so it moves when
+    Gradle does and not before.
+  - **Screenshots for the App Store.** `docs/store/screenshots.py` drives the Android emulator by
+    the labels uiautomator can see. The iOS set needs a 6.9" simulator on a Mac with Xcode 26, or
+    an iPhone: simctl cannot tap, and Apple's sizes are its own.

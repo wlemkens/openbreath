@@ -3,11 +3,15 @@ package io.github.wlemkens.openbreath
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -34,6 +38,8 @@ internal fun LabelledSlider(
     steps: Int,
     readout: String,
     onChangeFinished: (() -> Unit)? = null,
+    /** Given, flanks the slider with −/+ buttons; the argument is the direction, ∓1. */
+    onStep: ((Int) -> Unit)? = null,
     onChange: (Float) -> Unit,
 ) {
     Column {
@@ -41,12 +47,25 @@ internal fun LabelledSlider(
             Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
             Text(readout, style = MaterialTheme.typography.bodyMedium)
         }
-        Slider(
-            value = value,
-            onValueChange = onChange,
-            onValueChangeFinished = onChangeFinished,
-            valueRange = range,
-            steps = steps.coerceAtLeast(0),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            // a glyph rather than material-icons, as elsewhere: a whole dependency for two signs
+            if (onStep != null) StepButton("−", "$label down") { onStep(-1) }
+            Slider(
+                value = value,
+                onValueChange = onChange,
+                onValueChangeFinished = onChangeFinished,
+                valueRange = range,
+                steps = steps.coerceAtLeast(0),
+                modifier = Modifier.weight(1f),
+            )
+            if (onStep != null) StepButton("+", "$label up") { onStep(1) }
+        }
+    }
+}
+
+@Composable
+private fun StepButton(glyph: String, description: String, onClick: () -> Unit) {
+    IconButton(onClick = onClick, modifier = Modifier.semantics { contentDescription = description }) {
+        Text(glyph, style = MaterialTheme.typography.titleMedium)
     }
 }
