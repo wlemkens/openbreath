@@ -441,6 +441,12 @@ jobs:
       BUILD: ${{ github.run_number }}
       BUNDLE_ID: io.github.wlemkens.openbreath
       PROFILE_NAME: OpenBreath App Store
+      # Release is the first Kotlin/Native build that optimises the whole program at once, and it
+      # runs out of the 2g gradle.properties gives: "Compilation failed: Java heap space" from
+      # inside Xcode's script phase. The ios job never hit it because a Debug framework is a far
+      # lighter compile. Raised here rather than in gradle.properties so a laptop is not asked for
+      # 4g to build an APK; the runner has about 7g, so this leaves room for Xcode beside it.
+      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
 
     steps:
       - uses: actions/checkout@v7

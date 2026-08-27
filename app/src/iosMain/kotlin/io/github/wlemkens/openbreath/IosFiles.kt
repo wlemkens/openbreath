@@ -13,7 +13,6 @@ import platform.Foundation.NSUserDomainMask
 import platform.Foundation.dataWithContentsOfURL
 import platform.Foundation.stringWithContentsOfURL
 import platform.Foundation.writeToFile
-import platform.Foundation.writeToURL
 import platform.UIKit.UIApplication
 import platform.UIKit.UIDocumentPickerDelegateProtocol
 import platform.UIKit.UIDocumentPickerViewController
@@ -70,7 +69,16 @@ class IosFiles : Files {
             onDone(false)
             return
         }
-        val wrote = (text as NSString).writeToURL(temporary, true, NSUTF8StringEncoding, null)
+        // NOT `(text as NSString)`: Kotlin/Native warns that the cast can never succeed, and it
+        // is right — a Kotlin String is bridged for interop signatures, not castable at runtime,
+        // so that line threw the moment anyone exported a backup. The bytes go over as NSData,
+        // which is the same conversion the bowls already use.
+        val path = temporary.path
+        if (path == null) {
+            onDone(false)
+            return
+        }
+        val wrote = text.encodeToByteArray().toNSData().writeToFile(path, true)
         if (!wrote) {
             onDone(false)
             return
