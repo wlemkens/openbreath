@@ -104,6 +104,7 @@ class IconGen {
             HEADER + body + FOOTER
         )
         writeIosIcon(dots)
+        writeDesktopIcons(dots)
     }
 
     private class Dot(val cx: Float, val cy: Float, val r: Float, val rgb: Int, val alpha: Float)
@@ -113,18 +114,105 @@ class IconGen {
      *
      * From the same geometry as the vector above rather than exported from it, which is the whole
      * point of the TODO this answers: two icons drawn from one lattice cannot drift apart.
+     */
+    private fun writeIosIcon(dots: List<Dot>) {
+        val out = File("../iosApp/Sources/Assets.xcassets/AppIcon.appiconset/icon-1024.png")
+        out.parentFile?.mkdirs()
+        ImageIO.write(render(dots, 1024), "png", out)
+    }
+
+    /**
+     * The three shapes jpackage wants, all of them the same drawing at 512 px.
+     *
+     * Without these the installers put the Java coffee cup on the taskbar and in the dock, which is
+     * not cosmetic: it is the icon a reader has to find the window by. jpackage takes only the
+     * platform's own container — `.ico` on Windows, `.icns` on macOS, a plain `.png` on Linux — and
+     * both containers are thin wrappers around a PNG, which is why writing them here costs a few
+     * lines rather than a dependency.
+     *
+     * Read by the compose.desktop block in build.gradle.kts, from `app/desktopIcons`.
+     */
+    private fun writeDesktopIcons(dots: List<Dot>) {
+        val dir = File("desktopIcons").apply { mkdirs() }
+        val image = render(dots, 512)
+        val png = java.io.ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }.toByteArray()
+
+        ImageIO.write(image, "png", File(dir, "icon.png"))
+        File(dir, "icon.ico").writeBytes(ico(png))
+        File(dir, "icon.icns").writeBytes(icns(dots))
+    }
+
+    /**
+     * A one-entry ICO whose entry is the PNG itself, which Windows has accepted since Vista and
+     * every tool since has written. The alternative is a bottom-up 32-bit BMP with its own header
+     * and its height doubled for a mask nothing uses, and there is no reason to write one.
+     *
+     * `width` and `height` are single bytes, so 256 and anything above it are spelled 0. The image
+     * here is 512, which is what that zero means.
+     */
+    private fun ico(png: ByteArray): ByteArray {
+        val out = java.io.ByteArrayOutputStream()
+        fun u16(v: Int) { out.write(v and 0xFF); out.write((v shr 8) and 0xFF) }
+        fun u32(v: Int) { u16(v and 0xFFFF); u16((v shr 16) and 0xFFFF) }
+
+        u16(0) // reserved
+        u16(1) // type: icon
+        u16(1) // one image
+        out.write(0) // width, 0 meaning 256 or more
+        out.write(0) // height
+        out.write(0) // palette size, 0 for a true-colour image
+        out.write(0) // reserved
+        u16(1) // colour planes
+        u16(32) // bits per pixel
+        u32(png.size)
+        u32(22) // the offset of the data: 6 for the header plus 16 for this entry
+        out.write(png)
+        return out.toByteArray()
+    }
+
+    /**
+     * An ICNS carrying two sizes, because Finder picks the nearest rather than scaling one.
+     *
+     * The format is as simple as it looks: the magic, the total length, then a run of typed chunks
+     * whose own length includes their eight-byte header. `ic08` is 256 px and `ic09` is 512, and a
+     * PNG is a legal payload for both. Everything is big-endian, which is the one thing here that
+     * is easy to get wrong and silent when you do.
+     */
+    private fun icns(dots: List<Dot>): ByteArray {
+        val body = java.io.ByteArrayOutputStream()
+        fun be32(to: java.io.ByteArrayOutputStream, v: Int) {
+            to.write((v shr 24) and 0xFF); to.write((v shr 16) and 0xFF)
+            to.write((v shr 8) and 0xFF); to.write(v and 0xFF)
+        }
+        for ((type, px) in listOf("ic08" to 256, "ic09" to 512)) {
+            val png = java.io.ByteArrayOutputStream()
+                .also { ImageIO.write(render(dots, px), "png", it) }.toByteArray()
+            body.write(type.toByteArray(Charsets.US_ASCII))
+            be32(body, png.size + 8)
+            body.write(png)
+        }
+        val out = java.io.ByteArrayOutputStream()
+        out.write("icns".toByteArray(Charsets.US_ASCII))
+        be32(out, body.size() + 8)
+        out.write(body.toByteArray())
+        return out.toByteArray()
+    }
+
+    /**
+     * The cloud as a square bitmap, at whatever size is asked for.
      *
      * **No alpha channel.** An iOS app icon with one is rejected on upload, so this paints the
      * Ink background first and composites onto it — the same Ink the adaptive icon names as its
-     * background colour and the session screen uses.
+     * background colour and the session screen uses. The desktop containers would allow
+     * transparency; they get the same opaque square, because a rounded rectangle of Ink is what the
+     * icon is on the phone and a dock is not the place for it to differ.
      *
      * The whole 108 viewport is drawn rather than the 72 the launcher mask keeps. Android crops a
-     * circle out of the middle, where iOS only rounds the corners, so drawing the same fraction on
-     * both would leave the sphere pressed against the edges here. Full viewport puts it at roughly
-     * the size Android's mask leaves it looking.
+     * circle out of the middle, where iOS and every desktop only round the corners, so drawing the
+     * same fraction everywhere would leave the sphere pressed against the edges here. Full viewport
+     * puts it at roughly the size Android's mask leaves it looking.
      */
-    private fun writeIosIcon(dots: List<Dot>) {
-        val px = 1024
+    private fun render(dots: List<Dot>, px: Int): BufferedImage {
         val scale = px / 108f
         val image = BufferedImage(px, px, BufferedImage.TYPE_INT_RGB)
         val g = image.createGraphics()
@@ -156,10 +244,7 @@ class IconGen {
             g.fillOval((d.cx * scale - rr).toInt(), (d.cy * scale - rr).toInt(), (2 * rr).toInt(), (2 * rr).toInt())
         }
         g.dispose()
-
-        val out = File("../iosApp/Sources/Assets.xcassets/AppIcon.appiconset/icon-1024.png")
-        out.parentFile.mkdirs()
-        ImageIO.write(image, "png", out)
+        return image
     }
 
     private fun dot(cx: Float, cy: Float, r: Float, rgb: Int, alpha: Float): String {

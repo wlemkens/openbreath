@@ -50,17 +50,88 @@ import kotlin.time.Clock
  */
 private val Ink = Color(0xFF07090F)
 
-/**
- * The look, shared by both platforms so neither drifts.
- *
- * The navigator that sits inside this is still per-platform: it reaches Settings, Log, Reminders
- * and Support, which are Android's until they are ported, and offering an iPhone a menu item that
- * opens nothing would be worse than offering it fewer.
- */
+/** The look, shared by every platform so none of them drifts. */
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = darkColorScheme(background = Ink, surface = Ink)) {
         Surface(Modifier.fillMaxSize()) { content() }
+    }
+}
+
+/**
+ * Which screen is showing — for every platform, now.
+ *
+ * This was the same fifty-line `when` written out in androidMain/MainActivity.kt and again in
+ * iosMain/MainViewController.kt, and both of them said in a comment that they would collapse into
+ * one when the screens ported. Six of the seven destinations are in commonMain, so they have; a
+ * desktop would otherwise have been a third copy of it.
+ *
+ * Reminders is the exception and the only one, because AlarmManager and a BroadcastReceiver have
+ * no counterpart anywhere else yet. Both of its parameters are null where the platform has none —
+ * the same rule [SessionScreen]'s nullable `onOpen…` parameters already follow, and the rule
+ * [FirstRunSetup] already followed for its scheduler: the menu leaves the item out rather than
+ * offering one that opens nothing.
+ */
+@Composable
+fun Breath(
+    modifier: Modifier = Modifier,
+    reminders: (@Composable (modifier: Modifier, onBack: () -> Unit) -> Unit)? = null,
+    onReminder: ((Reminder) -> Unit)? = null,
+) {
+    val scope = rememberCoroutineScope()
+    val store = LocalStore.current
+    val config by remember { store.configFlow() }.collectAsState(initial = null)
+    val goals by remember { store.goalsFlow() }.collectAsState(initial = null)
+    var showSettings by remember { mutableStateOf(false) }
+    var showLog by remember { mutableStateOf(false) }
+    var showReminders by remember { mutableStateOf(false) }
+    var showGoals by remember { mutableStateOf(false) }
+    var showAchievements by remember { mutableStateOf(false) }
+    var showSupport by remember { mutableStateOf(false) }
+
+    // first frames, before DataStore has read. An empty list here would be a lie the goal screen
+    // could act on: saving a goal built on "no goals yet" writes over every goal there is
+    val current = config ?: return
+    val saved = goals ?: return
+
+    // over whichever screen is showing: a milestone is worth interrupting a settings tweak for
+    MilestoneWatch(current, saved)
+    FirstRunSetup(onReminder = onReminder)
+
+    when {
+        showSettings -> SettingsScreen(
+            config = current,
+            onChange = { scope.launch { store.saveConfig(it) } },
+            onBack = { showSettings = false },
+            modifier = modifier,
+        )
+
+        showLog -> LogScreen(onBack = { showLog = false }, modifier = modifier)
+
+        showGoals -> GoalsScreen(
+            goals = saved,
+            onChange = { scope.launch { store.saveGoals(it) } },
+            onBack = { showGoals = false },
+            modifier = modifier,
+        )
+
+        showAchievements ->
+            AchievementsScreen(saved, onBack = { showAchievements = false }, modifier = modifier)
+
+        showReminders && reminders != null -> reminders(modifier) { showReminders = false }
+
+        showSupport -> SupportScreen(onBack = { showSupport = false }, modifier = modifier)
+
+        else -> SessionScreen(
+            current,
+            onOpenGoals = { showGoals = true },
+            onOpenAchievements = { showAchievements = true },
+            onOpenSettings = { showSettings = true },
+            onOpenLog = { showLog = true },
+            onOpenReminders = reminders?.let { { showReminders = true } },
+            onOpenSupport = { showSupport = true },
+            modifier = modifier,
+        )
     }
 }
 

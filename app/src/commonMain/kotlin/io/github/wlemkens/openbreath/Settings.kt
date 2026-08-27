@@ -334,13 +334,15 @@ fun SettingsScreen(
         }
 
         item { SectionLabel("During a session") }
-        item {
-            ToggleRow("Vibrate at each phase change", config.vibrate) {
-                onChange(config.copy(vibrate = it))
+        // a switch for hardware the machine hasn't got is just a puzzle; the setting stays stored
+        // either way, so a phone that does have one still finds it turned on
+        if (platform.haptics.supported) {
+            item {
+                ToggleRow("Vibrate at each phase change", config.vibrate) {
+                    onChange(config.copy(vibrate = it))
+                }
             }
         }
-        // a switch for hardware the phone hasn't got is just a puzzle; the setting stays stored
-        // either way, so a phone that does have one still finds it turned on
         if (torch.available) {
             item {
                 ToggleRow("Flashlight follows the breath", config.flashlight) {

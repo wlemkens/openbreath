@@ -57,7 +57,15 @@ private const val ATTACK_S = 0.006
  * Expressed against the 16-bit scale these were tuned in and then normalised, so a float sink and
  * a PCM one land at the same loudness rather than one of them being quietly half.
  */
-private const val MARKER_PEAK = 12500f / 32768f
+/**
+ * How loud a marker is allowed to peak.
+ *
+ * `internal` rather than private because the desktop mixes markers into the same stream as the
+ * ambient bed and so has to know: the two recorded bowls are normalised to this as well, or a bowl
+ * mastered near full scale would clip against the waves it lands on. Android and iOS hand each
+ * sound to a system mixer and never need to ask.
+ */
+internal const val MARKER_PEAK = 12500f / 32768f
 
 /**
  * A struck-metal marker, in [-1, 1].
@@ -141,8 +149,11 @@ fun tickMarker(hz: Float, sampleRate: Int): FloatArray {
  * Every marker lands at the same peak. Left to a fixed scalar, each tone and pitch ends up a
  * different loudness purely from how its partials happen to sum — and normalising also makes
  * clipping impossible rather than merely unlikely.
+ *
+ * Scaled so the loudest sample sits exactly at [peak]; an all-zero array is left alone.
+ * `internal` for the same reason [MARKER_PEAK] is — the desktop normalises the recorded bowls too.
  */
-private fun FloatArray.normalisedTo(peak: Float): FloatArray {
+internal fun FloatArray.normalisedTo(peak: Float): FloatArray {
     var loudest = 0f
     for (v in this) loudest = maxOf(loudest, abs(v))
     val scale = if (loudest > 0f) peak / loudest else 0f

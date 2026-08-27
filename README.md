@@ -1,6 +1,11 @@
 # OpenBreath
 
-An Android app for heart coherence breathing meditations.
+An app for heart coherence breathing meditations, for Android, iOS, Windows, macOS and Linux.
+
+The Android build is the complete one. iOS has everything but reminders. The desktop builds have
+everything but reminders, vibration, the flashlight and the silencing of notifications — the last
+three because a desktop has no vibrator, no flashlight and no Focus a program may set, and each is
+left out of the settings screen rather than shown as a switch that does nothing.
 
 
 ## Features
@@ -38,7 +43,48 @@ An Android app for heart coherence breathing meditations.
 - Reminders: as many as you like, each with its own name and time — daily, or on the days you
   pick, every week or in the odd or even weeks of the year. Each one is either a quiet
   notification or an alarm that rings until you dismiss it. Nothing is asked of you until you
-  make the first one.
+  make the first one. *Android only for now.*
+
+## Running it on a computer
+
+```sh
+./gradlew :app:run
+```
+
+One codebase and one target for all three desktops — nothing in it branches on the operating
+system except where the log is stored. What is per-platform is only the installer, because
+`jpackage` builds for the machine it runs on and no other:
+
+```sh
+./gradlew :app:packageDeb    # on Linux
+./gradlew :app:packageMsi    # on Windows, needs WiX
+./gradlew :app:packageDmg    # on macOS
+```
+
+CI builds all three on every push; they are the `OpenBreath-deb`, `OpenBreath-msi` and
+`OpenBreath-dmg` artifacts on the run.
+
+**They are unsigned**, which you will notice. SmartScreen warns about the `.msi` and wants "More
+info" → "Run anyway"; Gatekeeper refuses the `.dmg` on a double-click and wants right-click →
+Open. Both need a code-signing certificate, which does not exist yet. Nothing is wrong with the
+installer.
+
+The log, the presets and the goals live where the platform keeps such things —
+`%APPDATA%\OpenBreath` on Windows, `~/Library/Application Support/OpenBreath` on macOS,
+`~/.local/share/openbreath` on Linux — and a backup file moves them between any two machines,
+phones included.
+
+### And on Windows Phone?
+
+No, and not for want of trying: the platform was discontinued in 2017, the store closed to new
+apps in 2019, there is no supported SDK, and Kotlin has no target for it. Nothing can be built
+that anybody could install.
+
+### The desktop tests
+
+`./gradlew :app:desktopTest` runs the shared suite — the session engine, the stored shapes, the
+breath cue, the DSP — on the JVM. Worth knowing because it is the fastest way to check any of that
+on a machine with no Android SDK and no Mac.
 
 ## Installing on a device
 
@@ -321,3 +367,9 @@ files from the
 released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). CC0 asks for no
 attribution; the credit is here because it is the decent thing, not because it
 is owed.
+
+Every dependency has to stay GPL-compatible. The AndroidX and Kotlin stack is Apache-2.0, which
+flows one way into GPLv3. One is not: **JLayer**, which decodes mp3 on the desktop because the JVM
+cannot, is LGPL-2.1 — also GPL-compatible in that direction, and the only non-Apache dependency in
+the tree. Anything under a proprietary or GPL-incompatible licence would make the combined app
+undistributable, so check before pulling one in.

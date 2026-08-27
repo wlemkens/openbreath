@@ -10,9 +10,10 @@ name: build
 
 on:
   push:
-    # the port branch as well as main: the iOS half cannot be checked on the machine it is
-    # written on, so it needs to reach a runner without waiting for a merge
-    branches: [main, ios-port]
+    # the port branches as well as main: neither the iOS half nor the Windows and macOS halves can
+    # be checked on the machine they are written on, so they need to reach a runner without waiting
+    # for a merge. A branch not listed here still builds through pull_request
+    branches: [main, ios-port, desktop-port]
   pull_request:
   workflow_dispatch:
 
@@ -290,3 +291,133 @@ jobs:
             app/build/reports/tests/
             app/build/test-results/
           if-no-files-found: ignore
+
+  # The desktop: one source set, three installers, and jpackage builds only for the machine it runs
+  # on — which is the whole reason this is three jobs rather than one. Nothing about the *code*
+  # differs between them.
+  #
+  # The Linux job carries the shared test suite as well, and that is not arbitrary: desktopTest
+  # inherits commonTest, so StorageTest and the session engine get checked by a third compiler.
+  # It is also the fastest of the three and the cheapest runner, so it is the one worth failing early.
+  desktop-linux:
+    runs-on: ubuntu-latest
+
+    env:
+      OPENBREATH_BUILD: ${{ github.run_number }}
+
+    steps:
+      # lfs for the bowls as everywhere, and now for the launcher icons too: jpackage refuses a
+      # 130-byte .ico, so without this the packaging step fails on something that reads as a
+      # corrupt icon rather than as a checkout that skipped LFS
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Check the bundled audio is audio
+        run: .github/check-media.sh
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Test the shared code on a third compiler, then package
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:desktopTest :app:packageDeb 2>&1 | tee /tmp/desktop-linux.log
+
+      - name: Say what failed
+        if: failure()
+        run: .github/print-test-failures.sh /tmp/desktop-linux.log
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: desktop-test-report
+          path: |
+            app/build/reports/tests/
+            app/build/test-results/desktopTest/
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: OpenBreath-deb
+          path: app/build/compose/binaries/main/deb/*.deb
+
+  desktop-windows:
+    runs-on: windows-latest
+
+    env:
+      OPENBREATH_BUILD: ${{ github.run_number }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      # WiX is on the runner image already, which is the only reason an .msi can be built here at
+      # all — jpackage shells out to it and says only "candle.exe not found" when it is missing.
+      #
+      # The unsigned installer is the point to know about rather than a fault to fix: SmartScreen
+      # warns on it, and quieting that needs an Authenticode certificate, which is the same
+      # missing-certificate problem the iOS build has.
+      - name: Package the installer
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:packageMsi 2>&1 | tee /tmp/desktop-windows.log
+
+      - name: Say what failed
+        if: failure()
+        shell: bash
+        run: .github/print-test-failures.sh /tmp/desktop-windows.log
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: OpenBreath-msi
+          path: app/build/compose/binaries/main/msi/*.msi
+
+  # Alongside the ios job rather than inside it: they share a runner image and nothing else, and a
+  # failure to link an iOS framework should not hide whether the desktop app builds.
+  desktop-macos:
+    runs-on: macos-15
+
+    env:
+      OPENBREATH_BUILD: ${{ github.run_number }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      # Unsigned and unnotarised, so Gatekeeper refuses it on a double-click and wants
+      # right-click → Open. Same certificate that the iOS half is waiting on.
+      - name: Package the disk image
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:packageDmg 2>&1 | tee /tmp/desktop-macos.log
+
+      - name: Say what failed
+        if: failure()
+        run: .github/print-test-failures.sh /tmp/desktop-macos.log
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: OpenBreath-dmg
+          path: app/build/compose/binaries/main/dmg/*.dmg

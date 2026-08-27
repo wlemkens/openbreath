@@ -32,6 +32,9 @@ class AndroidPlatform(
     override val version = activity.versionLabel()
 
     override val haptics = object : Haptics {
+        // every Android phone has a vibrator, and `buzz` already does nothing on the rare one
+        // that does not. The flag exists for the desktop — see Haptics.supported
+        override val supported = true
         override fun buzz(ms: Long) = activity.buzz(ms)
     }
 
