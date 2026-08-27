@@ -389,6 +389,14 @@ Functionality includes:
   that file has to keep producing the *unsigned* ipa the sideloading job publishes. Command-line
   settings win, so one project file serves both.
 
+  **A `.p12` for macOS must carry a SHA-1 MAC.** OpenSSL 3 defaults to SHA-256 and macOS's
+  Security framework will not read it: `security import` fails with "MAC verification failed
+  during PKCS12 import (wrong password?)", which sends you looking at the password, which is
+  fine. Export with `-macalg sha1`; the ciphers can stay AES-256, only the MAC is the problem.
+
+  And set the password secret with `printf '%s'` rather than from a file written by `echo`. A
+  trailing newline is inside the secret, the import fails, and the message is the same one.
+
   **The `.p8` is downloadable exactly once.** A leaked one is revoked and reissued, never rotated
   quietly, which is why `.gitignore` covers it, the `.cer`, the profile and `signing/` — the key
   sat untracked but unignored in the root of a public repository for a while, one `git add -A`
