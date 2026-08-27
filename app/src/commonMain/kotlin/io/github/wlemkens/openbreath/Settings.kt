@@ -198,6 +198,18 @@ fun SettingsScreen(
             )
         }
 
+        if (advanced) item {
+            // in Timing rather than a section of its own: it is the one length here that is not
+            // breathed, and it is still a length of the thing you just pressed Start on
+            SecondsSlider(
+                label = "Get ready",
+                ms = config.leadInMs,
+                minMs = 0,
+                maxMs = 20_000,
+                onChange = { onChange(config.copy(leadInMs = it)) },
+            )
+        }
+
         if (advanced) item { SectionLabel("Sound per phase") }
         if (advanced) for (phase in Phase.entries) {
             item(key = "sound-${phase.name}") {

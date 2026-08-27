@@ -94,6 +94,10 @@ fun SessionScreen(
     var running by remember { mutableStateOf(false) }
     var elapsed by remember { mutableLongStateOf(0L) }
 
+    // ms left of the lead-in, 0 once it is over: the only thing that distinguishes "counting
+    // down" from "breathing", since both run with `running` true
+    var leadInLeft by remember { mutableLongStateOf(0L) }
+
     // when this sitting began, which is what the log entry is keyed on: pausing and carrying on
     // rewrites the same entry rather than adding a second one
     var startedAt by remember { mutableLongStateOf(0L) }
@@ -114,6 +118,8 @@ fun SessionScreen(
 
     LaunchedEffect(running) {
         if (!running) {
+            // pausing mid-count abandons the count: whatever is left of it is not a session
+            leadInLeft = 0L
             dnd.restore()
             return@LaunchedEffect
         }
@@ -124,6 +130,16 @@ fun SessionScreen(
         markers.stopSessionEnd()
 
         val base = elapsed
+        // only on a fresh start: resuming means the phone is already down and the eyes already
+        // shut, which is the whole thing the count is for
+        if (base == 0L && config.leadInMs > 0) {
+            val c0 = withFrameNanos { it }
+            do {
+                leadInLeft = config.leadInMs - (withFrameNanos { it } - c0) / 1_000_000
+            } while (leadInLeft > 0L)
+            leadInLeft = 0L
+        }
+        // after the count, not before it: the sitting began when the breathing did
         if (base == 0L) startedAt = Clock.System.now().toEpochMilliseconds()
         var prev = phaseAt(base, timing)
         // read back in the finally instead of `elapsed`, which Reset clears in the same event
@@ -280,6 +296,7 @@ fun SessionScreen(
             Text(
                 when {
                     finished -> "Done"
+                    leadInLeft > 0L -> "Get ready"
                     running -> state.phase.label
                     else -> preset.name
                 },
@@ -289,7 +306,15 @@ fun SessionScreen(
             // under the name it belongs to, and only while nothing is running: what a preset is
             // called says nothing about what it will do, and the readouts below are hideable —
             // so with them off there would otherwise be no way to see the sitting you set up
-            if (!running && !finished) {
+            if (leadInLeft > 0L) {
+                // rounded up, so a 4 s count reads 4, 3, 2, 1 rather than starting at 3
+                Text(
+                    "${(leadInLeft + 999) / 1000}",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            } else if (!running && !finished) {
                 Text(
                     "${preset.pattern} · ${mmss(total)}",
                     style = MaterialTheme.typography.bodyMedium,

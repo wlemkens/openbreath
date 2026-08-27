@@ -153,6 +153,12 @@ data class Config(
     val vividCue: Boolean = false,
     /** Which half of the settings screen was last open, so it opens there again. */
     val advancedSettings: Boolean = false,
+    /**
+     * Counted down after Start and before the first inhale, so the phone can be put down and
+     * the eyes shut. Not part of the session: it is neither breathed nor logged, and pausing
+     * during it leaves nothing behind. 0 begins immediately.
+     */
+    val leadInMs: Int = 4000,
 ) {
     val active: Preset get() = presets[activeIndex]
 

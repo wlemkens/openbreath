@@ -42,6 +42,8 @@ listing has no reason to raise the subject.
       breath to follow with your eyes closed.
     • Optional silencing of notifications for the length of a sitting, put back exactly as it was
       afterwards.
+    • A count in after you press start — four seconds by default, as long as you like — to put
+      the phone down and shut your eyes before the first breath.
     • Time left, a dot per breath and a breath count, each hideable for a barer screen.
 
     WHAT IT REMEMBERS
@@ -103,6 +105,8 @@ listing has no reason to raise the subject.
     • Optional haptics at each phase change.
     • Optional torch that brightens as you breathe in and fades as you breathe out — the breath
       to follow with your eyes closed.
+    • A count in after you press start — four seconds by default, as long as you like — to put
+      the phone down and shut your eyes before the first breath.
     • Time left, a dot per breath and a breath count, each hideable for a barer screen.
 
     WHAT IT REMEMBERS
