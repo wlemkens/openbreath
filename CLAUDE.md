@@ -627,15 +627,15 @@ Functionality includes:
     serves `text/plain`, so a reviewer would see the markup rather than the page. Either store's
     URL can be changed later, so this does not foreclose stanistil.be.
 
-    **GitHub Pages serves it from the `ios-port` branch, `/docs` — and `main` has no `docs/`
-    at all.** Merging and deleting that branch takes the privacy policy off the web, and the
-    first sign of it is a store record pointing at a 404. Move the source in the same breath as
-    the merge:
-
-        gh api -X PUT repos/wlemkens/openbreath/pages -f 'source[branch]=main' -f 'source[path]=/docs'
+    **GitHub Pages serves it from `main`, `/docs`** — moved there when the iOS work merged, and
+    checked on 2026-08-28: `gh api repos/wlemkens/openbreath/pages` says so. This file used to say
+    `ios-port`, which was the branch it was published from and a trap worth remembering rather than
+    a fact worth keeping: a privacy policy served from a branch goes off the web when that branch is
+    deleted, and the first sign of it is a store record pointing at a 404.
 
     Publishing `/docs` puts `docs/store/` on the web too, which costs nothing on a public
-    repository.
+    repository. There is no `docs/index.html`, so the site root itself 404s — only the policy has a
+    URL. A landing page with the desktop download links is the obvious thing to put there.
   - **The Play listing.** Copy for both stores is in `docs/store/listing.md`, the phone
     screenshots and the two Play graphics beside it. The keystore now exists. Still missing: the
     Play Console record itself, and — for a personal developer account — the 12-tester, 14-day
