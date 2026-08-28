@@ -4,6 +4,13 @@ An app for heart coherence breathing meditations, for Android, iOS, Windows, mac
 
 Free, no ads, no tracking, no account. It makes no network call at all.
 
+**Download:**
+[Windows](https://github.com/wlemkens/openbreath/releases/download/latest/OpenBreath.msi) ·
+[macOS](https://github.com/wlemkens/openbreath/releases/download/latest/OpenBreath.dmg) ·
+[Linux](https://github.com/wlemkens/openbreath/releases/download/latest/OpenBreath.deb) ·
+[all builds](https://github.com/wlemkens/openbreath/releases/tag/latest) — unsigned, see
+[Getting it](#getting-it).
+
 ## What it does
 
 - Presets for the usual patterns, and your own timings for the in, hold, out and hold phases.
