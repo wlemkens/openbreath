@@ -39,6 +39,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
+import kotlin.math.exp
+import kotlin.math.ln
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -387,11 +389,46 @@ fun SettingsScreen(
                 CueStyle.entries.forEach { style ->
                     FilterChip(
                         selected = config.cue == style,
-                        onClick = { onChange(config.copy(cue = style)) },
+                        onClick = {
+                            // a count and a size that suit a sky of stars suit a packed cloud
+                            // rather less, so picking a style starts it at what it was tuned at
+                            onChange(
+                                config.copy(
+                                    cue = style,
+                                    cuePoints = DEFAULT_CUE_POINTS,
+                                    cueDot = DEFAULT_CUE_DOT,
+                                ),
+                            )
+                        },
                         label = { Text(style.label) },
                     )
                 }
             }
+        }
+        // the sphere draws no points, so it has neither to set
+        if (advanced && config.cue != CueStyle.GLOW) item {
+            // Logarithmic: the difference between 20 points and 60 is the whole character of the
+            // cue, and between 1000 and 1040 is nothing at all. Linear spends most of the travel
+            // on the half of the range where nothing changes.
+            LabelledSlider(
+                label = "Points",
+                value = ln(config.cuePoints.toFloat()),
+                range = ln(MIN_CUE_POINTS.toFloat())..ln(MAX_CUE_POINTS.toFloat()),
+                steps = 0,
+                readout = "${config.cuePoints}",
+                onChange = {
+                    val n = exp(it).roundToInt().coerceIn(MIN_CUE_POINTS, MAX_CUE_POINTS)
+                    onChange(config.copy(cuePoints = n))
+                },
+            )
+            LabelledSlider(
+                label = "Point size",
+                value = config.cueDot,
+                range = MIN_CUE_DOT..MAX_CUE_DOT,
+                steps = 0,
+                readout = "${formatOneDecimal(config.cueDot)}×",
+                onChange = { onChange(config.copy(cueDot = it)) },
+            )
         }
         if (advanced) item { CueColour(config.cueColor) { onChange(config.copy(cueColor = it)) } }
         if (advanced) item {

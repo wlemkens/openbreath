@@ -396,7 +396,7 @@ fun SessionScreen(
         }
 
         Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
-            Cue(config.cue, if (running) state.openness else 0f, glow)
+            Cue(config.cue, if (running) state.openness else 0f, glow, config.cuePoints, config.cueDot)
         }
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
