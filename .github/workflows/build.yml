@@ -360,6 +360,12 @@ jobs:
   desktop-linux:
     runs-on: ubuntu-latest
 
+    # to put the installer on the `latest` release, exactly as the ios job does. Per job rather than
+    # at the top of the file, so the Android job stays read-only — and the omission fails as a 403
+    # on the upload alone, with the packaging already green.
+    permissions:
+      contents: write
+
     env:
       OPENBREATH_BUILD: ${{ github.run_number }}
 
@@ -416,6 +422,9 @@ jobs:
   desktop-windows:
     runs-on: windows-latest
 
+    permissions:
+      contents: write
+
     env:
       OPENBREATH_BUILD: ${{ github.run_number }}
 
@@ -464,6 +473,9 @@ jobs:
   # failure to link an iOS framework should not hide whether the desktop app builds.
   desktop-macos:
     runs-on: macos-15
+
+    permissions:
+      contents: write
 
     env:
       OPENBREATH_BUILD: ${{ github.run_number }}
