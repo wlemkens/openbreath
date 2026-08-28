@@ -6,12 +6,24 @@ Everything a listing needs that lives in the repository rather than in a console
     play-icon-512.png                 Play's app icon, from the same 1024 IconGen writes for iOS
     play-feature-graphic-1024x500.png required by Play; no promo video, so nothing overlays it
     android/*.png                     ten phone screenshots, 1080x1920 (9:16, what Play asks for)
-    ios/iphone/*.png                  nine, 1320x2868 (the 6.9" set Apple asks for)
-    ios/ipad/*.png                    the same nine, 2064x2752 (the 13" set it also asks for)
     screenshots.py                    what took the Android set, so a release need not tap by hand
 
 `../privacypolicy.html` is the page both stores ask for the URL of. It has to be hosted; the
 listing cannot be filled in without it.
+
+**`ios/` is gitignored, and it is where everything Apple wants appears.** Both workflows below write
+there, so the same command fills the same directory on a laptop as on a runner:
+
+    ios/iphone/*.png                  nine screenshots, 1320x2868 (the 6.9" set Apple asks for)
+    ios/ipad/*.png                    the same nine, 2064x2752 (the 13" set it also asks for)
+    ios/{iphone,ipad}-breathing.mp4   the two previews, 22s of the cue
+    ios/preview-work/                 what the filming left behind, including the driver's log
+
+Not carried in the repository: 36 MB a regeneration against a 1 GB LFS quota, when the whole set is
+one workflow away. The Android screenshots *are* carried, and that asymmetry is worth naming — they
+are 2 MB, and they are what `screenshots.py` needs to be checked against. The cost of the choice is
+that an iOS set can go stale without a diff to notice it, so the rule below is the only guard there
+is.
 
 ## Retaking the screenshots
 

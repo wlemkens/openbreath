@@ -50,3 +50,8 @@ tmp-creds.md
 *.xcodeproj/
 *.xcworkspace/
 xcuserdata/
+
+# The iOS store assets are generated: `gh workflow run build.yml -f screenshots=true -f previews=true`
+# writes them here so they are somewhere obvious to find, and they are not carried in the repository.
+# The videos alone are 33 MB a refilm against a 1 GB LFS quota, and CI is one command away.
+docs/store/ios/

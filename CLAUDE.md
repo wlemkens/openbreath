@@ -195,6 +195,14 @@ Functionality includes:
 
       gh workflow run build.yml -f screenshots=true
 
+  **The Apple assets are gitignored**, unlike Play's: they land in `docs/store/ios/`, which is where
+  the workflow writes them and where a laptop finds them, and 36 MB a regeneration is not worth
+  carrying against a 1 GB LFS quota. The price is that the "not finished until the screenshot is
+  retaken" rule cannot be enforced by a diff on that half — nothing goes red, and nobody notices.
+  **So say out loud, whenever a shared screen changes, that the Apple set needs refilming**, exactly
+  as this file used to say about a hand-taken set. The command is the difference; the discipline is
+  not.
+
   Nine shots rather than ten: no reminders screen. **Twice over**, because `TARGETED_DEVICE_FAMILY`
   is `1,2` and App Store Connect then refuses a listing without a 13" iPad set as well as the 6.9"
   phone one — the device family and the screenshot script are one decision, and the error that asks

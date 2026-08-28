@@ -46,7 +46,9 @@ waves="app/build/preview/waves.wav"
 # film <name> <WxH> <device type name>...
 film() {
     local label="$1" size="$2"; shift 2
-    local work="$out/$label"
+    # under its own directory, not `$out/$label`: that is where the screenshots of the same device
+    # class live, and this one gets `rm -rf`d at the start of every run
+    local work="$out/preview-work/$label"
     rm -rf "$work"; mkdir -p "$work"
 
     local udid

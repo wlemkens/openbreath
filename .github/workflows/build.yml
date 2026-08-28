@@ -295,14 +295,14 @@ jobs:
       # also boots and drives a simulator for a couple of minutes on the priciest runner there is.
       - name: Take the App Store screenshots
         if: inputs.screenshots
-        run: .github/ios-screenshots.sh build/store-screenshots
+        run: .github/ios-screenshots.sh docs/store/ios
 
       # The preview videos, and the same reasoning: manual, because a video of the cue is retaken
       # when the cue changes. It films a simulator in real time — 22 seconds of breathing cannot be
       # hurried — and installs ffmpeg if the image has none, so it is the slowest thing here.
       - name: Film the App Store previews
         if: inputs.previews
-        run: .github/ios-previews.sh build/store-previews
+        run: .github/ios-previews.sh docs/store/ios
 
       - uses: actions/upload-artifact@v7
         # always(), so a failed run still hands over the driver's log; warn rather than error
@@ -310,16 +310,22 @@ jobs:
         if: always() && inputs.previews
         with:
           name: app-store-previews
-          path: build/store-previews
+          # docs/store/ios is where the same command puts them on a laptop, and it is gitignored:
+          # somewhere obvious to find rather than 36 MB carried in the repository
+          path: |
+            docs/store/ios/*-breathing.mp4
+            docs/store/ios/preview-work/*/xcodebuild.log
           if-no-files-found: warn
 
       - uses: actions/upload-artifact@v7
         if: always() && inputs.screenshots
         with:
           name: app-store-screenshots
-          # the directory rather than a glob: the shots are one level down, in iphone/ and ipad/,
+          # the directories rather than a glob: the shots are one level down, in iphone/ and ipad/,
           # and `*.png` matched nothing while the step that made them reported success
-          path: build/store-screenshots
+          path: |
+            docs/store/ios/iphone
+            docs/store/ios/ipad
           # error, not warn. A screenshot run whose whole product is an artifact should be red when
           # there is no artifact.
           if-no-files-found: error
