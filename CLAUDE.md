@@ -600,6 +600,11 @@ Functionality includes:
     The condition it carries is standing, not one-off: the waiver requires that the Paid
     Applications Agreement has *never* been signed. Accepting it in App Store Connect — which
     the UI offers freely — voids the waiver. The free apps agreement is the only one wanted.
+
+    So the price is the **Free** price point on both stores, and that is close to a one-way door:
+    charging for the app later would mean signing the agreement that voids the waiver, and on Play a
+    free app can never become paid at all — only a new listing can. Which suits an app that is free
+    by design, and is one more reason the tip link has to stay a gift rather than a price.
   - **The App Store listing.** The record exists — app `6805899911`, bundle
     `io.github.wlemkens.openbreath`, and build 70 uploaded and VALID, so the pipeline is proven.
     What a submission still wants is all copy and pictures: category, age rating, description and
