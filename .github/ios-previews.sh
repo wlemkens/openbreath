@@ -81,11 +81,9 @@ film() {
 
     # Recording starts before the app does and runs long: a capture cannot be started late, whereas
     # anything filmed too early is thrown away by the trim below. The install and first launch of a
-    # Compose app take the best part of a minute, which is exactly what makes guessing an offset
-    # hopeless and a marker cheap.
+    # Compose app take minutes on a runner, which is what makes guessing an offset hopeless and a
+    # marker cheap.
     local raw="$work/capture.mov"
-    local began_recording
-    began_recording=$(python3 -c 'import time; print(f"{time.time():.3f}")')
     xcrun simctl io "$udid" recordVideo --codec h264 --force "$raw" &
     local recorder=$!
 
@@ -99,9 +97,9 @@ film() {
         fi
         sleep 1
         waited=$((waited + 1))
-        [ "$waited" -lt 240 ] || {
+        [ "$waited" -lt 480 ] || {
             kill -INT "$recorder" 2>/dev/null || true
-            echo "::error title=No inhale within four minutes::$label"
+            echo "::error title=No inhale within eight minutes::$label"
             exit 1
         }
     done
@@ -111,6 +109,8 @@ film() {
 
     # SIGINT rather than SIGKILL: recordVideo finalises the container on interrupt, and a killed
     # recorder leaves a file that ffmpeg refuses.
+    local stopped
+    stopped=$(python3 -c 'import time; print(f"{time.time():.3f}")')
     kill -INT "$recorder" 2>/dev/null || true
     wait "$recorder" 2>/dev/null || true
     local status=0
@@ -123,15 +123,28 @@ film() {
     fi
     [ -s "$raw" ] || { echo "::error title=Nothing was recorded::$raw is empty"; exit 1; }
 
-    # Where the first inhale is in the capture: the marker holds the host clock at the phase change
-    # and the shell noted when the recorder started. The simulator shares the host clock, so this is
-    # arithmetic rather than an estimate.
-    local offset
+    # Where the first inhale is in the capture, measured **backwards from the end**: the capture
+    # stops when the recorder is interrupted, so the phase change sits `stopped - marker` seconds
+    # before the last frame, wherever the recording actually began.
+    #
+    # It was measured forwards from the start once, and that is a trap worth leaving a note about:
+    # `recordVideo` reported "Recording started" a full two minutes after the process was launched
+    # on a freshly erased device, so the offset came out 50 seconds beyond the end of a 226-second
+    # capture. ffmpeg then seeked past the end and wrote a perfectly valid file containing the
+    # soundtrack and no video at all — `video:0KiB audio:595KiB` — which the size check caught only
+    # because ffprobe returned an empty width. Nothing about the warmup is knowable in advance;
+    # the end of the file is.
+    local captured offset
+    captured=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$raw")
     offset=$(python3 -c "
 import sys
-began = float(open(sys.argv[1]).read().strip())
-print(f'{max(0.0, began - float(sys.argv[2])):.3f}')" "$marker" "$began_recording")
-    echo "$label: trimming from ${offset}s"
+captured, stopped, marker_at = float(sys.argv[1]), float(sys.argv[2]), float(open(sys.argv[3]).read().strip())
+offset = captured - (stopped - marker_at)
+if offset < 0 or offset + float(sys.argv[4]) > captured:
+    print(f'::error title=The trim does not fit the capture::{offset:.1f}s + {sys.argv[4]}s of a {captured:.1f}s recording')
+    raise SystemExit(1)
+print(f'{offset:.3f}')" "$captured" "$stopped" "$marker" "$SECONDS_OF_BREATH")
+    echo "$label: ${captured}s captured, trimming from ${offset}s"
 
     local final="$out/$label-breathing.mp4"
     ffmpeg -nostdin -y -ss "$offset" -i "$raw" -i "$waves" \
@@ -151,6 +164,10 @@ print(f'{max(0.0, began - float(sys.argv[2])):.3f}')" "$marker" "$began_recordin
     duration=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$final")
     audio=$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "$final")
 
+    [ -n "$width" ] || {
+        echo "::error title=The preview has no video::$label got a file with a soundtrack and no picture, which means the trim landed outside the capture"
+        exit 1
+    }
     [ "${width}x${height}" = "$size" ] || {
         echo "::error title=The preview is the wrong size::$label is ${width}x${height}, Apple wants $size"
         exit 1
