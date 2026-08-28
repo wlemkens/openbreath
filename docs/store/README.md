@@ -8,7 +8,6 @@ Everything a listing needs that lives in the repository rather than in a console
     android/*.png                     ten phone screenshots, 1080x1920 (9:16, what Play asks for)
     ios/iphone/*.png                  nine, 1320x2868 (the 6.9" set Apple asks for)
     ios/ipad/*.png                    the same nine, 2064x2752 (the 13" set it also asks for)
-    ios/*-breathing.mp4               the App Store previews, 22s of the cue, one per device class
     screenshots.py                    what took the Android set, so a release need not tap by hand
 
 `../privacypolicy.html` is the page both stores ask for the URL of. It has to be hosted; the
@@ -90,6 +89,12 @@ Optional — a listing goes live without them — and worth having for one scree
 animation, and a still frame cannot show whether it moves.
 
     gh workflow run build.yml --ref <branch> -f previews=true
+
+**Not kept in the repository**, unlike the screenshots: the two files are 33 MB, every refilm adds
+another copy to LFS forever, and a free LFS quota is 1 GB. They are a workflow away whenever they are
+wanted, which a screenshot is too — the difference is only that 2 MB of stills is worth the
+convenience and 33 MB of video is not. Download the `app-store-previews` artifact and upload from
+there.
 
 Twenty-two seconds of the default 5.5/5.5 breath, which is two whole cycles inside Apple's 15-to-30
 second window, filmed on the same two device classes as the screenshots: 886x1920 for the phone and

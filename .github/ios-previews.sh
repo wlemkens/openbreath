@@ -151,6 +151,10 @@ print(f'{offset:.3f}')" "$captured" "$stopped" "$marker" "$SECONDS_OF_BREATH")
         -t "$SECONDS_OF_BREATH" \
         -vf "scale=$size,fps=30,format=yuv420p" \
         -c:v libx264 -profile:v high -level 4.0 -b:v 11M -maxrate 12M -bufsize 24M \
+        `# 11M is the middle of Apple's 10-12 Mbps and x264 comes in under it — about 7.4 — because` \
+        `# the app is a glow on black and there is genuinely less to encode. That is a ceiling being` \
+        `# respected rather than a target being missed, and forcing bits into black frames would only` \
+        `# make the file bigger. Do not "fix" it.` \
         -c:a aac -b:a 256k -ar 44100 -ac 2 \
         -map 0:v:0 -map 1:a:0 -movflags +faststart \
         "$final" 2>&1 | tail -3
