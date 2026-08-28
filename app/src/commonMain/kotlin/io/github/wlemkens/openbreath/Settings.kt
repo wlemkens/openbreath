@@ -311,6 +311,7 @@ fun SettingsScreen(
                     range = 1f..100f,
                     steps = 98,
                     readout = "${config.cycles}",
+                    onStep = { dir -> onChange(config.copy(cycles = (config.cycles + dir).coerceIn(1, 100))) },
                     onChange = { onChange(config.copy(cycles = it.roundToInt())) },
                 )
             } else {
@@ -320,6 +321,10 @@ fun SettingsScreen(
                     range = 1f..60f,
                     steps = 58,
                     readout = "${(config.durationMs / 60_000L)} min",
+                    onStep = { dir ->
+                        val min = (config.durationMs / 60_000L + dir).coerceIn(1L, 60L)
+                        onChange(config.copy(durationMs = min * 60_000L))
+                    },
                     onChange = { onChange(config.copy(durationMs = (it.roundToInt() * 60_000L))) },
                 )
             }
