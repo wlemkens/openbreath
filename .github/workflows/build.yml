@@ -404,6 +404,15 @@ jobs:
           name: OpenBreath-deb
           path: app/build/compose/binaries/main/deb/*.deb
 
+      # and again as a public asset, since an artifact cannot be downloaded without a GitHub login.
+      # Not on pull requests: a fork's token cannot write, and a PR build has no business replacing
+      # what a reader is being offered.
+      - name: Publish the .deb as a download
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/publish-desktop.sh 'app/build/compose/binaries/main/deb/*.deb' OpenBreath.deb
+
   desktop-windows:
     runs-on: windows-latest
 
@@ -444,6 +453,13 @@ jobs:
           name: OpenBreath-msi
           path: app/build/compose/binaries/main/msi/*.msi
 
+      - name: Publish the .msi as a download
+        if: github.event_name != 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/publish-desktop.sh 'app/build/compose/binaries/main/msi/*.msi' OpenBreath.msi
+
   # Alongside the ios job rather than inside it: they share a runner image and nothing else, and a
   # failure to link an iOS framework should not hide whether the desktop app builds.
   desktop-macos:
@@ -479,6 +495,12 @@ jobs:
         with:
           name: OpenBreath-dmg
           path: app/build/compose/binaries/main/dmg/*.dmg
+
+      - name: Publish the .dmg as a download
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/publish-desktop.sh 'app/build/compose/binaries/main/dmg/*.dmg' OpenBreath.dmg
 
   # Signing and uploading, deliberately kept apart from the job above.
   #

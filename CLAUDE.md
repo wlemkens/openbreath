@@ -490,7 +490,12 @@ Functionality includes:
   What *is* per-OS is only packaging: `jpackage` builds an installer for the machine it is run on
   and no other, so `packageDeb`, `packageMsi` and `packageDmg` are three CI jobs over one source
   set. Asking Linux for an `.msi` fails, and that is jpackage's limit rather than a choice made
-  here. All three installers are **unsigned**, so SmartScreen warns and Gatekeeper refuses on a
+  here. All three land on the same rolling `latest` prerelease the ipa uses, under fixed names —
+  `OpenBreath.deb`, `.msi`, `.dmg`, via `.github/publish-desktop.sh` — because an upload-artifact
+  needs a GitHub login to download and a release asset does not, and the README links them. Fixed
+  names rather than the versioned ones jpackage writes: a URL that moves every push is not a
+  download link, and only SideStore needs a per-version filename. All three installers are
+  **unsigned**, so SmartScreen warns and Gatekeeper refuses on a
   double-click — the same missing-certificate problem the iOS TODO carries, said out loud in the
   README so it arrives as a known edge rather than a surprise.
 
@@ -636,7 +641,7 @@ Functionality includes:
     Play Console record itself, and — for a personal developer account — the 12-tester, 14-day
     closed test that has to run before production opens.
 
-    Uploading is wired: gradle-play-publisher, `./gradlew :app:publishBundle`, README has the
+    Uploading is wired: gradle-play-publisher, `./gradlew :app:publishBundle`, `docs/BUILDING.md` has the
     service-account setup. Release notes are generated from the commit subjects on the way, which
     makes a commit subject user-facing copy — one more reason they are written the way they are.
     They land in `app/src/main/play/`, which is AGP's source-set name and not the KMP one, and is
