@@ -1,17 +1,11 @@
 package io.github.wlemkens.openbreath
 
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.window.ComposeUIViewController
-import kotlinx.coroutines.launch
+import platform.Foundation.NSProcessInfo
 import platform.UIKit.UIViewController
 
 /**
@@ -21,75 +15,37 @@ import platform.UIKit.UIViewController
  * UIViewControllerRepresentable. It does what the Activity does — provide where the log lives,
  * provide what makes a sound, then hand over — because after the port there is nothing else for
  * an entry point to do.
+ *
+ * It passes the navigator neither of its two optional arguments, which is the whole of what iOS
+ * lacks: no reminders screen and so nothing for the first-run question to arm. Both come out as a
+ * menu item that is simply absent rather than one that opens nothing.
  */
 fun MainViewController(): UIViewController = ComposeUIViewController {
+    val store = store()
+    LaunchedEffect(Unit) { importDemoLog(store) }
     CompositionLocalProvider(
-        LocalStore provides store(),
+        LocalStore provides store,
         LocalPlatform provides IosPlatform(),
     ) {
-        AppTheme { IosBreath(Modifier.safeDrawingPadding()) }
+        AppTheme { Breath(Modifier.safeDrawingPadding()) }
     }
 }
 
 /**
- * Which screen is showing, over the ones that exist here.
+ * The store screenshots, and the only reason this exists.
  *
- * The twin of androidMain's Breath, and temporary in the same way. Reminders is the last screen
- * not reachable here, and passing null for it leaves it out of the menu rather than offering an
- * item that opens nothing. When it moves to commonMain, this file and its Android twin become
- * one navigator and both are deleted.
+ * The achievements and milestone screens are worth photographing only with a real streak behind
+ * them, and a real one cannot be arranged on purpose — so the harness hands in the same generated
+ * log Android's `screenshots.py` imports. Android drives the actual Import button through
+ * uiautomator; iOS cannot, because the file would have to be somewhere the document picker can
+ * browse to, so the backup arrives in the environment instead and goes through the same
+ * [Store.importBackup] the Settings screen calls.
+ *
+ * `launchEnvironment` is set by an XCUITest and by nothing else: an App Store build has no way to
+ * arrive here, since nobody can set a variable on a launch the phone performs. It is inert without
+ * it, which is why it can sit in the shipping entry point.
  */
-@Composable
-private fun IosBreath(modifier: Modifier = Modifier) {
-    val scope = rememberCoroutineScope()
-    val store = LocalStore.current
-    val config by remember { store.configFlow() }.collectAsState(initial = null)
-    val goals by remember { store.goalsFlow() }.collectAsState(initial = null)
-    var showGoals by remember { mutableStateOf(false) }
-    var showAchievements by remember { mutableStateOf(false) }
-    var showSettings by remember { mutableStateOf(false) }
-    var showLog by remember { mutableStateOf(false) }
-    var showSupport by remember { mutableStateOf(false) }
-
-    // the same null gate the Android side has, and for the same reason: a list built on a value
-    // that has not loaded yet is a lie the goal screen would act on
-    val current = config ?: return
-    val saved = goals ?: return
-
-    MilestoneWatch(current, saved)
-    // no onReminder: there are no reminders here yet, so the question asks about the goal alone
-    FirstRunSetup()
-
-    when {
-        showSettings -> SettingsScreen(
-            config = current,
-            onChange = { scope.launch { store.saveConfig(it) } },
-            onBack = { showSettings = false },
-            modifier = modifier,
-        )
-
-        showLog -> LogScreen(onBack = { showLog = false }, modifier = modifier)
-
-        showSupport -> SupportScreen(onBack = { showSupport = false }, modifier = modifier)
-
-        showGoals -> GoalsScreen(
-            goals = saved,
-            onChange = { scope.launch { store.saveGoals(it) } },
-            onBack = { showGoals = false },
-            modifier = modifier,
-        )
-
-        showAchievements ->
-            AchievementsScreen(saved, onBack = { showAchievements = false }, modifier = modifier)
-
-        else -> SessionScreen(
-            current,
-            onOpenGoals = { showGoals = true },
-            onOpenAchievements = { showAchievements = true },
-            onOpenSettings = { showSettings = true },
-            onOpenLog = { showLog = true },
-            onOpenSupport = { showSupport = true },
-            modifier = modifier,
-        )
-    }
+private suspend fun importDemoLog(store: Store) {
+    val text = NSProcessInfo.processInfo.environment["OPENBREATH_IMPORT_JSON"] as? String ?: return
+    decodeBackup(text)?.let { store.importBackup(it) }
 }

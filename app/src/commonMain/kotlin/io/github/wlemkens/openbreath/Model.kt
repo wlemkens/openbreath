@@ -147,6 +147,9 @@ data class Config(
     val showDots: Boolean = true,
     val showBreaths: Boolean = false,
     val cue: CueStyle = CueStyle.CLOUD,
+    /** How many points the cloud styles draw, and how big one is in dp. Not used by Glow. */
+    val cuePoints: Int = DEFAULT_CUE_POINTS,
+    val cueDot: Float = DEFAULT_CUE_DOT,
     /** Opaque ARGB. The bright end of the cue, and the colour of the breath dots. */
     val cueColor: Int = DEFAULT_CUE_COLOR,
     /** Draw the cue past what the picker can express — see `Color.vivid`. */

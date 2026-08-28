@@ -10,11 +10,29 @@ name: build
 
 on:
   push:
-    # the port branch as well as main: the iOS half cannot be checked on the machine it is
-    # written on, so it needs to reach a runner without waiting for a merge
-    branches: [main, ios-port]
+    # the port branches as well as main: neither the iOS half nor the Windows and macOS halves can
+    # be checked on the machine they are written on, so they need to reach a runner without waiting
+    # for a merge. A branch not listed here still builds through pull_request
+    branches: [main, ios-port, desktop-port]
   pull_request:
+  # Both of these are off by default, and that is the point of them existing. A manual run used to
+  # mean "upload to App Store Connect", which burns a build number that can never be reused and
+  # mails every TestFlight tester — so the moment there was a second reason to run this by hand,
+  # the reason had to be said rather than assumed.
   workflow_dispatch:
+    inputs:
+      app_store:
+        description: Sign a Release build and upload it to App Store Connect
+        type: boolean
+        default: false
+      screenshots:
+        description: Retake the App Store screenshots from a 6.9" simulator
+        type: boolean
+        default: false
+      previews:
+        description: Refilm the App Store preview videos of the breathing cue
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -271,6 +289,47 @@ jobs:
       - name: Run it and film it
         run: .github/record-simulator.sh build/ios-sim/Build/Products/Debug-iphonesimulator/OpenBreath.app
 
+      # The App Store screenshots, and workflow_dispatch only — for the same reason the Android set
+      # is a command someone types. A screenshot is a claim about what the app looks like, so it is
+      # retaken when a screen changes, which is a decision rather than a consequence of a push. It
+      # also boots and drives a simulator for a couple of minutes on the priciest runner there is.
+      - name: Take the App Store screenshots
+        if: inputs.screenshots
+        run: .github/ios-screenshots.sh docs/store/ios
+
+      # The preview videos, and the same reasoning: manual, because a video of the cue is retaken
+      # when the cue changes. It films a simulator in real time — 22 seconds of breathing cannot be
+      # hurried — and installs ffmpeg if the image has none, so it is the slowest thing here.
+      - name: Film the App Store previews
+        if: inputs.previews
+        run: .github/ios-previews.sh docs/store/ios
+
+      - uses: actions/upload-artifact@v7
+        # always(), so a failed run still hands over the driver's log; warn rather than error
+        # because on a failure there is legitimately no mp4, and the real cause is already annotated
+        if: always() && inputs.previews
+        with:
+          name: app-store-previews
+          # docs/store/ios is where the same command puts them on a laptop, and it is gitignored:
+          # somewhere obvious to find rather than 36 MB carried in the repository
+          path: |
+            docs/store/ios/*-breathing.mp4
+            docs/store/ios/preview-work/*/xcodebuild.log
+          if-no-files-found: warn
+
+      - uses: actions/upload-artifact@v7
+        if: always() && inputs.screenshots
+        with:
+          name: app-store-screenshots
+          # the directories rather than a glob: the shots are one level down, in iphone/ and ipad/,
+          # and `*.png` matched nothing while the step that made them reported success
+          path: |
+            docs/store/ios/iphone
+            docs/store/ios/ipad
+          # error, not warn. A screenshot run whose whole product is an artifact should be red when
+          # there is no artifact.
+          if-no-files-found: error
+
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -290,3 +349,330 @@ jobs:
             app/build/reports/tests/
             app/build/test-results/
           if-no-files-found: ignore
+
+  # The desktop: one source set, three installers, and jpackage builds only for the machine it runs
+  # on — which is the whole reason this is three jobs rather than one. Nothing about the *code*
+  # differs between them.
+  #
+  # The Linux job carries the shared test suite as well, and that is not arbitrary: desktopTest
+  # inherits commonTest, so StorageTest and the session engine get checked by a third compiler.
+  # It is also the fastest of the three and the cheapest runner, so it is the one worth failing early.
+  desktop-linux:
+    runs-on: ubuntu-latest
+
+    # to put the installer on the `latest` release, exactly as the ios job does. Per job rather than
+    # at the top of the file, so the Android job stays read-only — and the omission fails as a 403
+    # on the upload alone, with the packaging already green.
+    permissions:
+      contents: write
+
+    env:
+      OPENBREATH_BUILD: ${{ github.run_number }}
+
+    steps:
+      # lfs for the bowls as everywhere, and now for the launcher icons too: jpackage refuses a
+      # 130-byte .ico, so without this the packaging step fails on something that reads as a
+      # corrupt icon rather than as a checkout that skipped LFS
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Check the bundled audio is audio
+        run: .github/check-media.sh
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Test the shared code on a third compiler, then package
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:desktopTest :app:packageDeb 2>&1 | tee /tmp/desktop-linux.log
+
+      - name: Say what failed
+        if: failure()
+        run: .github/print-test-failures.sh /tmp/desktop-linux.log
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: desktop-test-report
+          path: |
+            app/build/reports/tests/
+            app/build/test-results/desktopTest/
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: OpenBreath-deb
+          path: app/build/compose/binaries/main/deb/*.deb
+
+      # and again as a public asset, since an artifact cannot be downloaded without a GitHub login.
+      # Not on pull requests: a fork's token cannot write, and a PR build has no business replacing
+      # what a reader is being offered.
+      - name: Publish the .deb as a download
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/publish-desktop.sh 'app/build/compose/binaries/main/deb/*.deb' OpenBreath.deb
+
+  desktop-windows:
+    runs-on: windows-latest
+
+    permissions:
+      contents: write
+
+    env:
+      OPENBREATH_BUILD: ${{ github.run_number }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      # WiX is on the runner image already, which is the only reason an .msi can be built here at
+      # all — jpackage shells out to it and says only "candle.exe not found" when it is missing.
+      #
+      # The unsigned installer is the point to know about rather than a fault to fix: SmartScreen
+      # warns on it, and quieting that needs an Authenticode certificate, which is the same
+      # missing-certificate problem the iOS build has.
+      - name: Package the installer
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:packageMsi 2>&1 | tee /tmp/desktop-windows.log
+
+      - name: Say what failed
+        if: failure()
+        shell: bash
+        run: .github/print-test-failures.sh /tmp/desktop-windows.log
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: OpenBreath-msi
+          path: app/build/compose/binaries/main/msi/*.msi
+
+      - name: Publish the .msi as a download
+        if: github.event_name != 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/publish-desktop.sh 'app/build/compose/binaries/main/msi/*.msi' OpenBreath.msi
+
+  # Alongside the ios job rather than inside it: they share a runner image and nothing else, and a
+  # failure to link an iOS framework should not hide whether the desktop app builds.
+  desktop-macos:
+    runs-on: macos-15
+
+    permissions:
+      contents: write
+
+    env:
+      OPENBREATH_BUILD: ${{ github.run_number }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      # Unsigned and unnotarised, so Gatekeeper refuses it on a double-click and wants
+      # right-click → Open. Same certificate that the iOS half is waiting on.
+      - name: Package the disk image
+        run: |
+          set -o pipefail
+          ./gradlew --no-daemon :app:packageDmg 2>&1 | tee /tmp/desktop-macos.log
+
+      - name: Say what failed
+        if: failure()
+        run: .github/print-test-failures.sh /tmp/desktop-macos.log
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: OpenBreath-dmg
+          path: app/build/compose/binaries/main/dmg/*.dmg
+
+      - name: Publish the .dmg as a download
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/publish-desktop.sh 'app/build/compose/binaries/main/dmg/*.dmg' OpenBreath.dmg
+
+  # Signing and uploading, deliberately kept apart from the job above.
+  #
+  # Manual only. A build that reaches App Store Connect burns a build number that can never be
+  # reused and, once TestFlight is on, mails every tester — neither of which should happen because
+  # someone fixed a typo. Run it from the Actions tab when there is something worth shipping.
+  #
+  # Everything it needs is a repository secret. No Mac of anyone's is involved: the certificate was
+  # issued through the App Store Connect API, and the upload authenticates with an API key rather
+  # than an Apple ID, so nothing here knows a password.
+  app-store:
+    name: Upload to App Store Connect
+    runs-on: macos-15
+    if: inputs.app_store
+
+    env:
+      VERSION: 1.0.${{ github.run_number }}
+      BUILD: ${{ github.run_number }}
+      BUNDLE_ID: io.github.wlemkens.openbreath
+      PROFILE_NAME: OpenBreath App Store
+      # Release is the first Kotlin/Native build that optimises the whole program at once, and it
+      # runs out of the 2g gradle.properties gives: "Compilation failed: Java heap space" from
+      # inside Xcode's script phase. The ios job never hit it because a Debug framework is a far
+      # lighter compile. Raised here rather than in gradle.properties so a laptop is not asked for
+      # 4g to build an APK; the runner has about 7g, so this leaves room for Xcode beside it.
+      GRADLE_OPTS: -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g"
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Check the bundled audio is audio
+        run: .github/check-media.sh
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Use an Xcode new enough for Compose Multiplatform
+        run: .github/select-xcode.sh 26
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('build.gradle.kts') }}
+          restore-keys: konan-${{ runner.os }}-
+
+      # A keychain of its own, unlocked for this run and deleted after it, rather than the
+      # runner's login keychain: a hosted runner is thrown away anyway, but a build that leaves a
+      # private key in a shared keychain is a habit that eventually runs somewhere that is not.
+      - name: Take the signing identity in
+        env:
+          P12: ${{ secrets.IOS_DIST_P12 }}
+          P12_PASSWORD: ${{ secrets.IOS_DIST_P12_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PROVISIONING_PROFILE }}
+        run: |
+          set -euo pipefail
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          password="$(uuidgen)"
+
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 3600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+
+          echo "$P12" | base64 --decode > "$RUNNER_TEMP/dist.p12"
+          security import "$RUNNER_TEMP/dist.p12" -k "$keychain" -P "$P12_PASSWORD" \
+            -T /usr/bin/codesign -T /usr/bin/security
+          # without this codesign stops to ask for permission, and a runner has nobody to ask
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$keychain"
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          rm -f "$RUNNER_TEMP/dist.p12"
+
+          # Xcode looks for profiles by UUID in this directory and nowhere else
+          profiles=~/Library/MobileDevice/Provisioning\ Profiles
+          mkdir -p "$profiles"
+          echo "$PROFILE" | base64 --decode > "$profiles/openbreath.mobileprovision"
+
+          echo "identity in the keychain:"
+          security find-identity -v -p codesigning "$keychain"
+
+      - name: Generate the Xcode project
+        working-directory: iosApp
+        run: |
+          curl -fsSL -o /tmp/xcodegen.zip \
+            https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip
+          unzip -q /tmp/xcodegen.zip -d /tmp/xcodegen
+          bin=$(find /tmp/xcodegen -type f -path '*/bin/xcodegen' | head -1)
+          "$bin" generate
+
+      # Release, and signed with the identity above. The signing settings are given here rather
+      # than in project.yml because that file has to keep producing the *unsigned* build the
+      # sideloading job wants — command-line settings win over the project's own.
+      - name: Archive
+        run: |
+          set -o pipefail
+          xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/OpenBreath.xcarchive" \
+            MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$BUILD" \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=YES \
+            CODE_SIGN_STYLE=Manual \
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            archive 2>&1 | tee /tmp/archive.log | xcbeautify || {
+              .github/print-test-failures.sh /tmp/archive.log; exit 1; }
+
+      - name: Export the ipa
+        run: |
+          set -o pipefail
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>teamID</key><string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>uploadSymbols</key><true/>
+            <key>provisioningProfiles</key>
+            <dict><key>$BUNDLE_ID</key><string>$PROFILE_NAME</string></dict>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/OpenBreath.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            2>&1 | tee /tmp/export.log | xcbeautify || {
+              .github/print-test-failures.sh /tmp/export.log; exit 1; }
+          ls -la "$RUNNER_TEMP/export"
+
+      # altool wants the key on disk, in this directory, named exactly this. An API key rather
+      # than an Apple ID: no password exists to leak, and it cannot be locked out by 2FA.
+      - name: Upload
+        run: |
+          set -o pipefail
+          mkdir -p ~/private_keys
+          echo "${{ secrets.ASC_KEY_P8 }}" | base64 --decode \
+            > ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
+          xcrun altool --upload-app -f "$RUNNER_TEMP/export/OpenBreath.ipa" -t ios \
+            --apiKey "${{ secrets.ASC_KEY_ID }}" --apiIssuer "${{ secrets.ASC_ISSUER_ID }}" \
+            2>&1 | tee /tmp/upload.log || { .github/print-test-failures.sh /tmp/upload.log; exit 1; }
+
+      # if: always() — a failed archive still leaves a key in a keychain, and the point of a
+      # throwaway keychain is that it is actually thrown away
+      - name: Put the signing identity back
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/signing.keychain-db" 2>/dev/null || true
+          rm -f ~/private_keys/AuthKey_*.p8
+          rm -f ~/Library/MobileDevice/Provisioning\ Profiles/openbreath.mobileprovision
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: app-store-ipa
+          path: ${{ runner.temp }}/export/*.ipa
+          if-no-files-found: warn

@@ -1,5 +1,6 @@
 # Overview
-This project is an Android apllication for doing heart coherence breathing meditations.
+This project is an application for doing heart coherence breathing meditations, for Android, iOS
+and the desktop (Windows, macOS, Linux).
 
 Functionality includes:
 - custom timing of the in, hold, out and hold phases.
@@ -28,6 +29,12 @@ Functionality includes:
   Every dependency has to stay GPL-compatible: the AndroidX and Kotlin stack is Apache-2.0,
   which is fine one-way into GPLv3. Adding anything under a proprietary or GPL-incompatible
   licence would make the combined app undistributable, so check before pulling one in.
+
+  **One dependency is not Apache-2.0, and it is worth knowing which.** `com.googlecode.soundlibs:jlayer`
+  is LGPL-2.1, and it is in the tree because the JVM has no mp3 decoder at all — without it the
+  two bundled bowls and a reader's own file could not sound on the desktop. LGPL flows one way into
+  GPLv3 exactly as Apache does, so nothing about distribution changes; it is named here so that
+  "everything is Apache" does not become a thing anyone believes without checking.
 
   The bundled audio is **not** covered by that grant. `app/src/commonMain/composeResources/files/*.mp3` are cuts
   of files in `media/` from the `freesound_community` Pixabay account, released under
@@ -181,9 +188,33 @@ Functionality includes:
   it, and the App Store half may only name what iOS actually has — reminders and the silencing of
   notifications are still Android's alone.
 
-  The iOS screenshots are the ones that will rot, because they cannot be taken from here: `simctl`
-  cannot tap a simulator, so Apple's set is hand-taken on a Mac and nothing reminds anyone. When a
-  shared screen changes, say out loud that the iOS set is now stale.
+  **The iOS set is taken the same way now**, which it was not: it used to be hand-taken on a Mac
+  because `simctl` cannot tap a simulator, and the tapping is an XCUITest — `iosApp/StoreScreenshots`
+  driven by `.github/ios-screenshots.sh` — so it runs in CI on a 6.9" simulator and the rule above
+  covers both stores:
+
+      gh workflow run build.yml -f screenshots=true
+
+  **The Apple assets are gitignored**, unlike Play's: they land in `docs/store/ios/`, which is where
+  the workflow writes them and where a laptop finds them, and 36 MB a regeneration is not worth
+  carrying against a 1 GB LFS quota. The price is that the "not finished until the screenshot is
+  retaken" rule cannot be enforced by a diff on that half — nothing goes red, and nobody notices.
+  **So say out loud, whenever a shared screen changes, that the Apple set needs refilming**, exactly
+  as this file used to say about a hand-taken set. The command is the difference; the discipline is
+  not.
+
+  Nine shots rather than ten: no reminders screen. **Twice over**, because `TARGETED_DEVICE_FAMILY`
+  is `1,2` and App Store Connect then refuses a listing without a 13" iPad set as well as the 6.9"
+  phone one — the device family and the screenshot script are one decision, and the error that asks
+  for it says nothing about where it came from. Nothing is laid out for a tablet and nothing needs to
+  be: the cue takes the space it is given.
+
+  Two things it inherits from the Android script.
+  It taps by accessibility label, so **renaming a button breaks the run rather than the app**. And
+  the demo log arrives in the app's launch environment instead of through the file picker — the hook
+  is in `iosMain/MainViewController.kt`, inert without the variable, and it is the one piece of
+  shipping code that exists for the screenshots. Deleting it silently empties the log, achievements
+  and milestone shots.
 
   ## The iOS port
   The module is Kotlin Multiplatform with Compose Multiplatform, targeting `androidTarget()`
@@ -201,11 +232,12 @@ Functionality includes:
   compiled. Downgrading Kotlin, or upgrading Compose past what the Kotlin version can read, breaks
   the phone build and nothing else — so it fails only in the job most likely to be skipped.
 
-  Compiling for iOS does **not** need Xcode: Kotlin/Native ships a prebuilt
-  `kotlin-native-prebuilt-macos-*` distribution, so `compileKotlinIosArm64` and
+  Compiling for iOS does **not** need Xcode, and does not need a Mac either: Kotlin/Native
+  downloads a prebuilt distribution for whatever host it is on, so `compileKotlinIosArm64` and
   `compileTestKotlinIosArm64` run on a Mac with only the Command Line Tools — an Intel one
-  included. Only *linking* a framework and running a simulator need Xcode. Type-check iOS code
-  locally with those two tasks; do not wait for CI to find a typo.
+  included — **and on Linux**. Only *linking* a framework and running a simulator need Xcode.
+  Type-check iOS code locally with those two tasks wherever you are; do not wait for CI to find a
+  typo.
 
   **Linking needs Xcode 26, not merely some Xcode.** Compose Multiplatform 1.11.1 is built
   against the iOS 26 SDK: `ui-uikit` references `UIViewLayoutRegion`, which does not exist in
@@ -217,17 +249,25 @@ Functionality includes:
   before 2019 can run, so the split is not a preference: type-check locally on whatever Mac is to
   hand, link and test on CI. An Apple Silicon machine collapses the two, and nothing else does.
 
-  Kotlin/Native builds Apple targets on a macOS host **only** — on Linux the targets are not
-  merely broken, they are absent, so there is no iOS feedback there at all.
+  **The Apple targets do compile on Linux**, which this file used to say they did not. Verified on
+  2026-08-27: `:app:compileKotlinIosArm64` and `:app:compileTestKotlinIosArm64` both succeed on a
+  Linux host — Kotlin/Native downloads a cross-compiling distribution and the whole type-check runs.
+  So the shared code *can* be checked against iOS here, and there is no reason to wait for CI to
+  find a typo in `iosMain`.
+  Linking a framework and booting a simulator still need Xcode on a Mac; that part is unchanged.
 
   The check that the port has not broken anything:
 
-      ./gradlew :app:testDebugUnitTest :app:assembleDebug \
+      ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:desktopTest \
                 :app:compileKotlinIosArm64 :app:compileTestKotlinIosArm64
 
   The Android half alone is not enough any more. `compileTestKotlinIosArm64` is what catches
   shared code reaching into `androidMain` — `commonTest` compiled against Android resolves such a
   call happily and says nothing.
+
+  `:app:desktopTest` runs the whole of `commonTest` on the JVM, and the first three of these run
+  on Linux — so on a machine with no Mac the shared code is now checked by two compilers rather
+  than the one. It is also the fastest of them, which makes it the right thing to run first.
 
   Two Kotlin/Native rules that only bite in `commonTest`, both of which cost a red build here:
 
@@ -339,7 +379,9 @@ Functionality includes:
   Still Android-only, and why:
 
   - **`Reminders.kt`, `RemindersScreen.kt`** — AlarmManager and a BroadcastReceiver →
-    UNUserNotificationCenter, plus the permission prompt.
+    UNUserNotificationCenter, plus the permission prompt. Now the only feature missing from *two*
+    platforms rather than one; the desktop needs its own answer again (a tray notification, or the
+    platform's own scheduler), so this is two ports and not one.
   Settings has since moved to commonMain, and with it the mp3 picker, the colour picker and
   backup export and import — `IosFiles` answers all three, so an iPhone reads a backup written on
   Android. Reminders is the only screen left behind.
@@ -350,6 +392,52 @@ Functionality includes:
   interface instead, because Android cannot answer either without a Context. `uses24Hour` joins
   them with the reminders port. Anything reaching for `java.time.format` or `String.format` in
   commonMain is this seam being crossed by accident.
+
+  ### Signing, and where the pieces live
+  Stanistil VZW is the App Store publisher; Play stays under Wim Lemkens personally. Team
+  `AD8Y56HX64`, app `6805899911`, bundle id `io.github.wlemkens.openbreath`.
+
+  Nothing was signed on a Mac. The certificate was issued by posting a CSR generated with
+  `openssl` to the App Store Connect API, and the profile the same way — `signing/` holds the
+  private key, the certificate, the `.p12` and the profile, and is gitignored. **The private key
+  in `signing/distribution.key` is the half Apple cannot reissue**: lose it and the certificate is
+  waste, which costs a revoke and a new one rather than anything worse, but back it up somewhere
+  that is not this repository.
+
+  CI signs from seven repository secrets — the `.p12` and its password, the profile, the App Store
+  Connect key with its id and issuer, and the team id. The `app-store` job needs
+  **`-f app_store=true` on a manual run**: a build that reaches App Store Connect burns a build
+  number that can never be reused and mails every TestFlight tester, which should not happen because
+  someone fixed a typo. It was every `workflow_dispatch` until the screenshots gave a second reason
+  to run the workflow by hand, at which point "manual" stopped being enough of a statement of intent
+  — both are now inputs that default to false.
+
+  The signing settings are on the `xcodebuild` command line rather than in `project.yml`, because
+  that file has to keep producing the *unsigned* ipa the sideloading job publishes. Command-line
+  settings win, so one project file serves both.
+
+  **A `.p12` for macOS must be the legacy PKCS#12, `openssl pkcs12 -export -legacy`.** OpenSSL 3
+  defaults to AES-256 with a SHA-256 MAC and macOS's Security framework reads neither. It fails
+  twice over, with two different messages, and both point away from the answer:
+
+  - SHA-256 MAC → "MAC verification failed during PKCS12 import (wrong password?)", when the
+    password is right.
+  - AES/PBES2 encryption → "Unknown format in import", when the file is a perfectly good p12.
+
+  `-legacy` gives 3DES for the key, RC2-40 for the certificates and a SHA-1 MAC. That is weak
+  crypto by any modern reading and it is what `security import` parses, so it is what the file has
+  to be. It sits in `signing/`, gitignored, and never leaves as anything but a GitHub secret.
+
+  Reading it back on Linux then needs `-legacy` too — which is what led to "fixing" it into a
+  modern format that macOS rejected. The local read is not the constraint; the runner is.
+
+  And set the password secret with `printf '%s'` rather than from a file written by `echo`. A
+  trailing newline is inside the secret, the import fails, and the message is the same one.
+
+  **The `.p8` is downloadable exactly once.** A leaked one is revoked and reissued, never rotated
+  quietly, which is why `.gitignore` covers it, the `.cer`, the profile and `signing/` — the key
+  sat untracked but unignored in the root of a public repository for a while, one `git add -A`
+  from being published.
 
   ### What the App Store still wants
   `PrivacyInfo.xcprivacy` declares no tracking and no collected data, and one required-reason
@@ -385,6 +473,117 @@ Functionality includes:
   Do-not-disturb has no iOS equivalent and is not getting one — no public API sets a Focus.
   That feature is Android-only by nature, not by omission.
 
+  ## The desktop port
+  `jvm("desktop")` beside `androidTarget()` and the two iOS targets, so the source sets are
+  `desktopMain` and `desktopTest`. Named rather than left as a bare `jvm()`, because `jvmMain`
+  would read as a set Android shares and it does not.
+
+  **Windows, macOS and Linux are one implementation and not three.** Nothing in `desktopMain`
+  branches on the operating system except `appDir` in `Prefs.desktop.kt`, which is the one genuine
+  per-OS question — `%APPDATA%`, Application Support, or the XDG data directory. Everything else it
+  needs is plain JVM API that behaves the same everywhere: `javax.sound.sampled` for the audio,
+  `java.awt.FileDialog` for the pickers, `Desktop.browse` for the links, `java.time.format` for the
+  locale seam. That is the whole difference from the android/ios split, where the APIs really are
+  different, and it is why a third `Platform` implementation cost one afternoon and the iOS one cost
+  weeks.
+
+  What *is* per-OS is only packaging: `jpackage` builds an installer for the machine it is run on
+  and no other, so `packageDeb`, `packageMsi` and `packageDmg` are three CI jobs over one source
+  set. Asking Linux for an `.msi` fails, and that is jpackage's limit rather than a choice made
+  here. All three land on the same rolling `latest` prerelease the ipa uses, under fixed names —
+  `OpenBreath.deb`, `.msi`, `.dmg`, via `.github/publish-desktop.sh` — because an upload-artifact
+  needs a GitHub login to download and a release asset does not, and the README links them. Fixed
+  names rather than the versioned ones jpackage writes: a URL that moves every push is not a
+  download link, and only SideStore needs a per-version filename. All three installers are
+  **unsigned**, so SmartScreen warns and Gatekeeper refuses on a
+  double-click — the same missing-certificate problem the iOS TODO carries, said out loud in the
+  README so it arrives as a known edge rather than a surprise.
+
+  Absent on the desktop, and each one a fact about a desktop rather than something owed: reminders
+  (as on iOS), vibration, the flashlight, and do-not-disturb. Every one is gated on a flag the
+  screens already read — `Haptics.supported` was added for exactly this and joins
+  `TorchLight.available`, `FocusGuard.supported`, `Files.canPickAudio` and `Links.canRate`. The rule
+  those all share: a platform that cannot do something says so, and the row is left out rather than
+  shown as a switch that does nothing. Adding a feature one platform lacks means adding a flag, not
+  a branch in the screen.
+
+  **Windows Phone is not a target and cannot be one.** Discontinued 2017, store closed to new apps
+  2019, no supported SDK, and Kotlin has no backend for it. It is asked about often enough that the
+  answer is written down here rather than re-derived.
+
+  ### One navigator, finally
+  `Breath` is in `commonMain/App.kt` now. It was the same fifty-line `when` copied into
+  `MainActivity.kt` and `MainViewController.kt`, both of which said in a comment that they would
+  collapse when the screens ported — and a desktop would have been a third copy. Six of the seven
+  destinations are shared; Reminders is passed in as a composable slot, null where the platform has
+  none, exactly as `FirstRunSetup(onReminder)` already worked. Android is the only caller that
+  passes anything.
+
+  This is the shape to keep: an entry point provides a `Store` and a `Platform` and hands over.
+  A platform-specific navigator is now a sign that something belongs behind a flag instead.
+
+  ### The sound, a third time
+  `DesktopWaveSynth` is a daemon thread writing a `SourceDataLine` — the same division
+  `androidMain/Audio.kt` and `iosMain/IosAudio.kt` keep, where `WaveDsp.kt` and `MarkerSynth.kt`
+  hold every filter and every ear-picked constant and the platform holds only where the samples go.
+
+  **The sample rate is a parameter here too**, and `supportedRate()` asks before anything is
+  opened: 44100 if the machine takes it, since that is what the constants were tuned at, 48000
+  otherwise. `isLineSupported` is a query and not a reservation, which is what lets the rate be
+  known before `WaveDsp` is constructed.
+
+  The line is opened inside the render thread and not held in a field, which matters: it is closed
+  when the fade reaches silence, and a field would then hold a closed line the next Start could not
+  reopen. Android's `WaveSynth` does the same for the same reason.
+
+  **One markers class where iOS has two**, and that is not laziness. iOS splits `IosMarkers` from
+  `IosBowls` because a recording there wants an `AVAudioPlayer` and a synthesis wants the engine;
+  here a recording is decoded to a `FloatArray` first, after which a bowl plays through exactly the
+  code the bell does. There is nothing left for a second class to be.
+
+  ### Mp3.kt, and the only non-Apache dependency
+  `javax.sound.sampled` reads WAV, AIFF and AU and no mp3 at all, so the desktop is the one
+  platform that needs a decoder in the tree: JLayer, LGPL-2.1, see the licensing note above.
+
+  `decodeAudio` tries JLayer first and `AudioSystem` second, so a picked WAV works too — both other
+  platforms accept one, and the desktop quietly falling back to a bell for a wav is precisely the
+  failure this file's own comment warns about.
+
+  `resample` does two jobs in one pass: a recording's rate onto the line's rate, and the pitch the
+  phase asks for. They are the same arithmetic, and `gongRate`'s 0.6 means the same thing here as
+  it does reaching SoundPool and `AVAudioPlayer.rate`. It is linearly interpolated rather than
+  nearest-sample, which is the difference between a bowl and a bowl with a hiss on it, and it is
+  the one piece of the desktop audio that can be checked without a speaker — `ResampleTest` and
+  `Mp3Test` in `desktopTest` are that check. `Mp3Test` also catches an LFS pointer, since JLayer
+  refuses one.
+
+  ### The icons are generated too
+  `IconGen` writes `app/desktopIcons/icon.png`, `.ico` and `.icns` beside the launcher and iOS
+  icons, from the same point lattice, under the same `-Picons=true`. jpackage takes only the
+  platform's own container and puts the Java coffee cup there without one — which is not cosmetic,
+  it is the icon a reader has to find the window by. Both containers are a PNG in a small wrapper,
+  which is why writing them cost a dozen lines each rather than a dependency.
+
+  `.ico` and `.icns` joined `*.png` in `.gitattributes`, so they are LFS, and
+  `.github/check-media.sh` covers them: jpackage refuses a 130-byte icon, and the error it gives
+  talks about an unrecognised file format rather than about a checkout that skipped LFS.
+
+  ### Still owed on the desktop
+  - **Check what `LifecycleEventEffect(ON_STOP)` means here.** `SessionScreen` pauses the sitting on
+    it, which is right on a phone — leaving the app should not play on in the background. On the
+    desktop it depends on what Compose maps the event to. Minimising the window is a fine reason to
+    pause; *losing focus* is not, and a meditation that stops because you clicked your browser is a
+    bug. Untested either way: verifying it needs a hand on the window. If it turns out to be focus,
+    the fix is to gate that one effect rather than to change the shared screen.
+  - **Keeping the display awake.** `KeepAwake` is a no-op: the JVM has no API for it, so a
+    screensaver may arrive mid-sitting. `java.awt.Robot` nudging the pointer is the usual trick and
+    takes over the pointer; doing it honestly means JNA and three per-OS calls. Worth doing the day
+    someone reports it, and marked `ponytail:` in `DesktopPlatform.kt` until then.
+  - **Signing.** Same problem as iOS, three more certificates.
+  - **A store listing, if ever.** `docs/store/listing.md` is Play and the App Store. If a Microsoft
+    Store record is ever wanted, the same rule applies as for Apple: the copy may only name what
+    that platform actually has, and reminders are not it.
+
   ## Sounds during the phases
   During hte breathing phases, there are different sound options available.
 
@@ -397,39 +596,52 @@ Functionality includes:
     revisited: local notifications need no App Store id and no entitlement, so this *could* be
     built sooner — the timing is a choice about effort, not a technical gate. Until it lands, the
     store listing must not promise reminders.
-  - **Ask Apple whether a Belgian VZW is eligible for the fee waiver.** Everything about
-    publishing under the VZW rests on it, and the answer is not published anywhere: the old
-    country list excluded Belgium, the current page names no list at all. Enrolling as an
-    organisation also needs a D-U-N-S number for the VZW, which is free but slow.
-  - **Signing.** CI builds unsigned on purpose, which is right for sideloading and useless for
-    the store: a distribution certificate, an App Store provisioning profile and a
-    `DEVELOPMENT_TEAM` are all still missing, and none can exist before the account does.
-  - **The App Store Connect record**: bundle id, name, category, age rating, description,
-    keywords, support URL, privacy policy URL, screenshots at Apple's sizes.
-  - **The rate link.** `IosPlatform.canRate` is false because the numeric App Store id does not
-    exist until first submission. Fill it in once it does — that one really is gated on
-    submitting.
+  - ~~**Ask Apple whether a Belgian VZW is eligible for the fee waiver.**~~ Answered: yes.
+    Stanistil VZW is enrolled as an organisation, team `AD8Y56HX64`, D-U-N-S 37-171-7333, KBO
+    0719.384.464. **Still worth confirming once that the waiver was actually applied** rather
+    than the fee merely deferred — membership details will say, and it is the sort of thing that
+    surfaces as a charge a year later.
+
+    The condition it carries is standing, not one-off: the waiver requires that the Paid
+    Applications Agreement has *never* been signed. Accepting it in App Store Connect — which
+    the UI offers freely — voids the waiver. The free apps agreement is the only one wanted.
+
+    So the price is the **Free** price point on both stores, and that is close to a one-way door:
+    charging for the app later would mean signing the agreement that voids the waiver, and on Play a
+    free app can never become paid at all — only a new listing can. Which suits an app that is free
+    by design, and is one more reason the tip link has to stay a gift rather than a price.
+  - **The App Store listing.** The record exists — app `6805899911`, bundle
+    `io.github.wlemkens.openbreath`, and build 70 uploaded and VALID, so the pipeline is proven.
+    What a submission still wants is all copy and pictures: category, age rating, description and
+    keywords, support URL, the privacy policy URL (live, above), screenshots at Apple's sizes, and
+    the App Privacy answers — which are "no data collected", matching `PrivacyInfo.xcprivacy`.
+
+    The description may only name what iOS actually has. Reminders are not it.
+  - **The rate link, on release day.** The id was there all along — Apple assigns it when the
+    record is created, not at submission — so `IosPlatform` now holds it and builds the URL. What
+    it waits for is the listing being live, because an App Store page 404s until then. One
+    constant: `LISTING_IS_LIVE` to true.
   - ~~**Publish the privacy policy.**~~ Live at
     https://wlemkens.github.io/openbreath/privacypolicy.html, which is the URL to give both
     stores — they ask for one and Play checks it resolves. Not `raw.githubusercontent.com`: it
     serves `text/plain`, so a reviewer would see the markup rather than the page. Either store's
     URL can be changed later, so this does not foreclose stanistil.be.
 
-    **GitHub Pages serves it from the `ios-port` branch, `/docs` — and `main` has no `docs/`
-    at all.** Merging and deleting that branch takes the privacy policy off the web, and the
-    first sign of it is a store record pointing at a 404. Move the source in the same breath as
-    the merge:
-
-        gh api -X PUT repos/wlemkens/openbreath/pages -f 'source[branch]=main' -f 'source[path]=/docs'
+    **GitHub Pages serves it from `main`, `/docs`** — moved there when the iOS work merged, and
+    checked on 2026-08-28: `gh api repos/wlemkens/openbreath/pages` says so. This file used to say
+    `ios-port`, which was the branch it was published from and a trap worth remembering rather than
+    a fact worth keeping: a privacy policy served from a branch goes off the web when that branch is
+    deleted, and the first sign of it is a store record pointing at a 404.
 
     Publishing `/docs` puts `docs/store/` on the web too, which costs nothing on a public
-    repository.
+    repository. There is no `docs/index.html`, so the site root itself 404s — only the policy has a
+    URL. A landing page with the desktop download links is the obvious thing to put there.
   - **The Play listing.** Copy for both stores is in `docs/store/listing.md`, the phone
     screenshots and the two Play graphics beside it. The keystore now exists. Still missing: the
     Play Console record itself, and — for a personal developer account — the 12-tester, 14-day
     closed test that has to run before production opens.
 
-    Uploading is wired: gradle-play-publisher, `./gradlew :app:publishBundle`, README has the
+    Uploading is wired: gradle-play-publisher, `./gradlew :app:publishBundle`, `docs/BUILDING.md` has the
     service-account setup. Release notes are generated from the commit subjects on the way, which
     makes a commit subject user-facing copy — one more reason they are written the way they are.
     They land in `app/src/main/play/`, which is AGP's source-set name and not the KMP one, and is
@@ -438,6 +650,8 @@ Functionality includes:
     **the plugin is pinned to 3.13.0 because every 4.x needs Gradle 9.1**, while this build is on
     8.14.3 for AGP and Kotlin; the pin is a toolchain fact, not a preference, so it moves when
     Gradle does and not before.
-  - **Screenshots for the App Store.** `docs/store/screenshots.py` drives the Android emulator by
-    the labels uiautomator can see. The iOS set needs a 6.9" simulator on a Mac with Xcode 26, or
-    an iPhone: simctl cannot tap, and Apple's sizes are its own.
+  - ~~**Screenshots for the App Store.**~~ Done, and by the same discipline as Android's:
+    `gh workflow run build.yml -f screenshots=true` drives a 6.9" simulator through
+    `iosApp/StoreScreenshots` and downloads as the `app-store-screenshots` artifact. **Never run and
+    therefore never yet proven** — the first run is the one that finds out whether Compose exposes
+    every label the test taps, and it says which one it could not find when it does not.

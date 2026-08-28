@@ -84,6 +84,13 @@ def shot(name):
     print(f"  {name}.png")
 
 def main():
+    # The iOS set is hand-taken on a phone, and it wants the same log behind it — so the backup can
+    # be written on its own, to be handed to the phone and imported there through the same screen.
+    if "--demo-json" in sys.argv:
+        out = pathlib.Path(sys.argv[sys.argv.index("--demo-json") + 1])
+        out.write_text(demo_backup())
+        print(f"wrote {out}")
+        return
     if PKG not in sh("shell", "pm", "list", "packages"):
         sys.exit(f"{PKG} is not installed: ./gradlew :app:installDebug")
     pathlib.Path("/tmp/openbreath-demo.json").write_text(demo_backup())
@@ -127,7 +134,9 @@ def main():
         swipe(1600, 700)                                 # the sound section, with one marker set
         tap("Marker", exact=True)
         shot("sound-per-phase")
-        swipe(1600, 700); swipe(1600, 900)
+        # stops with "Breath cue" at the top: the chips and the two sliders under them read as a
+        # section, and a headless row of chips does not
+        swipe(1600, 700); swipe(1600, 1080)
         shot("settings-options")
     finally:
         sh("shell", "wm", "size", "reset")

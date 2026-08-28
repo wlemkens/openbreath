@@ -102,6 +102,13 @@ interface TorchLight {
 
 /** A short nudge at a phase boundary, long enough to feel with the screen off. */
 interface Haptics {
+    /**
+     * Whether this machine can be felt at all. False on the desktop, which has no vibrator and no
+     * Taptic Engine, and the setting is then left out of the screen — the same sentence
+     * [FocusGuard.supported] and [TorchLight.available] answer, for the same reason.
+     */
+    val supported: Boolean
+
     fun buzz(ms: Long = 45L)
 }
 

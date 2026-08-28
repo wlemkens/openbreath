@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -93,6 +94,30 @@ kotlin {
     }
 
     /**
+     * The desktop: Windows, macOS and Linux, which are **one** target and not three.
+     *
+     * Nothing in desktopMain branches on the operating system except where the store file lives,
+     * because everything else it needs is plain JVM API that behaves the same on all three —
+     * javax.sound.sampled for the audio, java.awt.FileDialog for the pickers, Desktop.browse for
+     * the links, java.time for the formats. That is the whole difference from the android/ios
+     * split, where the APIs really are different.
+     *
+     * What is per-OS is only packaging: jpackage can build an installer for the machine it is run
+     * on and no other, so `.msi`, `.dmg` and `.deb` are three CI jobs over one source set. See
+     * the compose.desktop block below.
+     *
+     * Named "desktop" rather than left as `jvm()` so the source sets read as desktopMain and
+     * desktopTest — `jvmMain` would suggest a set Android shares, which it does not.
+     *
+     * The free half of this is `desktopTest`: it inherits commonTest, so the stored-shape and
+     * session tests get a third runner, and the first one that runs the shared suite on Linux
+     * without going through Android. `./gradlew :app:desktopTest`.
+     */
+    jvm("desktop") {
+        compilerOptions { jvmTarget.set(JvmTarget.JVM_17) }
+    }
+
+    /**
      * The device and the simulator, which are both arm64 but not the same arm64. No iosX64:
      * Compose Multiplatform stopped publishing it at 1.11, so the Intel-Mac simulator is off
      * the table — adding the target back would only fail to resolve. Configuring these costs
@@ -127,6 +152,43 @@ kotlin {
         androidMain.dependencies {
             implementation("androidx.activity:activity-compose:1.13.0")
         }
+        val desktopMain by getting
+        /**
+         * So the window can wear the icon too, and not only the installer.
+         *
+         * `nativeDistributions.<os>.iconFile` below is read by jpackage at packaging time and is
+         * invisible to `:app:run`, which then shows AWT's default Java cup — and to anything that
+         * launches the jar directly. Putting the directory on the classpath lets Main.kt load the
+         * png at runtime and hand it to `Window(icon = …)`, which covers both.
+         *
+         * The same directory rather than a second copy of the png: an icon that exists twice is an
+         * icon that will differ, and IconGen writes one of them.
+         *
+         * ponytail: this also packages icon.ico and icon.icns into the jar, ~195 KB nobody reads,
+         * because the KMP resources DSL has no include filter worth the lines. Split the png out if
+         * the installer size ever matters.
+         */
+        desktopMain.resources.srcDir("desktopIcons")
+        desktopMain.dependencies {
+            // resolves to the skiko build for whichever machine is compiling, which is exactly
+            // right: an installer is only ever built on the OS it installs on
+            implementation(compose.desktop.currentOs)
+
+            /**
+             * The mp3 decoder, and the only reason one is needed: the JVM has no mp3 support at
+             * all, where Android has SoundPool and iOS has AVAudioPlayer. Without it the two
+             * bundled bowls and a reader's own file could not sound on the desktop.
+             *
+             * **LGPL-2.1, which is the licence question this raises.** Every other dependency
+             * here is Apache-2.0; LGPL flows one way into GPLv3 just as Apache does, so the
+             * combined app stays distributable. It is the first non-Apache dependency in the
+             * tree, so it is worth knowing which one it is — see the licensing note in CLAUDE.md.
+             *
+             * The googlecode.soundlibs coordinates rather than javazoom's own: same JLayer, but
+             * actually published to Maven Central.
+             */
+            implementation("com.googlecode.soundlibs:jlayer:1.0.1.4")
+        }
         // The session engine, the stored shape and the cue are checked on every platform that
         // runs them, not just Android. StorageTest especially: a backup written on a phone has to
         // open on an iPhone, so the strings older releases really wrote are now decoded by both
@@ -156,6 +218,59 @@ compose.resources {
 }
 
 /**
+ * The desktop app and its installers.
+ *
+ * `./gradlew :app:run` runs it. `packageDeb`, `packageMsi` and `packageDmg` build installers —
+ * **each only on its own operating system**, because that is jpackage's limit and not a choice
+ * made here. Asking Linux for an `.msi` fails; CI therefore has one job per format.
+ *
+ * The version is [buildNumber] again, so an installer and a Play bundle built from one commit
+ * cannot disagree about which build they are. It also has to satisfy MSI's shape — major.minor.build
+ * with build below 65536 — which a commit count will not reach for a very long time.
+ */
+compose.desktop {
+    application {
+        mainClass = "io.github.wlemkens.openbreath.MainKt"
+
+        nativeDistributions {
+            targetFormats(TargetFormat.Msi, TargetFormat.Dmg, TargetFormat.Deb)
+            packageName = "OpenBreath"
+            packageVersion = "1.0.$buildNumber"
+            description = "Heart coherence breathing"
+            copyright = "Copyright (c) 2026 Wim Lemkens"
+            vendor = "Wim Lemkens"
+            licenseFile.set(rootProject.file("LICENSE"))
+
+            // Only what java.desktop and the audio need. Left to the default, jpackage bundles a
+            // whole JDK image and the installer is three times the size for modules nothing calls.
+            modules("java.desktop", "java.management", "jdk.unsupported")
+
+            // Written by IconGen — `./gradlew :app:testDebugUnitTest -Picons=true`. Without them
+            // jpackage puts the Java coffee cup on the taskbar, which is a visible defect rather
+            // than a cosmetic one: it is the icon a reader has to find the window by.
+            windows {
+                iconFile.set(project.file("desktopIcons/icon.ico"))
+                menuGroup = "OpenBreath"
+                // Fixed forever: this is how Windows recognises an install as an *upgrade* of the
+                // last one rather than a second copy beside it. Changing it strands the old install.
+                upgradeUuid = "6f1a5d0e-9f3b-4c7a-8e2d-3b5c9a1d4f80"
+                dirChooser = true
+            }
+            macOS {
+                iconFile.set(project.file("desktopIcons/icon.icns"))
+                bundleID = "io.github.wlemkens.openbreath"
+            }
+            linux {
+                iconFile.set(project.file("desktopIcons/icon.png"))
+                packageName = "openbreath"
+                debMaintainer = "wim.lemkens@trace.vision"
+                appCategory = "utils"
+            }
+        }
+    }
+}
+
+/**
  * IconGen regenerates the launcher icon and the iOS app icon, and only when asked:
  * `./gradlew :app:testDebugUnitTest -Picons=true`. A Gradle property rather than an environment
  * variable because a test JVM inherits the daemon's environment, not the shell's, so an env var
@@ -163,6 +278,10 @@ compose.resources {
  */
 tasks.withType<Test>().configureEach {
     systemProperty("openbreath.icons", providers.gradleProperty("icons").getOrElse("false"))
+    // and the same arrangement for the App Store preview's soundtrack, written by PreviewAudio in
+    // desktopTest: `-Ppreview=true`. Apple requires an audio track on a preview and the simulator
+    // records none, so it is rendered from the shared WaveDsp instead of faked or left silent.
+    systemProperty("openbreath.preview", providers.gradleProperty("preview").getOrElse("false"))
 }
 
 android {

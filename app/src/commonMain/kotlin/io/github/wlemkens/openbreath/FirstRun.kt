@@ -62,10 +62,21 @@ fun FirstRunSetup(onReminder: ((Reminder) -> Unit)? = null) {
         title = { Text("Welcome") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // the sentence follows the switches. Promising "a reminder for the evenings it has
+                // not happened yet" on a platform with no reminders is the app claiming a feature
+                // it does not have, in the one place a reader has no way to check — and it read
+                // that way on iOS from the day the question was written
                 Text(
-                    "A breathing meditation every day is what we would recommend. We can set " +
-                        "that up as a goal, and a reminder for the evenings it has not happened " +
-                        "yet. Neither is needed, and both can be changed or dropped later.",
+                    if (onReminder != null) {
+                        "A breathing meditation every day is what we would recommend. We can set " +
+                            "that up as a goal, and a reminder for the evenings it has not " +
+                            "happened yet. Neither is needed, and both can be changed or dropped " +
+                            "later."
+                    } else {
+                        "A breathing meditation every day is what we would recommend. We can set " +
+                            "that up as a goal. It is not needed, and it can be changed or " +
+                            "dropped later."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 ToggleRow("A goal of one sitting a day", wantGoal) { wantGoal = it }

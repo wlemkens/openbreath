@@ -1,5 +1,6 @@
 package io.github.wlemkens.openbreath
 
+import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
@@ -106,7 +107,7 @@ class IosBowls {
 
     private fun start(data: NSData, rate: Float): AVAudioPlayer? {
         configureAudioSession()
-        val player = AVAudioPlayer(data = data, error = null) ?: return null
+        val player = AVAudioPlayer(data = data, error = null)
         player.enableRate = true
         player.rate = rate
         player.prepareToPlay()
@@ -134,6 +135,6 @@ class IosBowls {
  * the pointer immediately and Kotlin is otherwise free to move the array while it does.
  */
 @OptIn(ExperimentalForeignApi::class)
-private fun ByteArray.toNSData(): NSData = usePinned { pinned ->
+internal fun ByteArray.toNSData(): NSData = usePinned { pinned ->
     NSData.create(bytes = pinned.addressOf(0), length = size.toULong())
 }

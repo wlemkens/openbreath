@@ -93,8 +93,15 @@ private fun Color.atDepth(d: Float): Color {
 
 /** The breath cue: something that grows on the inhale and shrinks on the exhale. */
 @Composable
-fun Cue(style: CueStyle, openness: Float, glow: Color) {
-    if (style == CueStyle.GLOW) GlowSphere(openness, glow) else PointCloud(openness, glow, lookOf(style))
+fun Cue(
+    style: CueStyle,
+    openness: Float,
+    glow: Color,
+    points: Int = DEFAULT_CUE_POINTS,
+    dotScale: Float = DEFAULT_CUE_DOT,
+) {
+    if (style == CueStyle.GLOW) GlowSphere(openness, glow)
+    else PointCloud(openness, glow, lookOf(style), points, dotScale)
 }
 
 /** The original: a soft sphere, [glow] core fading through deep blue. */
@@ -124,8 +131,8 @@ private fun GlowSphere(openness: Float, glow: Color) {
  * see is one object turning rather than a swarm reshuffling.
  */
 @Composable
-private fun PointCloud(openness: Float, glow: Color, look: PointLook) {
-    val pts = remember { cuePoints() }
+private fun PointCloud(openness: Float, glow: Color, look: PointLook, points: Int, dotScale: Float) {
+    val pts = remember(points) { cuePoints(points) }
     // the session clock only ticks while running; the cloud drifts on the idle screen too
     val seconds = remember { mutableFloatStateOf(0f) }
     LaunchedEffect(Unit) {
@@ -158,7 +165,7 @@ private fun PointCloud(openness: Float, glow: Color, look: PointLook) {
         val pitch = TILT + t * 0.037f
         val cy = cos(yaw); val sy = sin(yaw)
         val cp = cos(pitch); val sp = sin(pitch)
-        val dot = 1.dp.toPx()
+        val dot = dotScale.dp.toPx()
 
         var i = 0
         while (i < pts.size) {
@@ -227,8 +234,9 @@ private fun PointCloud(openness: Float, glow: Color, look: PointLook) {
             val at = Offset(center.x + x1 * r, center.y + y2 * r)
             val size = dot * (0.9f + 1.3f * d) * (0.75f + 0.5f * s1)
 
-            // ponytail: two drawCircle per point, ~840 a frame on Cloud and Motes. If that ever
-            // drops frames, bucket into a few depth bands and use drawPoints instead.
+            // ponytail: two drawCircle per point, ~840 a frame at the default count and twice
+            // that at MAX_CUE_POINTS. If it ever drops frames, bucket into a few depth bands
+            // and use drawPoints instead.
             // A star is a hard white point inside a soft coloured halo, and the two are what
             // sell it: the halo alone is a smudge, the point alone is a pixel. Magnitude is
             // fixed per point, so the sky has a few bright ones rather than an even field.
@@ -283,13 +291,29 @@ private const val TRIP_SPAN = 8f
 internal const val STRIDE = 6
 
 /**
+ * How many points the cloud is made of, and how big one is in dp. Both are settings now, and
+ * both are what every cue was tuned at, so they are also what a change of style resets to.
+ *
+ * The ceiling is the frame budget rather than taste: two `drawCircle` per point, so 1500 is
+ * 3000 a frame. The floor is where a cloud stops being one and becomes a handful of specks,
+ * which is a legitimate thing to want.
+ */
+const val DEFAULT_CUE_POINTS = 420
+const val MIN_CUE_POINTS = 20
+const val MAX_CUE_POINTS = 1500
+const val DEFAULT_CUE_DOT = 1f
+const val MIN_CUE_DOT = 0.3f
+const val MAX_CUE_DOT = 4f
+
+/**
  * A Fibonacci lattice — directions spread over the sphere by stepping the golden angle round the
  * axis while walking down it — then scattered off it. The lattice alone covers evenly but reads as
  * rows of a spiral; the scatter breaks the rows while keeping the coverage, and being hashed off
  * the index rather than drawn at random the cloud is the same every launch.
  */
-internal fun cuePoints(): FloatArray {
-    val n = 420
+internal fun cuePoints(count: Int = DEFAULT_CUE_POINTS): FloatArray {
+    // a stored config is only as sane as the file it came from, and FloatArray(-6) throws
+    val n = count.coerceIn(MIN_CUE_POINTS, MAX_CUE_POINTS)
     val out = FloatArray(n * STRIDE)
     for (i in 0 until n) {
         // scatter by about one lattice step, so a point lands anywhere in its own neighbourhood

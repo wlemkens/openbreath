@@ -21,6 +21,13 @@ class IosHaptics : Haptics {
     private val generator =
         UIImpactFeedbackGenerator(style = UIImpactFeedbackStyle.UIImpactFeedbackStyleMedium)
 
+    /**
+     * True on every iPhone, including the handful without a Taptic Engine: the generator is a no-op
+     * there rather than an error, and hiding the setting on a device we cannot ask about would take
+     * it away from everyone. The flag exists for the desktop, which has nothing to vibrate at all.
+     */
+    override val supported = true
+
     override fun buzz(ms: Long) {
         generator.prepare()
         generator.impactOccurred()

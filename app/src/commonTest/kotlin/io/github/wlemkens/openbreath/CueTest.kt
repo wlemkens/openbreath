@@ -19,6 +19,13 @@ class CueTest {
     }
 
     @Test
+    fun `draws the count asked for and clamps a nonsense one`() {
+        assertEquals(60 * STRIDE, cuePoints(60).size)
+        assertEquals(MIN_CUE_POINTS * STRIDE, cuePoints(-6).size)
+        assertEquals(MAX_CUE_POINTS * STRIDE, cuePoints(100_000).size)
+    }
+
+    @Test
     fun `directions are unit vectors`() {
         val lengths = (pts.indices step STRIDE).map {
             sqrt(pts[it] * pts[it] + pts[it + 1] * pts[it + 1] + pts[it + 2] * pts[it + 2])

@@ -35,6 +35,17 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.wlemkens.openbreath
+        # iPhone and iPad, said explicitly rather than left to Xcode's default of the same thing.
+        # It is worth stating because it has a consequence nobody expects: a binary claiming iPad
+        # support makes App Store Connect refuse the listing until a **13" iPad set** is uploaded as
+        # well — "You must upload a screenshot for 13-inch iPad displays." So the device family and
+        # `.github/ios-screenshots.sh` are one decision; dropping to 1 means dropping that set, and
+        # adding a family means another nine pictures.
+        #
+        # Nothing here is laid out *for* a tablet, and nothing needs to be: the cue is a circle that
+        # takes the space it is given, and every screen is a column of rows. What a large screen
+        # actually gets is a bigger sphere.
+        TARGETED_DEVICE_FAMILY: "1,2"
         # Sources/Assets.xcassets is swept up by the sources entry above; this is what makes the
         # app actually wear it. The single 1024 png is written by IconGen from the same point
         # lattice the Android launcher icon comes from, so the two cannot drift apart — regenerate
@@ -90,8 +101,9 @@ targets:
         # portrait-only is only allowed to mean portrait-only if the app also says it wants the
         # whole screen; without this the build warns that every orientation must be supported
         UIRequiresFullScreen: true
-        # portrait only: the cue is a circle centred in the screen and a landscape phone gives it
-        # nothing but a shorter axis to be cropped by
+        # portrait only: the cue is a circle centred in the screen and a landscape screen gives it
+        # nothing but a shorter axis to be cropped by. No `~ipad` variant, deliberately — iPad falls
+        # back to this key when there is none, and the reasoning does not change with the screen.
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UIUserInterfaceStyle: Dark
@@ -109,3 +121,34 @@ targets:
           cd "$SRCROOT/.."
           ./gradlew :app:embedAndSignAppleFrameworkForXcode
         basedOnDependencyAnalysis: false
+
+    # so `xcodebuild test -scheme iosApp` runs the screenshot driver. Without this the target
+    # builds and is never executed, which looks exactly like a run that took no pictures.
+    scheme:
+      testTargets:
+        - StoreScreenshots
+
+  # The App Store screenshots, taken by driving the app rather than by hand on a phone.
+  #
+  # It is a test target because XCUITest is the only thing that can tap a simulator — `simctl` can
+  # boot one, install to it and photograph it, but not touch it, which is what kept Apple's set
+  # hand-taken and rotting. Nothing here asserts anything about the app; it navigates and saves
+  # PNGs, and the assertions it does make are about the screenshots being the size Apple accepts.
+  StoreScreenshots:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: StoreScreenshots
+    dependencies:
+      - target: iosApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.wlemkens.openbreath.screenshots
+        TEST_TARGET_NAME: iosApp
+        # an XCTest bundle without an Info.plist does not load, and there is no plist here worth
+        # writing by hand — the generated one says everything a test bundle has to say
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
+        EXCLUDED_ARCHS[sdk=iphonesimulator*]: x86_64

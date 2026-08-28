@@ -10,6 +10,9 @@
 *.ttf  filter=lfs diff=lfs merge=lfs -text
 *.otf  filter=lfs diff=lfs merge=lfs -text
 *.png  filter=lfs diff=lfs merge=lfs -text
+# the desktop launcher icons, which are a PNG in a four-byte wrapper each
+*.ico  filter=lfs diff=lfs merge=lfs -text
+*.icns filter=lfs diff=lfs merge=lfs -text
 
 # Deliberately NOT in LFS, both for the same reason — a clone made without git-lfs
 # installed gets a pointer file instead of the real one, and the build fails before it
