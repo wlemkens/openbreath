@@ -33,16 +33,24 @@ nothing given in return. That holds — no feature, theme, badge or acknowledgem
 and the screen says so in its own words. See the Monetisation section of CLAUDE.md; if that
 check ever stops holding, this file and the submission are both wrong.
 
-## Item 5 describes the next build, not build 70
+## These describe build 115, not build 70
 
 **Build 70's Support buttons open a profile that does not exist.** Every build up to and
 including it carried `paypal.me/wimlemkens`; the handle is `wlemkens`, and the wrong one answers
-with "We can't find this profile" on all three platforms. It is fixed in the source, and item 5
-below names the corrected link — so these notes belong with a build that has the fix.
+"We can't find this profile" on all three platforms. Build 115 carries the fix, and item 5 names
+the corrected link — so send these with 115, and do not leave 70 anywhere a reviewer can reach
+that screen. A link that goes nowhere is a Guideline 2.1 *bugs* rejection, a worse letter than
+the information one this file answers.
 
-Do not send them with build 70, and do not leave build 70 where a reviewer can reach that
-screen. A link that goes nowhere is a Guideline 2.1 *bugs* rejection, which is a worse letter
-than the information one this file answers.
+Checked against 115's tree rather than 70's, because twenty-two commits sit between them. What
+actually moved in the shipping app: the PayPal handle, two cue sliders in Settings, and ± on the
+session length. `Info.plist` and the bundled audio are untouched, so no new purpose string and
+no new asset — items 1, 5 and 7 stand as written. `canRate` is still false, so the Rate item is
+still hidden and item 5's "two links" is still two.
+
+**Re-run that check against whatever build is actually submitted.** These notes describe a
+binary, and the version they were written for stops being the version being sent the moment
+another build goes up.
 
 ---
 
@@ -64,9 +72,9 @@ Three things are not in the recording. They are named here rather than left for 
   - The first-launch "Welcome" screen does not appear, because the app had already been opened
     once on that phone. It is described in item 4, and deleting and reinstalling brings it back.
   - The Support screen is not opened. It is described in item 5. Nothing is sold anywhere in
-    this app: that screen carries an optional link which opens PayPal in Safari, and no payment
-    is taken inside the app by any mechanism. We will gladly send a second clip of it if you
-    would like to see it.
+    this app: that screen carries an optional link which opens PayPal outside the app — in Safari,
+    or in the PayPal app where the device has it — and no payment is taken inside the app by any
+    mechanism. We will gladly send a second clip of it if you would like to see it.
 
 The app has no account, no login, no purchases, no subscriptions, no user-generated content and
 no sharing between users, so none of those flows appear in it — there are none to show.
@@ -134,11 +142,13 @@ without opening Settings at all; everything below is optional.
     still logged.
   - The ⋮ menu on the main screen reaches everything else: Settings, Goals, Achievements, Log,
     Feedback and Support the app.
-  - Settings has a Standard and an Advanced tab: cue shape and colour, the sound for each phase,
-    the session-end bowl, haptics, the torch, the count-in length, what the session screen
-    shows, saving and renaming presets, and a Backup section.
+  - Settings has a Standard and an Advanced tab: the cue's shape and colour and how many points
+    it is drawn from and how large they are, the sound for each phase, the session-end bowl,
+    haptics, the torch, the count-in length, what the session screen shows, saving and renaming
+    presets, and a Backup section.
   - Backup's Export writes one JSON file through the system document picker, and Import reads
-    one back. That is the only way data enters or leaves the app.
+    one back. That is the only route anything takes in or out of the app; there is no other, and
+    no network.
 
 5. EXTERNAL SERVICES, TOOLS AND PLATFORMS
 
@@ -148,7 +158,9 @@ learning service, and no backend of ours. The app makes no network request; ever
 the timings, the cue, the synthesised sounds, the log, the goals — is computed on the device.
 That is also why ITSAppUsesNonExemptEncryption is false: there is no connection to encrypt.
 
-Two links open Safari when the user taps them, and are the app's only outbound traffic:
+Two links send the user out of the app when tapped, and are its only outbound traffic. Both open
+in Safari, except that iOS hands the PayPal one to the PayPal app where the device has it
+installed — either way it leaves the app, which is the part that matters:
 
   - paypal.me/wlemkens — on the Support screen. An optional gift to the developer as an
     individual, under Guideline 3.2.1(vii). 100% goes to him. It grants no content, feature,

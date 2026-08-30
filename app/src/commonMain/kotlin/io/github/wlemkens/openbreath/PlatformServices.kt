@@ -201,9 +201,20 @@ interface Links {
     fun openFeedback()
 
     /**
-     * PayPal, in a browser. A browser and not a screen of our own on either platform, and on iOS
-     * that is the rule rather than a preference: App Review 3.2.2(iv) allows funds to be collected
-     * for a cause only outside the app, "such as via Safari or SMS". Opening a URL is exactly that.
+     * PayPal, outside the app — the browser, or PayPal's own app where the phone has it and claims
+     * the URL. Which of the two opens is the platform's decision and not ours; both are outside,
+     * which is the only part that matters, and the Support screen says both so that neither is a
+     * surprise.
+     *
+     * Somewhere outside and never a screen of our own, and on iOS that is the rule rather than a
+     * preference. The rule is **3.2.1(vii)**, the monetary-gift one: optional, and 100% to the
+     * receiver. It is not the charitable-donation guideline, which is what this comment used to
+     * cite — that one governs collecting for a cause and would drag in approved-nonprofit status
+     * and Apple Pay. A tip to the person who writes the app is a gift between individuals.
+     *
+     * What must not happen either way is a payment sheet of our own. The moment money is taken
+     * inside the app by anything that is not Apple's own mechanism, both stores stop reading it as
+     * a gift.
      *
      * Nothing is charged here and no amount is remembered — the app opens a page and steps out of
      * the way, and it is never told whether anything was sent. That is what keeps this a tip and
