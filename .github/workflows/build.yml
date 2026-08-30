@@ -98,11 +98,6 @@ jobs:
   ios:
     runs-on: macos-15
 
-    # to publish the rolling `latest` release the phone updates from. Naming it here rather than at
-    # the top of the file keeps the Android job read-only.
-    permissions:
-      contents: write
-
     env:
       # One monotonic number for both, from the run counter, so a push always advertises a version
       # higher than the one on the phone. It has to reach the ipa *and* the source JSON identically:
@@ -211,68 +206,8 @@ jobs:
           name: OpenBreath-unsigned-ipa
           path: build/OpenBreath-unsigned.ipa
 
-      # Everything below turns a push into a tap on the phone. An artifact cannot do it: downloading
-      # one needs a GitHub login, and SideStore has none. A release asset is public, so the source
-      # JSON and the ipa both live on one tag whose URLs never change.
-      #
-      # Not on pull requests: a fork's token cannot write, and a PR build has no business replacing
-      # what the phone is being offered.
-      - name: Publish the ipa and the source for over-the-air updates
-        if: github.event_name != 'pull_request'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-        run: |
-          set -euo pipefail
-
-          # The ipa carries its version in the filename, and that is the whole trick: SideStore
-          # caches the source and checks the version it downloaded against the version it was
-          # promised. One fixed ipa URL whose contents keep changing fails that check on every
-          # phone whose cache is a build or two behind — "expected 30, got 32". A per-version name
-          # means a stale cache asks for the build it still believes in, gets exactly that, and
-          # installs; the newer one is offered on the next refresh instead of erroring now.
-          #
-          # apps.json keeps its fixed name, because that URL is typed into the phone once.
-          ipa="OpenBreath-$VERSION.ipa"
-          cp build/OpenBreath-unsigned.ipa "build/$ipa"
-
-          .github/make-source.sh \
-            "build/$ipa" "$VERSION" "$BUILD" \
-            "https://github.com/$REPO/releases/download/latest/$ipa" \
-            build/apps.json
-
-          # one rolling prerelease rather than a tag per build: the source URL has to stay put, and
-          # a year of test builds is not release history worth keeping
-          gh release view latest >/dev/null 2>&1 || gh release create latest \
-            --prerelease \
-            --title "Latest test build" \
-            --notes "Rolling builds for sideloading. Not a release."
-
-          gh release upload latest "build/$ipa" build/apps.json --clobber
-
-          # The old ipas are what stale caches resolve against, so several are kept on purpose; left
-          # unbounded they are 18 MB per push forever.
-          #
-          # Counted rather than `head -n -5`, which is a GNU extension: this job runs on macOS, where
-          # BSD head answers "illegal line count". And `|| true` because a grep that matches nothing
-          # exits 1, which under pipefail would fail the build over there being nothing to tidy.
-          keep=5
-          names="$(gh release view latest --json assets --jq '.assets[].name' \
-            | grep -E '^OpenBreath-.*\.ipa$' | sort -V || true)"
-          total="$(printf '%s' "$names" | grep -c . || true)"
-          if [ "${total:-0}" -gt "$keep" ]; then
-            printf '%s\n' "$names" | sed -n "1,$((total - keep))p" | while read -r stale; do
-              [ -n "$stale" ] || continue
-              echo "pruning $stale"
-              gh release delete-asset latest "$stale" --yes
-            done
-          fi
-
-          echo "### Sideloading" >> "$GITHUB_STEP_SUMMARY"
-          echo "Version \`$VERSION\` is live. SideStore source URL:" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "https://github.com/$REPO/releases/download/latest/apps.json" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+      # The ipa reaches a phone from the `publish` job at the bottom, not from here — see the
+      # comment on that job for why nothing writes to the release from the job that built it.
 
       # and the same app actually running, for when there is no phone to hand: a breathing cue is
       # an animation, and a still frame cannot show whether it moves
@@ -360,12 +295,6 @@ jobs:
   desktop-linux:
     runs-on: ubuntu-latest
 
-    # to put the installer on the `latest` release, exactly as the ios job does. Per job rather than
-    # at the top of the file, so the Android job stays read-only — and the omission fails as a 403
-    # on the upload alone, with the packaging already green.
-    permissions:
-      contents: write
-
     env:
       OPENBREATH_BUILD: ${{ github.run_number }}
 
@@ -410,20 +339,8 @@ jobs:
           name: OpenBreath-deb
           path: app/build/compose/binaries/main/deb/*.deb
 
-      # and again as a public asset, since an artifact cannot be downloaded without a GitHub login.
-      # Not on pull requests: a fork's token cannot write, and a PR build has no business replacing
-      # what a reader is being offered.
-      - name: Publish the .deb as a download
-        if: github.event_name != 'pull_request'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: .github/publish-desktop.sh 'app/build/compose/binaries/main/deb/*.deb' OpenBreath.deb
-
   desktop-windows:
     runs-on: windows-latest
-
-    permissions:
-      contents: write
 
     env:
       OPENBREATH_BUILD: ${{ github.run_number }}
@@ -462,20 +379,10 @@ jobs:
           name: OpenBreath-msi
           path: app/build/compose/binaries/main/msi/*.msi
 
-      - name: Publish the .msi as a download
-        if: github.event_name != 'pull_request'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: .github/publish-desktop.sh 'app/build/compose/binaries/main/msi/*.msi' OpenBreath.msi
-
   # Alongside the ios job rather than inside it: they share a runner image and nothing else, and a
   # failure to link an iOS framework should not hide whether the desktop app builds.
   desktop-macos:
     runs-on: macos-15
-
-    permissions:
-      contents: write
 
     env:
       OPENBREATH_BUILD: ${{ github.run_number }}
@@ -508,11 +415,128 @@ jobs:
           name: OpenBreath-dmg
           path: app/build/compose/binaries/main/dmg/*.dmg
 
-      - name: Publish the .dmg as a download
-        if: github.event_name != 'pull_request'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: .github/publish-desktop.sh 'app/build/compose/binaries/main/dmg/*.dmg' OpenBreath.dmg
+  # The one writer for the rolling `latest` release, where there used to be four.
+  #
+  # An artifact cannot be downloaded without a GitHub login, and SideStore has none, so the ipa,
+  # its apps.json and the three installers have to be public release assets on a tag whose URLs
+  # never move. That part is unchanged. What changed is who does it: each of the four jobs used to
+  # upload what it had just built, which meant four concurrent `gh release upload --clobber`
+  # against one release. `--clobber` is delete-then-upload, and two of them raced badly enough to
+  # answer "HTTP 404" on a release id that had moved under them — a red build over nothing, with
+  # every installer on the release intact.
+  #
+  # One job cannot race itself, and `concurrency` then keeps two *runs* from colliding, which is
+  # what actually happened: a push and a manual dispatch seconds apart, both live at once.
+  #
+  # The group could not simply have been put on the four jobs instead. Only one job per group may
+  # be pending, so the three siblings would have cancelled each other rather than queued — the
+  # opposite of the intent, and it would have looked like flaky infrastructure.
+  #
+  # cancel-in-progress is false on purpose: a queued publish is not stale work to be dropped, it is
+  # the previous run's downloads waiting their turn.
+  #
+  # Publishing now needs all four builds green, where before a broken Windows build still put a
+  # .deb up. That is the trade for a consistent set, and it is the right way round: a run that
+  # failed has no business replacing what a reader is being offered.
+  publish:
+    name: Publish the downloads
+    runs-on: ubuntu-latest
+    needs: [ios, desktop-linux, desktop-windows, desktop-macos]
+    # a fork's token cannot write, and a PR build has no business replacing what is offered
+    if: github.event_name != 'pull_request'
+
+    # The only job that writes to the repository, now that it is the only one that touches the
+    # release. Named here rather than at the top of the file so every other job stays read-only —
+    # and the omission fails exactly as it did the first time this job ran: 403 on the asset
+    # delete inside `--clobber`, with all four builds already green.
+    permissions:
+      contents: write
+
+    concurrency:
+      group: publish-latest
+      cancel-in-progress: false
+
+    env:
+      VERSION: 1.0.${{ github.run_number }}
+      BUILD: ${{ github.run_number }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+
+    steps:
+      # for the two scripts below; no LFS, since nothing here reads the bundled audio
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v7
+        with: { name: OpenBreath-deb, path: downloads/deb }
+      - uses: actions/download-artifact@v7
+        with: { name: OpenBreath-msi, path: downloads/msi }
+      - uses: actions/download-artifact@v7
+        with: { name: OpenBreath-dmg, path: downloads/dmg }
+      - uses: actions/download-artifact@v7
+        with: { name: OpenBreath-unsigned-ipa, path: downloads/ipa }
+
+      # jpackage names its output after the version, so each of these is a glob resolving to the
+      # one file the artifact holds, copied to the fixed name the README links.
+      - name: Publish the installers
+        run: |
+          set -euo pipefail
+          .github/publish-desktop.sh 'downloads/deb/*.deb' OpenBreath.deb
+          .github/publish-desktop.sh 'downloads/msi/*.msi' OpenBreath.msi
+          .github/publish-desktop.sh 'downloads/dmg/*.dmg' OpenBreath.dmg
+
+      - name: Publish the ipa and the source for over-the-air updates
+        run: |
+          set -euo pipefail
+
+          # The ipa carries its version in the filename, and that is the whole trick: SideStore
+          # caches the source and checks the version it downloaded against the version it was
+          # promised. One fixed ipa URL whose contents keep changing fails that check on every
+          # phone whose cache is a build or two behind — "expected 30, got 32". A per-version name
+          # means a stale cache asks for the build it still believes in, gets exactly that, and
+          # installs; the newer one is offered on the next refresh instead of erroring now.
+          #
+          # apps.json keeps its fixed name, because that URL is typed into the phone once.
+          ipa="OpenBreath-$VERSION.ipa"
+          cp downloads/ipa/OpenBreath-unsigned.ipa "$ipa"
+
+          .github/make-source.sh \
+            "$ipa" "$VERSION" "$BUILD" \
+            "https://github.com/$REPO/releases/download/latest/$ipa" \
+            apps.json
+
+          # one rolling prerelease rather than a tag per build: the source URL has to stay put, and
+          # a year of test builds is not release history worth keeping
+          gh release view latest >/dev/null 2>&1 || gh release create latest \
+            --prerelease \
+            --title "Latest test build" \
+            --notes "Rolling builds for sideloading. Not a release."
+
+          gh release upload latest "$ipa" apps.json --clobber
+
+          # The old ipas are what stale caches resolve against, so several are kept on purpose; left
+          # unbounded they are 18 MB per push forever.
+          #
+          # Counted rather than `head -n -5`: this used to run on macOS, where BSD head answers
+          # "illegal line count", and there is no reason to reintroduce the trap. `|| true` because
+          # a grep that matches nothing exits 1, which under pipefail would fail the build over
+          # there being nothing to tidy.
+          keep=5
+          names="$(gh release view latest --json assets --jq '.assets[].name' \
+            | grep -E '^OpenBreath-.*\.ipa$' | sort -V || true)"
+          total="$(printf '%s' "$names" | grep -c . || true)"
+          if [ "${total:-0}" -gt "$keep" ]; then
+            printf '%s\n' "$names" | sed -n "1,$((total - keep))p" | while read -r stale; do
+              [ -n "$stale" ] || continue
+              echo "pruning $stale"
+              gh release delete-asset latest "$stale" --yes
+            done
+          fi
+
+          echo "### Sideloading" >> "$GITHUB_STEP_SUMMARY"
+          echo "Version \`$VERSION\` is live. SideStore source URL:" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "https://github.com/$REPO/releases/download/latest/apps.json" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
   # Signing and uploading, deliberately kept apart from the job above.
   #
@@ -529,7 +553,19 @@ jobs:
     if: inputs.app_store
 
     env:
-      VERSION: 1.0.${{ github.run_number }}
+      # Stable, where the sideloading half of this workflow stamps 1.0.<run number>. The two want
+      # opposite things and only look alike.
+      #
+      # SideStore compares the version a source advertises against the bundle on the phone, so the
+      # ipa the `ios` job builds has to climb on every push or an update is never offered. The App
+      # Store wants the reverse: CFBundleShortVersionString is the *release*, one record in App
+      # Store Connect, with CFBundleVersion climbing underneath it. Stamping the run number into
+      # both filed every upload under a version of its own — 1.0.70, then 1.0.115, then 1.0.120 —
+      # so a build could not be attached to the record it was meant to fix without editing that
+      # record's version number first, which looks exactly like an upload that never arrived.
+      #
+      # This is also just what iosApp/project.yml already declares; CI was overriding it.
+      VERSION: "1.0"
       BUILD: ${{ github.run_number }}
       BUNDLE_ID: io.github.wlemkens.openbreath
       PROFILE_NAME: OpenBreath App Store
