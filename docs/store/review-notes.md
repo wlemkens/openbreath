@@ -59,25 +59,32 @@ another build goes up.
 ```
 1. SCREEN RECORDING
 
-Attached. Captured on a physical iPhone 15 running iOS 26.6. It begins on the Home screen with
-the app being launched from its icon, and follows the typical flow from there: the main screen
-and its phase timings, a breathing session started and running, and the Goals, Achievements and
-Settings screens, with settings changed on camera so that their effect can be seen.
+Attached. Captured on a physical iPhone 15 running iOS 26.6, on a clean install of the build
+submitted here. It begins on the Home screen with the app being launched from its icon, and
+runs through the app as someone opening it for the first time meets it:
 
-Three things are not in the recording. They are named here rather than left for you to notice:
+  - The "Welcome" question of item 4, answered by leaving its one switch off, so that nothing
+    is set up on the user's behalf.
+  - Settings: the session shortened to one minute and the breath retimed to four seconds in and
+    six seconds out, so that the timings are visibly the user's own rather than ours.
+  - Goals, Achievements and the Log before any practice — one goal unmet and two empty screens.
+  - The Feedback item, which opens the form named in item 5 in Safari, and back.
+  - The Support screen, which opens PayPal in Safari with an amount filled in, and back. No
+    payment is taken inside the app by any mechanism; see item 5.
+  - A complete one-minute sitting, from the count-in through the breathing cue to the singing
+    bowl that marks the end.
+  - Goals, Achievements and the Log again, now carrying that sitting.
 
-  - The breathing session is ended early rather than run to its full length, to keep the
-    recording short. Ending early is a normal path and not a failure — the sitting is still
-    written to the log, with the breaths actually taken.
-  - The first-launch "Welcome" screen does not appear, because the app had already been opened
-    once on that phone. It is described in item 4, and deleting and reinstalling brings it back.
-  - The Support screen is not opened. It is described in item 5. Nothing is sold anywhere in
-    this app: that screen carries an optional link which opens PayPal outside the app — in Safari,
-    or in the PayPal app where the device has it — and no payment is taken inside the app by any
-    mechanism. We will gladly send a second clip of it if you would like to see it.
+The first and last of those are the app itself: the log is written by practising, on the device,
+with nothing asked of the user beforehand and nothing sent anywhere afterwards.
 
 The app has no account, no login, no purchases, no subscriptions, no user-generated content and
 no sharing between users, so none of those flows appear in it — there are none to show.
+
+Two features are described on the store page and cannot appear in a screen recording, because
+they are not on the screen: the haptic feedback at each phase change, and the torch brightening
+and fading with the breath, which is there to be followed with the eyes closed. Both are off by
+default and are switched on in Settings. Neither asks for any permission.
 
 It also requests no permissions, and no system prompt appears anywhere in the recording. This
 is not an omission: the app declares no purpose strings at all, because it needs none. It makes
