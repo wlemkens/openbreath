@@ -667,16 +667,24 @@ Functionality includes:
     repository. There is no `docs/index.html`, so the site root itself 404s — only the policy has a
     URL. A landing page with the desktop download links is the obvious thing to put there.
   - **The Play listing.** Copy for both stores is in `docs/store/listing.md`, the phone
-    screenshots and the two Play graphics beside it. The keystore now exists. Still missing: the
-    Play Console record itself, and — for a personal developer account — the 12-tester, 14-day
-    closed test that has to run before production opens.
+    screenshots and the two Play graphics beside it. The keystore exists.
+
+    **The Console record exists too, and uploading from here works** — proven on 2026-08-30, when
+    `./gradlew :app:publishBundle` put versionCode 131 on the `alpha` track as a completed
+    release. This file used to say the record was "still missing", which was true when it was
+    written and had quietly stopped being true; a TODO that describes the world rather than the
+    repository goes stale without anything going red, so check it before believing it.
+
+    What is genuinely still owed is the **12-tester, 14-day closed test** a personal developer
+    account has to run before production opens. `alpha` *is* that closed test, so every upload
+    feeds it — what it wants now is twelve people and two weeks, neither of which is a command.
 
     Uploading is wired: gradle-play-publisher, `./gradlew :app:publishBundle`, `docs/BUILDING.md` has the
     service-account setup. Release notes are generated from the commit subjects on the way, which
     makes a commit subject user-facing copy — one more reason they are written the way they are.
     They land in `app/src/main/play/`, which is AGP's source-set name and not the KMP one, and is
-    the only thing left under `src/main` now that the code has moved. Two things that constrain it. **The API cannot create the app** — the
-    first bundle, the listing and the track go up by hand, and only updates come from here. And
+    the only thing left under `src/main` now that the code has moved. Two things that constrain it. **The API could not create the app** — the
+    first bundle, the listing and the track went up by hand, and only updates come from here. And
     **the plugin is pinned to 3.13.0 because every 4.x needs Gradle 9.1**, while this build is on
     8.14.3 for AGP and Kotlin; the pin is a toolchain fact, not a preference, so it moves when
     Gradle does and not before.
