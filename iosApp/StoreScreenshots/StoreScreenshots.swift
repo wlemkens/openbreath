@@ -43,9 +43,21 @@ final class StoreScreenshots: XCTestCase {
     func testTakeTheStoreScreenshots() throws {
         // A fresh install, so nothing has ever been stored and the first-run question appears. The
         // shell script erases the device for the same reason.
+        //
+        // Waited for, and that is not belt-and-braces. `launch()` returns when the process is up,
+        // which is well before Compose has drawn anything, and this was the one shot in the run
+        // taken without a wait in front of it — every other one follows a `tap` or a `waitUntil`
+        // that blocks until the screen is there. So it photographed an empty black rectangle, and
+        // it did so silently: the script checks that nine files exist at the size Apple accepts,
+        // which a blank screenshot passes. A blank one reached the App Store listing that way.
         app.launch()
+        let welcome = element("Continue")
+        XCTAssertTrue(
+            welcome.waitForExistence(timeout: 30),
+            "the first-run question never appeared — was the device erased?"
+        )
         shot("firstrun")
-        tap("Continue")
+        welcome.tap()
 
         // Relaunched with the log in the environment. Android taps Settings ▸ Advanced ▸ Import
         // here; the effect is the same and the wait is for the import to land.
@@ -95,8 +107,18 @@ final class StoreScreenshots: XCTestCase {
         let marker = scroll(to: "Marker")
         marker.tap()
         shot("sound-per-phase")
-        app.swipeUp()
-        app.swipeUp()
+
+        // Scrolled to, for the reason the comment above already gives and this line used to
+        // ignore: two bare swipes land wherever the list happens to be that day, and the list grew
+        // when the cue gained its two sliders — so this shot drifted onto the sound chips,
+        // duplicating the one above it and missing the section it is named for.
+        //
+        // "Point size" rather than "Breath cue", which is the section this frames: `scroll(to:)`
+        // stops the moment a label is on screen, so asking for the header would stop with it at
+        // the bottom edge and the chips and both sliders still below the fold. Asking for the last
+        // row of the section puts the whole of it on screen — which is Android's framing, where
+        // the chips and the two sliders under them read as one section.
+        _ = scroll(to: "Point size")
         shot("settings-options")
     }
 
