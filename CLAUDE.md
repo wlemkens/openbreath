@@ -66,6 +66,24 @@ Functionality includes:
   whether it still holds — and if a paid tier is ever genuinely wanted, that is Play Billing,
   not a link.
 
+  ### The link also has to go somewhere
+  All of the above is about what the link is *allowed* to be, and none of it notices when the
+  link is simply wrong. Every build up to and including 70 pointed at `paypal.me/wimlemkens`,
+  which is a profile nobody owns, so the Support screen answered "We can't find this profile" on
+  Android, iOS and the desktop at once — shipped, in three published desktop installers, and
+  found only because someone opened it by hand while filming a video for App Review.
+
+  Nothing here could have caught it. A PayPal.Me handle is a name claimed in someone's PayPal
+  account, so whether it resolves is a fact about that account and not about this repository: no
+  compiler, no test and no reviewer of a diff can see it. **A dead one still answers 200** with
+  the slug echoed back inside PayPal's single-page shell, which is exactly how a first look at it
+  concluded the link was fine. The discriminator is `"displayName"` in the page body — present on
+  a real profile, absent on a phantom.
+
+  So: **open the link after touching `PAYPAL_ME`, and before any submission that could put a
+  reviewer on that screen.** A tip link that goes nowhere stops being a monetisation question and
+  becomes Guideline 2.1, bugs and crashes.
+
   ### The same link on the App Store
   The rule that governs it is **3.2.1(vii)**, the monetary-gift one, and not the charitable
   donation rules — a tip to the developer is a gift between people, not a fundraiser for a cause:
@@ -611,10 +629,22 @@ Functionality includes:
     free app can never become paid at all — only a new listing can. Which suits an app that is free
     by design, and is one more reason the tip link has to stay a gift rather than a price.
   - **The App Store listing.** The record exists — app `6805899911`, bundle
-    `io.github.wlemkens.openbreath`, and build 70 uploaded and VALID, so the pipeline is proven.
-    What a submission still wants is all copy and pictures: category, age rating, description and
-    keywords, support URL, the privacy policy URL (live, above), screenshots at Apple's sizes, and
-    the App Privacy answers — which are "no data collected", matching `PrivacyInfo.xcprivacy`.
+    `io.github.wlemkens.openbreath` — the copy and pictures are in, and build 70 was submitted.
+    It came back **rejected on 2026-08-29 under Guideline 2.1, Information Needed**, which is not
+    a fault in the app: the App Review Information **Notes** field was empty, and Apple's reply is
+    the standard seven-item letter asking who the app is for, what it talks to, what it was tested
+    on, and for a screen recording made on a physical device.
+
+    The seven answers are written out in `docs/store/review-notes.md` and the shot list for the
+    recording in `docs/store/video-script.md`. **Paste the notes into App Review Information
+    before every submission** — the field is not version-controlled, so an empty one is invisible
+    until the letter arrives.
+
+    That file is a standing check of the same kind as the monetisation one, and for the same
+    reason: it answers "no permission prompts, no network, no external services, no purchases,
+    nothing regulated" in Apple's own words. **Anything that adds a purpose string, an outbound
+    link, a dependency that phones home, or a paid anything makes it false**, and a false answer
+    there is a worse rejection than an empty one.
 
     The description may only name what iOS actually has. Reminders are not it.
   - **The rate link, on release day.** The id was there all along — Apple assigns it when the

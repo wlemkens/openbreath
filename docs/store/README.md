@@ -3,6 +3,8 @@
 Everything a listing needs that lives in the repository rather than in a console.
 
     listing.md                        copy for both stores, with the character counts checked
+    review-notes.md                   the App Review Information notes Apple asked for by name
+    video-script.md                   the shot list for the demo recording that letter wanted
     play-icon-512.png                 Play's app icon, from the same 1024 IconGen writes for iOS
     play-feature-graphic-1024x500.png required by Play; no promo video, so nothing overlays it
     android/*.png                     ten phone screenshots, 1080x1920 (9:16, what Play asks for)
