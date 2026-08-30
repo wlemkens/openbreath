@@ -5,8 +5,12 @@
 # the same reason the ipa goes to a release asset rather than an artifact. A release asset is public
 # and its URL is guessable, which is the whole point: the README can name it once.
 #
-# Shared by the deb, msi and dmg jobs because nothing but the filename differs between them, and the
-# Windows job runs its steps under `shell: bash` already.
+# Called three times over, from the one `publish` job — once per installer, since nothing but the
+# filename differs between them. It used to be called once from each of the three jobs that built
+# one, which is what raced; see the comment on that job.
+#
+# The glob is what jpackage wrote, which now arrives via download-artifact rather than sitting in
+# the build directory. The script does not care which, and that is why it did not have to change.
 #
 #   publish-desktop.sh <glob jpackage wrote> <fixed asset name>
 set -euo pipefail
