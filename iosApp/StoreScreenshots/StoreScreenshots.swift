@@ -85,7 +85,10 @@ final class StoreScreenshots: XCTestCase {
         waitUntil(inhale, exists: true, "the sitting never reached an inhale")
         waitUntil(inhale, exists: false, "the first inhale never ended")
         waitUntil(inhale, exists: true, "the second inhale never came")
-        Thread.sleep(forTimeInterval: 3.6)   // of the 5.5: the sphere is near full stretch
+        // 3.6 s into the 5.5, where the sphere is near full stretch — but `shot` settles for 0.6
+        // of its own before it fires, so the wait here is the remainder. The number that matters
+        // is their sum; splitting it is what keeps this shot at the moment it was tuned for.
+        Thread.sleep(forTimeInterval: 3.0)
         shot("session-breathe-in")
         tap("Reset")
 
@@ -165,6 +168,17 @@ final class StoreScreenshots: XCTestCase {
     /// than `app.screenshot()`: the app's own bounds exclude the status bar, and Apple wants the
     /// device's full resolution or it refuses the upload.
     private func shot(_ name: String) {
+        // Settled first, and here rather than at one call site because it is true of all of them.
+        // `waitForExistence` returns when an element enters the accessibility tree, which is
+        // before its entrance animation has run: the first-run dialog was photographed at part
+        // opacity with the scrim behind it still clearing, which reads as a half-broken app.
+        // XCUITest waits for animations before it *interacts*, but a screenshot is not an
+        // interaction and nothing makes it wait.
+        //
+        // A fixed pause, which the scroll comments above argue against — the difference is that
+        // this one is not a guess about where a list has landed. It is longer than a Material
+        // dialog's entrance and costs five seconds across the nine pictures.
+        Thread.sleep(forTimeInterval: 0.6)
         let png = XCUIScreen.main.screenshot().pngRepresentation
         let file = shots.appendingPathComponent("\(name).png")
         XCTAssertNoThrow(try png.write(to: file), "could not write \(file.path)")
