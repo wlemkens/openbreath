@@ -94,6 +94,18 @@ final class StoreScreenshots: XCTestCase {
         for screen in ["Log", "Achievements", "Goals"] {
             tap("⋮")
             tap(screen)
+            // The log is the one that visibly flickers: LogScreen collects its history with an
+            // empty initial value, so "Nothing yet." is on screen for a frame or two before the
+            // entries arrive, and a shot taken in that window claims the app has no history at
+            // all. The iPad caught exactly that on one run and missed it on the run before — the
+            // same code, half an hour apart, which is what a race looks like from outside.
+            //
+            // The summary line is the signal because it exists only once the history has: the
+            // other two screens have no static text worth waiting on, and no run has caught them
+            // half-drawn.
+            if screen == "Log" {
+                waitForLabel(containing: "in all", "the log never filled in")
+            }
             shot(screen.lowercased())
             tap("Done")
         }
@@ -122,7 +134,21 @@ final class StoreScreenshots: XCTestCase {
         shot("settings-options")
     }
 
-    // MARK: - the four things this needs
+    // MARK: - the five things this needs
+
+    /// Polls for any element whose label *contains* `text`. [element(_:)] matches exactly, which
+    /// cannot express "the log's summary line, whatever the numbers in it happen to be".
+    private func waitForLabel(
+        containing text: String, _ what: String, timeout: TimeInterval = 20
+    ) {
+        let match = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", text))
+            .firstMatch
+        guard match.waitForExistence(timeout: timeout) else {
+            print("::error title=Waited \(Int(timeout))s for nothing::\(what). On screen: \(visible())")
+            return XCTFail(what)
+        }
+    }
 
     /// A screenshot of the whole screen, at the simulator's own pixel size. `XCUIScreen` rather
     /// than `app.screenshot()`: the app's own bounds exclude the status bar, and Apple wants the
