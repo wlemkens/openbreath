@@ -182,7 +182,16 @@ interface Files {
 internal const val FEEDBACK_FORM =
     "https://docs.google.com/forms/d/e/1FAIpQLSfiiYcjxAfzvYQXIEQfyxwErtbEDVqjxbdaPAsvSuZpGgaFDA/viewform"
 
-internal const val PAYPAL_ME = "https://paypal.me/wimlemkens"
+/**
+ * `wlemkens`, and it was `wimlemkens` in every build up to 70 — which is a profile nobody owns,
+ * so the Support screen sent all three platforms to "We can't find this profile" and nothing here
+ * could tell. A handle is a name claimed at PayPal, not a fact about this account: it is right or
+ * wrong entirely outside the repository, no build fails over it, and the only check is opening it.
+ * Open it after touching this line. A live one carries `"displayName":"Wim Lemkens"` in the page;
+ * a dead one still answers 200 with the slug echoed back, which is what made the first look at it
+ * say the link was fine.
+ */
+internal const val PAYPAL_ME = "https://paypal.me/wlemkens"
 
 /** PayPal, with the amount already filled in when one was chosen. */
 internal fun payPalUrl(euros: Int?) = if (euros == null) PAYPAL_ME else "$PAYPAL_ME/${euros}EUR"
