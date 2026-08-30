@@ -11,6 +11,12 @@ is a rejection that costs a week.
 One of the seven is not text at all: **item 1**, the recording, which is uploaded to the
 Resolution Center. `video-script.md` beside this file is the shot list.
 
+**The Notes field takes under 4000 characters**, which the first draft of this missed by more
+than half — it was 9520. What is below is 3956 and is the only version kept, because two
+lengths of the same answers would drift and the shorter one is what actually gets pasted.
+Anything added here has to buy its space from something else. The first thing cut, if it comes
+to that again, is prose that is not answering one of Apple's seven questions.
+
 **Item 2 goes stale, and silently.** It is a claim about machines that really ran the app, so it
 has to be re-checked rather than re-pasted:
 
@@ -33,20 +39,25 @@ nothing given in return. That holds — no feature, theme, badge or acknowledgem
 and the screen says so in its own words. See the Monetisation section of CLAUDE.md; if that
 check ever stops holding, this file and the submission are both wrong.
 
-## These describe build 115, not build 70
+## These describe build 120, not build 70
 
 **Build 70's Support buttons open a profile that does not exist.** Every build up to and
 including it carried `paypal.me/wimlemkens`; the handle is `wlemkens`, and the wrong one answers
-"We can't find this profile" on all three platforms. Build 115 carries the fix, and item 5 names
-the corrected link — so send these with 115, and do not leave 70 anywhere a reviewer can reach
+"We can't find this profile" on all three platforms. Build 120 carries the fix, and item 5 names
+the corrected link — so send these with 120, and do not leave 70 anywhere a reviewer can reach
 that screen. A link that goes nowhere is a Guideline 2.1 *bugs* rejection, a worse letter than
 the information one this file answers.
 
-Checked against 115's tree rather than 70's, because twenty-two commits sit between them. What
-actually moved in the shipping app: the PayPal handle, two cue sliders in Settings, and ± on the
-session length. `Info.plist` and the bundled audio are untouched, so no new purpose string and
-no new asset — items 1, 5 and 7 stand as written. `canRate` is still false, so the Rate item is
-still hidden and item 5's "two links" is still two.
+Checked against 120's tree rather than 70's, because fifty commits sit between them. What
+actually moved in the shipping app: the PayPal handle and its wording, two cue sliders in
+Settings, and ± on the session length. `Info.plist` and the bundled audio are untouched, so no
+new purpose string and no new asset — items 1, 5 and 7 stand as written. `canRate` is still
+false, so the Rate item is still hidden and item 5's "two links" is still two.
+
+**Build 120 also carries a different marketing version from 70** — the workflow stamps
+`1.0.<run number>` — so App Store Connect files it under version **1.0.120** and will not offer
+it in the build picker of the rejected 1.0.70 record. Change that record's Version field to
+1.0.120 first, or conclude wrongly that the upload failed.
 
 **Re-run that check against whatever build is actually submitted.** These notes describe a
 binary, and the version they were written for stops being the version being sent the moment
@@ -59,161 +70,76 @@ another build goes up.
 ```
 1. SCREEN RECORDING
 
-Attached. Captured on a physical iPhone 15 running iOS 26.6, on a clean install of the build
-submitted here. It begins on the Home screen with the app being launched from its icon, and
-runs through the app as someone opening it for the first time meets it:
+Attached. Physical iPhone 15, iOS 26.6, clean install of this build. It begins on the Home
+screen with the app being launched from its icon, and runs the typical flow through to a
+completed one-minute sitting and the log it writes.
 
-  - The "Welcome" question of item 4, answered by leaving its one switch off, so that nothing
-    is set up on the user's behalf.
-  - Settings: the session shortened to one minute and the breath retimed to four seconds in and
-    six seconds out, so that the timings are visibly the user's own rather than ours.
-  - Goals, Achievements and the Log before any practice — one goal unmet and two empty screens.
-  - The Feedback item, which opens the form named in item 5 in Safari, and back.
-  - The Support screen, which opens PayPal in Safari with an amount filled in, and back. No
-    payment is taken inside the app by any mechanism; see item 5.
-  - A complete one-minute sitting, from the count-in through the breathing cue to the singing
-    bowl that marks the end.
-  - Goals, Achievements and the Log again, now carrying that sitting.
-
-The first and last of those are the app itself: the log is written by practising, on the device,
-with nothing asked of the user beforehand and nothing sent anywhere afterwards.
-
-The app has no account, no login, no purchases, no subscriptions, no user-generated content and
-no sharing between users, so none of those flows appear in it — there are none to show.
-
-Two features are described on the store page and cannot appear in a screen recording, because
-they are not on the screen: the haptic feedback at each phase change, and the torch brightening
-and fading with the breath, which is there to be followed with the eyes closed. Both are off by
-default and are switched on in Settings. Neither asks for any permission.
-
-It also requests no permissions, and no system prompt appears anywhere in the recording. This
-is not an omission: the app declares no purpose strings at all, because it needs none. It makes
-no network connection, reads no contacts or location, and the optional torch is configuration
-on the capture device rather than capture, so no AVCaptureSession is created and
-NSCameraUsageDescription does not apply. Verified on a device: no prompt appears.
+There is no account, login, purchase, subscription, user-generated content or sharing, so
+none of those flows appear. No permission prompt appears anywhere: the app declares no
+purpose strings and needs none - the optional torch is device configuration, not capture,
+so no capture session is created.
 
 2. DEVICES AND OPERATING SYSTEMS TESTED
 
-  - iPhone 15, iOS 26.6 — physical device, via TestFlight; the build submitted
-  - iPhone 17 Pro Max simulator, iOS 26.2 — automated UI run, which took the 6.9" screenshots
-  - iPad Pro 13-inch (M5) simulator, iOS 26.2 — automated UI run, which took the 13" screenshots
-
-The app targets iPhone and iPad, deployment target iOS 15.0. Nothing is laid out separately
-for a tablet; the breathing cue takes the space it is given.
+iPhone 15, iOS 26.6 - physical device, this build, via TestFlight.
+iPhone 17 Pro Max and iPad Pro 13-inch (M5) simulators, both iOS 26.2 - automated UI runs.
+Targets iPhone and iPad; deployment target iOS 15.0.
 
 3. WHAT THE APP DOES, AND FOR WHOM
 
-OpenBreath is a paced breathing timer for coherence practice.
+A paced breathing timer for coherence practice. You set the four phase lengths, or take a
+preset, and follow a sphere that opens and closes with the breath, with an optional sound
+at each turn so it can be followed with eyes shut. The problem it solves: counting breaths
+yourself occupies the attention the practice is meant to free. Every sitting is logged;
+goals, streaks and milestones are counted from it.
 
-The problem: breathing at a slow, even, fixed pace is easy to describe and hard to do, because
-counting occupies the attention the practice is meant to free. Watching a clock is worse.
-
-What it does: you set how long to breathe in, hold, breathe out and hold — or take one of the
-presets (coherence 5.5, 4-6, 4-7-8, box 4) — and then follow a sphere that opens as you breathe
-in and closes as you breathe out, with an optional sound at each turn so it can be followed
-with the eyes shut. It keeps a log of every sitting, from which it counts goals, streaks and
-milestones.
-
-Audience: anyone practising paced or coherence breathing — people who already know the patterns
-and want a timer that is not a subscription, and beginners who want the presets. It is a
-general-audience wellness and timing app.
-
-The value: it is free, it has no account, and it makes no network connection of any kind, so a
-practice log stays on the phone. Nothing is behind a payment, and there is nothing to unlock.
-
-It makes no health or medical claim. It does not diagnose, treat or measure anything, it reads
-no sensor and no health data, and neither the app nor its store copy says that breathing treats
-any condition. It is a timer with a visual and audible pace.
+For anyone practising paced or coherence breathing: a general-audience wellness and timing
+app, free, with no account and no network, so the log stays on the phone. It makes no
+health or medical claim, treats nothing, and reads no sensor or health data.
 
 4. SETUP AND ACCESS
 
-No credentials of any kind. There is no account, no sign-in, no demo account, no server and no
-sample files, so there is nothing to give you to log in with and nothing to prepare beforehand.
-
-One screen can stand between launching the app and using it, on a phone the app has never been
-opened on. It is not in the attached recording — that was filmed on a phone where the app had
-already been launched once — so it is described here instead:
-
-  - "Welcome" says that a breathing meditation every day is what we would recommend, and offers
-    to set that as a goal. There is a single switch, "A goal of one sitting a day", and it
-    starts OFF: the recommendation is stated, not applied. Tapping Continue with it off creates
-    nothing and is a complete answer. Either way it can be changed later from the Goals screen.
-    Deleting the app and installing it again shows the screen, if you would like to see it.
-
-Nothing else is required. Every setting has a working default and the app is fully usable
-without opening Settings at all; everything below is optional.
-
-  - Main screen: the four phase timings and the session length, a preset row, and Start.
-  - Start begins a four-second count-in, then the sitting. The sphere opens and closes with the
-    breath. Tapping the screen pauses; a button ends the sitting early, and a short sitting is
-    still logged.
-  - The ⋮ menu on the main screen reaches everything else: Settings, Goals, Achievements, Log,
-    Feedback and Support the app.
-  - Settings has a Standard and an Advanced tab: the cue's shape and colour and how many points
-    it is drawn from and how large they are, the sound for each phase, the session-end bowl,
-    haptics, the torch, the count-in length, what the session screen shows, saving and renaming
-    presets, and a Backup section.
-  - Backup's Export writes one JSON file through the system document picker, and Import reads
-    one back. That is the only route anything takes in or out of the app; there is no other, and
-    no network.
+No credentials and nothing to prepare: no account, sign-in, demo account, server or sample
+files. Only one screen precedes use, and only on a phone the app has never been opened on:
+"Welcome" offers a goal of one sitting a day with its single switch OFF, so Continue creates
+nothing unless you turn it on. Everything else has a working default. Delete and reinstall
+to see it again.
 
 5. EXTERNAL SERVICES, TOOLS AND PLATFORMS
 
-None deliver the app's functionality. There are no data providers, no authentication service,
-no payment processor, no analytics, no advertising SDK, no crash reporter, no AI or machine
-learning service, and no backend of ours. The app makes no network request; every feature —
-the timings, the cue, the synthesised sounds, the log, the goals — is computed on the device.
-That is also why ITSAppUsesNonExemptEncryption is false: there is no connection to encrypt.
+None deliver any functionality: no data provider, authentication, payment processor,
+analytics, advertising SDK, crash reporter, AI service or backend of ours. The only
+third-party code is the Kotlin and Compose Multiplatform runtimes (Apache-2.0), carrying no
+service. The app makes no network request at all, which is also why
+ITSAppUsesNonExemptEncryption is false.
 
-Two links send the user out of the app when tapped, and are its only outbound traffic. Both open
-in Safari, except that iOS hands the PayPal one to the PayPal app where the device has it
-installed — either way it leaves the app, which is the part that matters:
+Two links open Safari, and are the only outbound traffic:
 
-  - paypal.me/wlemkens — on the Support screen. An optional gift to the developer as an
-    individual, under Guideline 3.2.1(vii). 100% goes to him. It grants no content, feature,
-    badge or acknowledgement of any kind; the app is identical whether or not anyone uses it,
-    and the screen says so. No payment is taken inside the app by any mechanism.
-  - A Google Forms page — the Feedback item in the menu, so a user can write to the developer
-    without composing an email. Google hosts that form and nothing else; the app itself sends it
-    nothing, and the form is opened in the browser rather than embedded.
+- paypal.me/wlemkens, on the Support screen. An optional gift to the developer as an
+  individual, under Guideline 3.2.1(vii); 100% goes to him. It grants no content, feature,
+  badge or acknowledgement - the app is identical whether or not anyone uses it, and the
+  screen says so. No payment is taken inside the app by any mechanism.
+- A Google Forms page, the Feedback menu item, for writing to the developer. Google hosts
+  the form and nothing else; the app sends it nothing.
 
-Third-party code in the binary is open source and carries no service: the Kotlin and Compose
-Multiplatform runtimes and their libraries, all Apache-2.0. None of them phones home, and there
-is no SDK in the app that talks to anyone.
-
-The app collects no data. This matches PrivacyInfo.xcprivacy, which declares no tracking and no
-collected data, and one required-reason API — NSPrivacyAccessedAPICategoryFileTimestamp, reason
-C617.1, which is the settings store reading the metadata of its own file in the app container
-in order to write it atomically.
+No data is collected, matching PrivacyInfo.xcprivacy: no tracking, no collected data, one
+required-reason API - NSPrivacyAccessedAPICategoryFileTimestamp, reason C617.1, the
+settings store reading its own file's metadata to write atomically.
 
 6. REGIONAL DIFFERENCES
 
-None. The app functions identically in every region and storefront. There is no
-geo-restriction, no region-gated feature, no regional content, and no server that could vary by
-country.
-
-The interface is English only. Dates and times follow the device's own locale — first day of
-the week, day names, and 12- or 24-hour clock — which is formatting, not a difference in
-features.
+None. Identical in every region and storefront: no geo-restriction, no region-gated
+feature or content, no server that could vary by country. English only; dates and times
+follow the device locale, which is formatting, not a feature difference.
 
 7. REGULATED INDUSTRY AND THIRD-PARTY MATERIAL
 
-Neither applies.
+Neither applies. A breathing timer is not a medical device or health service: no sensor, no
+HealthKit, no diagnostic or therapeutic claim. The app is our own work, GPL-3.0-or-later,
+source at github.com/wlemkens/openbreath.
 
-Not a regulated industry: this is a breathing timer, not a medical device or health service. It
-reads no sensor and no HealthKit data, makes no diagnostic or therapeutic claim, and provides no
-regulated service of any kind.
-
-No protected third-party material. The app is our own work, released under the GNU General
-Public License v3 or later, source public at github.com/wlemkens/openbreath.
-
-The two recorded singing-bowl sounds in the bundle are the only assets not written by us. Both
-are cut from files published by the freesound_community account on Pixabay under CC0 1.0, a
-public domain dedication that permits commercial use and requires no attribution or permission:
-
-  - session_end.mp3 — from "025535 singing bowl" (Pixabay 60767)
-  - singing_bowl.mp3 — from "singing bowl hit 3" (Pixabay 33366)
-
-Every other sound in the app is synthesised arithmetically at runtime and is not a recording of
-anything.
+The only assets not ours are two recorded singing bowls, cut from freesound_community's
+files on Pixabay under CC0 1.0, a public domain dedication requiring no attribution or
+permission: session_end.mp3 (Pixabay 60767), singing_bowl.mp3 (Pixabay 33366). Every other
+sound is synthesised at runtime.
 ```
