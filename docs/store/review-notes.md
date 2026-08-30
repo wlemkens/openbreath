@@ -54,10 +54,17 @@ Settings, and ± on the session length. `Info.plist` and the bundled audio are u
 new purpose string and no new asset — items 1, 5 and 7 stand as written. `canRate` is still
 false, so the Rate item is still hidden and item 5's "two links" is still two.
 
-**Build 120 also carries a different marketing version from 70** — the workflow stamps
-`1.0.<run number>` — so App Store Connect files it under version **1.0.120** and will not offer
-it in the build picker of the rejected 1.0.70 record. Change that record's Version field to
-1.0.120 first, or conclude wrongly that the upload failed.
+**Build 120 also carries a different marketing version from 70**, so App Store Connect files it
+under version **1.0.120** and will not offer it in the build picker of the rejected 1.0.70
+record. Change that record's Version field to 1.0.120 first, or conclude wrongly that the upload
+never arrived.
+
+Build 120 is the last one this happens to. The workflow stamped `1.0.<run number>` into both
+halves of the build, which SideStore needs — it compares the advertised version against the
+bundle on the phone — and the App Store does not: there, the marketing version is the *release*
+and the build number climbs underneath it. The App Store job now stamps a stable `1.0`, so every
+upload after this lands under one record with the build number rising, and there is no version
+field to edit.
 
 **Re-run that check against whatever build is actually submitted.** These notes describe a
 binary, and the version they were written for stops being the version being sent the moment

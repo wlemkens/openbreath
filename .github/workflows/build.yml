@@ -553,7 +553,19 @@ jobs:
     if: inputs.app_store
 
     env:
-      VERSION: 1.0.${{ github.run_number }}
+      # Stable, where the sideloading half of this workflow stamps 1.0.<run number>. The two want
+      # opposite things and only look alike.
+      #
+      # SideStore compares the version a source advertises against the bundle on the phone, so the
+      # ipa the `ios` job builds has to climb on every push or an update is never offered. The App
+      # Store wants the reverse: CFBundleShortVersionString is the *release*, one record in App
+      # Store Connect, with CFBundleVersion climbing underneath it. Stamping the run number into
+      # both filed every upload under a version of its own — 1.0.70, then 1.0.115, then 1.0.120 —
+      # so a build could not be attached to the record it was meant to fix without editing that
+      # record's version number first, which looks exactly like an upload that never arrived.
+      #
+      # This is also just what iosApp/project.yml already declares; CI was overriding it.
+      VERSION: "1.0"
       BUILD: ${{ github.run_number }}
       BUNDLE_ID: io.github.wlemkens.openbreath
       PROFILE_NAME: OpenBreath App Store
