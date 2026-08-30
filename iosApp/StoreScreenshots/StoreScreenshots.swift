@@ -118,6 +118,17 @@ final class StoreScreenshots: XCTestCase {
         // list is not obviously wrong in a diff
         let marker = scroll(to: "Marker")
         marker.tap()
+        // And then scrolled on, because `scroll(to:)` stops the instant a label becomes hittable
+        // — at the bottom edge — so anchoring on the first thing in a section frames everything
+        // *above* it. This shot was three quarters Preset and Timing with "Sound per phase" as a
+        // sliver along the bottom, where Android's is the section itself: Breathe in set to
+        // Marker, the mp3 row, and the bowl/bell/tick choice under it. That choice is what the
+        // picture is selling, and it was not in it.
+        //
+        // "Tick" is the anchor because it is unique — the tone chips exist only for a phase in
+        // Marker mode, which is the one just tapped — and because stopping with it at the bottom
+        // puts the section header and every chip above it on screen.
+        _ = scroll(to: "Tick")
         shot("sound-per-phase")
 
         // Scrolled to, for the reason the comment above already gives and this line used to
