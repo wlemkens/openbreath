@@ -98,11 +98,6 @@ jobs:
   ios:
     runs-on: macos-15
 
-    # to publish the rolling `latest` release the phone updates from. Naming it here rather than at
-    # the top of the file keeps the Android job read-only.
-    permissions:
-      contents: write
-
     env:
       # One monotonic number for both, from the run counter, so a push always advertises a version
       # higher than the one on the phone. It has to reach the ipa *and* the source JSON identically:
@@ -300,12 +295,6 @@ jobs:
   desktop-linux:
     runs-on: ubuntu-latest
 
-    # to put the installer on the `latest` release, exactly as the ios job does. Per job rather than
-    # at the top of the file, so the Android job stays read-only — and the omission fails as a 403
-    # on the upload alone, with the packaging already green.
-    permissions:
-      contents: write
-
     env:
       OPENBREATH_BUILD: ${{ github.run_number }}
 
@@ -353,9 +342,6 @@ jobs:
   desktop-windows:
     runs-on: windows-latest
 
-    permissions:
-      contents: write
-
     env:
       OPENBREATH_BUILD: ${{ github.run_number }}
 
@@ -397,9 +383,6 @@ jobs:
   # failure to link an iOS framework should not hide whether the desktop app builds.
   desktop-macos:
     runs-on: macos-15
-
-    permissions:
-      contents: write
 
     env:
       OPENBREATH_BUILD: ${{ github.run_number }}
@@ -461,6 +444,13 @@ jobs:
     needs: [ios, desktop-linux, desktop-windows, desktop-macos]
     # a fork's token cannot write, and a PR build has no business replacing what is offered
     if: github.event_name != 'pull_request'
+
+    # The only job that writes to the repository, now that it is the only one that touches the
+    # release. Named here rather than at the top of the file so every other job stays read-only —
+    # and the omission fails exactly as it did the first time this job ran: 403 on the asset
+    # delete inside `--clobber`, with all four builds already green.
+    permissions:
+      contents: write
 
     concurrency:
       group: publish-latest
