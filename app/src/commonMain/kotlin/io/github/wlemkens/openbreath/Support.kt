@@ -83,8 +83,9 @@ fun SupportScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         }
 
         Text(
-            "Opens PayPal in your browser, paying the developer directly. Nothing is charged from " +
-                "here, and the app is not told whether you went through with it.",
+            "Opens PayPal in your browser, or in the PayPal app if you have it, paying the " +
+                "developer directly. Nothing is charged from here, and the app is not told " +
+                "whether you went through with it.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 24.dp),
