@@ -28,7 +28,7 @@ class RecurrenceTest {
     }
 
     @Test
-    fun `the fire time is strictly after now, never the very minute asked about`() {
+    fun `the fire time is strictly after now rather than the very minute asked about`() {
         val r = Reminder(id = 1, hour = 8, minute = 0)
         assertEquals(at("2026-03-11T08:00"), nextFireAt(r, at("2026-03-10T08:00")))
     }
