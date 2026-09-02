@@ -406,13 +406,41 @@ Functionality includes:
 
   - **Do-not-disturb.** `FocusGuard.supported` is false on iOS and the desktop and always will be:
     no public API sets a Focus. Android-only by nature, not by omission.
-  - **Reminders** — `Reminders.kt`, `RemindersScreen.kt`, AlarmManager and a BroadcastReceiver.
-    Missing from *two* platforms rather than one; the desktop needs its own answer again (a tray
-    notification, or the platform's own scheduler), so that half is still two ports.
+  - **Reminders on the desktop.** The screen and the recurrence rule are in commonMain and iOS
+    schedules through `UNUserNotificationCenter`, but `DesktopPlatform` answers `NoReminders`: the
+    three operating systems share no scheduler, so it is the first thing in `desktopMain` that
+    would genuinely have to branch per OS. A tray notification, or each platform's own.
 
   Everything else has reached parity: haptics, the torch, the mp3 picker, the colour picker, the
-  recorded bowls, backup export and import, and the rating link. Settings moved to commonMain and
-  `IosFiles` answers the file questions, so an iPhone reads a backup written on Android.
+  recorded bowls, backup export and import, the rating link, and reminders. Settings moved to
+  commonMain and `IosFiles` answers the file questions, so an iPhone reads a backup written on
+  Android.
+
+  ### Reminders arrive differently on the two phones
+  Android sets **one** alarm and decides the next occurrence inside the receiver, microseconds
+  before it rings — which is what lets it read the log at that instant and stay quiet when
+  `onlyIfBehind` is satisfied. Nothing runs at that moment on iOS. A local notification is handed
+  to the system now and delivered later whatever the app is doing, so `IosReminders` arms the next
+  eight occurrences up front and tops them up whenever the app opens.
+
+  Eight is a budget, not a taste: iOS keeps **64 pending notifications per app** and silently drops
+  the rest, so eight leaves room for seven other reminders and still covers a fortnightly rule for
+  four months.
+
+  Two differences the screen states rather than papers over, both following the rule every
+  capability flag here follows:
+
+  - **`canRingUntilDismissed` is false on iOS**, so the switch is not shown. Android's insistent
+    alarm needs a tone that repeats; the iOS equivalent is the Critical Alerts entitlement, applied
+    for and granted case by case, and a default sound playing once is not that.
+  - **`onlyIfBehind` is decided when the app is used**, not when the notification fires — `apply()`
+    re-arms on launch and after every sitting. That is sound rather than approximate: the only way
+    to get ahead of a goal is to practise, and the only way to practise is to open the app.
+
+  **The rule itself is shared and tested.** `Recurrence.kt` in commonMain holds `nextFireAt` and
+  the ISO week arithmetic, with `isoWeek` computed rather than looked up because kotlinx-datetime
+  carries no week fields — the Thursday of a week decides its year. Its tests were androidUnitTest's
+  and ran on the JVM alone for as long as the rule was Android's.
 
   **Locale data is the recurring seam.** kotlinx-datetime carries none, on purpose, so every
   question about how a reader writes something goes to the platform. `firstDayOfWeek()` is an
@@ -618,12 +646,22 @@ Functionality includes:
   The base sound is waves coming ashore. During the breath in, the pitch goes up, during breathing out, the pitch goes down.
 
   # TODO
-  - **Reminders on iOS.** The last unported screen: AlarmManager and a BroadcastReceiver become
-    UNUserNotificationCenter, plus the permission prompt and `uses24Hour` for the picker.
-    Deliberately deferred until after the first App Store submission. Worth knowing when that is
-    revisited: local notifications need no App Store id and no entitlement, so this *could* be
-    built sooner — the timing is a choice about effort, not a technical gate. Until it lands, the
-    store listing must not promise reminders.
+  - ~~**Reminders on iOS.**~~ Done, after the first submission as planned. See the port notes for
+    how they differ from Android's, which they do in two ways worth knowing before anyone calls it
+    a translation.
+
+    **Three things now have to move together with it**, and none of them is code:
+
+    - The App Store description may finally name reminders. It could not before, and
+      `docs/store/listing.md` still keeps the two listings deliberately different on this point.
+    - `docs/store/review-notes.md` item 1 said no permission prompt appears anywhere. That is the
+      app's **first** one, and Apple's letter asks explicitly for prompts to be in the recording.
+    - So the demo video needs refilming: the first-run question has two switches on iOS now rather
+      than one, and the notification prompt has to be in shot. Neither is optional — the notes and
+      the recording are answers about a binary, and the binary changed.
+
+    None of this reaches anyone until an `app_store=true` build goes up. Build 120, which is what
+    is live, has none of it.
   - ~~**Ask Apple whether a Belgian VZW is eligible for the fee waiver.**~~ Answered: yes.
     Stanistil VZW is enrolled as an organisation, team `AD8Y56HX64`, D-U-N-S 37-171-7333, KBO
     0719.384.464. **Still worth confirming once that the waiver was actually applied** rather

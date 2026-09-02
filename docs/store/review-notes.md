@@ -40,7 +40,23 @@ nothing given in return. That holds — no feature, theme, badge or acknowledgem
 and the screen says so in its own words. See the Monetisation section of CLAUDE.md; if that
 check ever stops holding, this file and the submission are both wrong.
 
-## These describe build 120, not build 70
+## These now describe a build that does not exist yet
+
+Reminders landed on iOS after the app was accepted, and they change two of the answers below.
+**The recording has to be made again before the next submission**, for reasons that are not
+cosmetic:
+
+- The first-run question has **two** switches on iOS now — a goal and an evening reminder —
+  where the filmed one had a single switch. Item 4 says two.
+- Adding a reminder asks for **notification permission**, the app's first and only prompt. Item 1
+  said none appeared anywhere. Apple's own letter asks for prompts to be in the recording, so a
+  video without it answers item 1 wrongly twice over.
+
+Neither reaches anyone until an `app_store=true` build goes up; build 120 is live and has no
+reminders in it. Until then these notes are ahead of the binary, which is the one direction this
+file is normally wrong in and the one worth stating.
+
+## What build 120 needed, kept for the next rejected version
 
 **Build 70's Support buttons open a profile that does not exist.** Every build up to and
 including it carried `paypal.me/wimlemkens`; the handle is `wlemkens`, and the wrong one answers
@@ -101,20 +117,20 @@ Targets iPhone and iPad; deployment target iOS 15.0.
 A paced breathing timer for coherence practice. You set the four phase lengths, or take a
 preset, and follow a sphere that opens and closes with the breath, with an optional sound
 at each turn so it can be followed with eyes shut. The problem it solves: counting breaths
-yourself occupies the attention the practice is meant to free. Every sitting is logged, and
-goals and streaks counted from it.
+occupies the attention the practice is meant to free. Every sitting is logged, and goals
+and streaks counted from it.
 
 For anyone practising paced or coherence breathing: a general-audience wellness and timing
 app, free, with no account and no network, so the log stays on the phone. It makes no
-health or medical claim, treats nothing, and reads no sensor or health data.
+health or medical claim and reads no sensor or health data.
 
 4. SETUP AND ACCESS
 
 No credentials and nothing to prepare: no account, sign-in, demo account, server or sample
-files. Only one screen precedes use, and only on a phone the app has never been opened on:
-"Welcome" offers a goal of one sitting a day with its single switch OFF, so Continue creates
-nothing unless you turn it on. Everything else has a working default. Delete and reinstall
-to see it again.
+files. One screen precedes use, only on a phone the app has never been opened on:
+"Welcome" offers a goal of one sitting a day and an evening reminder for the days it has
+not happened, both switches OFF, so Continue creates nothing unless one is turned on.
+Everything else has a working default. Delete and reinstall to see it again.
 
 5. EXTERNAL SERVICES, TOOLS AND PLATFORMS
 
@@ -149,8 +165,7 @@ Neither applies. A breathing timer is not a medical device or health service: no
 HealthKit, no diagnostic or therapeutic claim. The app is our own work, GPL-3.0-or-later,
 source at github.com/wlemkens/openbreath.
 
-The only assets not ours are two recorded singing bowls, from freesound_community on
-Pixabay under CC0 1.0, a public domain dedication requiring no attribution or permission:
-session_end.mp3 (60767), singing_bowl.mp3 (33366). Every other sound is synthesised at
-runtime.
+The only assets not ours are two recorded singing bowls from freesound_community on Pixabay
+under CC0 1.0, a public domain dedication requiring no attribution or permission:
+session_end.mp3 (60767) and singing_bowl.mp3 (33366). Every other sound is synthesised.
 ```
