@@ -1,10 +1,5 @@
 package io.github.wlemkens.openbreath
 
-import android.Manifest
-import android.content.Context
-import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -36,31 +31,25 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
-import java.time.format.TextStyle
-import java.time.temporal.WeekFields
-import java.util.Locale
 
 @Composable
 fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
+    val platform = LocalPlatform.current
+    val scheduler = platform.reminders
     val store = LocalStore.current
     val scope = rememberCoroutineScope()
     val reminders by remember { store.remindersFlow() }.collectAsState(initial = emptyList())
     var editing by remember { mutableStateOf<Reminder?>(null) }
 
-    // asked for at the moment the first reminder is made, rather than on a first run by someone
-    // who may never want one
-    val askNotify = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
-
     fun save(list: List<Reminder>) {
-        context.applyReminders(list)
+        scheduler.apply(list)
         scope.launch { store.saveReminders(list) }
     }
 
@@ -94,8 +83,8 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 Column(Modifier.weight(1f)) {
                     Text(reminder.name, style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        reminder.summary(context) +
-                            (if (reminder.alarm) " · alarm" else "") +
+                        reminder.summary(platform.formats) +
+                            (if (reminder.alarm && scheduler.canRingUntilDismissed) " · alarm" else "") +
                             (if (reminder.onlyIfBehind) " · only when behind" else ""),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -105,7 +94,7 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     checked = reminder.enabled,
                     onCheckedChange = { on ->
                         val updated = reminder.copy(enabled = on)
-                        if (!on) context.cancelReminder(reminder.id)
+                        if (!on) scheduler.cancel(reminder.id)
                         save(reminders.map { if (it.id == reminder.id) updated else it })
                     },
                 )
@@ -115,9 +104,9 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         item {
             Button(
                 onClick = {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        askNotify.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    }
+                    // asked for at the moment the first reminder is made, rather than on a first
+                    // run by someone who may never want one
+                    scope.launch { scheduler.request() }
                     // ids are handed out above the highest in use, so deleting never reissues one
                     editing = Reminder(id = (reminders.maxOfOrNull { it.id } ?: 0) + 1)
                 },
@@ -125,17 +114,19 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             ) { Text("Add a reminder") }
         }
 
-        // exact alarms are a permission from Android 12 and no longer given by default; without
-        // it the reminder still comes, just not necessarily to the minute
-        if (reminders.isNotEmpty() && !context.canScheduleExact()) {
+        // Android says something here when it has not been given the exact-alarm permission,
+        // which it stopped granting by default in 14: the reminder still comes, just not
+        // necessarily to the minute. iOS has nothing to say and answers null.
+        scheduler.lateness?.takeIf { reminders.isNotEmpty() }?.let { late ->
             item {
                 Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "May arrive a few minutes late",
+                        late,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
                     )
-                    TextButton(onClick = { context.startActivity(exactAlarmIntent()) }) { Text("Fix") }
+                    TextButton(onClick = { scheduler.fixLateness() }) { Text("Fix") }
                 }
             }
         }
@@ -147,7 +138,7 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             onDismiss = { editing = null },
             onDelete = {
                 editing = null
-                context.cancelReminder(reminder.id)
+                scheduler.cancel(reminder.id)
                 save(reminders.filterNot { it.id == reminder.id })
             },
             onSave = { edited ->
@@ -156,23 +147,6 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                 save((kept + edited).sortedBy { it.hour * 60 + it.minute })
             },
         )
-    }
-}
-
-/**
- * Arms a reminder made somewhere other than this screen, asking for the notification permission
- * on the way — the two lines "Add a reminder" does, for the one reminder the first-run question
- * can make.
- */
-@Composable
-internal fun rememberReminderScheduler(): (Reminder) -> Unit {
-    val context = LocalContext.current
-    val askNotify = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
-    return { reminder ->
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            askNotify.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-        context.scheduleReminder(reminder)
     }
 }
 
@@ -185,13 +159,12 @@ private fun ReminderDialog(
     onSave: (Reminder) -> Unit,
 ) {
     var draft by remember { mutableStateOf(reminder) }
+    val platform = LocalPlatform.current
+    val formats = platform.formats
+    val scheduler = platform.reminders
     // TimeInput rather than the dial: it is a text field, so it fits in a dialog next to the
     // rest of the fields instead of filling the screen on its own
-    val time = rememberTimePickerState(
-        reminder.hour,
-        reminder.minute,
-        is24Hour = LocalContext.current.uses24Hour(),
-    )
+    val time = rememberTimePickerState(reminder.hour, reminder.minute, is24Hour = formats.uses24Hour)
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -219,17 +192,24 @@ private fun ReminderDialog(
                         )
                     }
                 }
-                ToggleRow("Ring until dismissed", draft.alarm) { draft = draft.copy(alarm = it) }
-                Text(
-                    if (draft.alarm) {
-                        "The alarm tone, over and over, heard through a silenced ringer. " +
-                            "Dismiss the notification to stop it."
-                    } else {
-                        "One notification, at the volume everything else arrives at."
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                // Left out entirely where a reminder cannot be made to ring until dismissed,
+                // which is iOS — that wants the Critical Alerts entitlement, granted case by
+                // case. The rule every other capability here follows: a platform that cannot do
+                // something says so, rather than offering a switch that does something quieter
+                // than it promises.
+                if (scheduler.canRingUntilDismissed) {
+                    ToggleRow("Ring until dismissed", draft.alarm) { draft = draft.copy(alarm = it) }
+                    Text(
+                        if (draft.alarm) {
+                            "The alarm tone, over and over, heard through a silenced ringer. " +
+                                "Dismiss the notification to stop it."
+                        } else {
+                            "One notification, at the volume everything else arrives at."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 ToggleRow("Only when behind on a goal", draft.onlyIfBehind) {
                     draft = draft.copy(onlyIfBehind = it)
                 }
@@ -250,16 +230,16 @@ private fun ReminderDialog(
                     ) {
                         weekDays().forEach { day ->
                             FilterChip(
-                                selected = day.value in draft.days,
+                                selected = day.isoDayNumber in draft.days,
                                 onClick = {
                                     val days =
-                                        if (day.value in draft.days) draft.days - day.value
-                                        else draft.days + day.value
+                                        if (day.isoDayNumber in draft.days) draft.days - day.isoDayNumber
+                                        else draft.days + day.isoDayNumber
                                     // the last day cannot be turned off: a weekly reminder with
                                     // no day is one that never comes
                                     if (days.isNotEmpty()) draft = draft.copy(days = days)
                                 },
-                                label = { Text(day.shortName()) },
+                                label = { Text(formats.shortDayName(day)) },
                             )
                         }
                     }
@@ -275,19 +255,18 @@ private fun ReminderDialog(
     )
 }
 
-private fun DayOfWeek.shortName() = getDisplayName(TextStyle.SHORT, Locale.getDefault())
-
 /** The week starting where the reader's own calendar starts it, which is not Monday everywhere. */
 private fun weekDays(): List<DayOfWeek> {
-    val first = WeekFields.of(Locale.getDefault()).firstDayOfWeek
-    return (0L..6L).map { first.plus(it) }
+    val first = firstDayOfWeek().isoDayNumber
+    return (0..6).map { DayOfWeek.entries[(first - 1 + it) % 7] }
 }
 
 /** "Weekly Mon, Thu · 8:00 AM", in the reader's own conventions throughout. */
-internal fun Reminder.summary(context: Context): String {
-    val at = context.clockTime(hour, minute)
+internal fun Reminder.summary(formats: Formats): String {
+    val at = formats.clockTime(hour, minute)
     val on =
         if (repeat == Repeat.DAILY) ""
-        else " " + weekDays().filter { it.value in days }.joinToString(", ") { it.shortName() }
+        else " " + weekDays().filter { it.isoDayNumber in days }
+            .joinToString(", ") { formats.shortDayName(it) }
     return "${repeat.label}$on · $at"
 }

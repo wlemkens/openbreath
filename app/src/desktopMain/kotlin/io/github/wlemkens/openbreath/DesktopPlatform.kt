@@ -1,6 +1,8 @@
 package io.github.wlemkens.openbreath
 
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.toJavaLocalDate
 import java.awt.Desktop
 import java.awt.Frame
@@ -8,6 +10,8 @@ import java.net.URI
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.time.format.TextStyle
+import java.util.Locale
 
 /**
  * The desktop's answers to commonMain/PlatformServices.kt.
@@ -92,6 +96,13 @@ class DesktopPlatform(private val owner: Frame?) : Platform {
         override fun off() = Unit
     }
 
+    /**
+     * Nothing yet. A desktop needs its own answer — a tray notification, or the platform's own
+     * scheduler — and none of the three operating systems share one, which is the first thing in
+     * this file that would genuinely have to branch per OS.
+     */
+    override val reminders = NoReminders
+
     override fun session(): SessionServices = DesktopSession(focus, torch)
 
     /** A machine with no browser registered is not a crash worth taking a meditation down for. */
@@ -124,6 +135,14 @@ class DesktopFormats : Formats {
 
     override fun clockTime(hour: Int, minute: Int): String =
         timeOfDay.format(LocalTime.of(hour, minute))
+
+    /** No switch of its own on a desktop: the locale's own short time pattern is the answer. */
+    override val uses24Hour: Boolean =
+        !DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+            .format(LocalTime.of(13, 0)).contains("1:")
+
+    override fun shortDayName(day: DayOfWeek): String =
+        java.time.DayOfWeek.of(day.isoDayNumber).getDisplayName(TextStyle.SHORT, Locale.getDefault())
 
     override fun dayLabel(date: LocalDate): String = wholeDate.format(date.toJavaLocalDate())
 }

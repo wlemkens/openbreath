@@ -73,13 +73,10 @@ fun AppTheme(content: @Composable () -> Unit) {
  * offering one that opens nothing.
  */
 @Composable
-fun Breath(
-    modifier: Modifier = Modifier,
-    reminders: (@Composable (modifier: Modifier, onBack: () -> Unit) -> Unit)? = null,
-    onReminder: ((Reminder) -> Unit)? = null,
-) {
+fun Breath(modifier: Modifier = Modifier) {
     val scope = rememberCoroutineScope()
     val store = LocalStore.current
+    val platform = LocalPlatform.current
     val config by remember { store.configFlow() }.collectAsState(initial = null)
     val goals by remember { store.goalsFlow() }.collectAsState(initial = null)
     var showSettings by remember { mutableStateOf(false) }
@@ -96,7 +93,7 @@ fun Breath(
 
     // over whichever screen is showing: a milestone is worth interrupting a settings tweak for
     MilestoneWatch(current, saved)
-    FirstRunSetup(onReminder = onReminder)
+    FirstRunSetup()
 
     when {
         showSettings -> SettingsScreen(
@@ -118,7 +115,7 @@ fun Breath(
         showAchievements ->
             AchievementsScreen(saved, onBack = { showAchievements = false }, modifier = modifier)
 
-        showReminders && reminders != null -> reminders(modifier) { showReminders = false }
+        showReminders -> RemindersScreen(onBack = { showReminders = false }, modifier = modifier)
 
         showSupport -> SupportScreen(onBack = { showSupport = false }, modifier = modifier)
 
@@ -128,7 +125,7 @@ fun Breath(
             onOpenAchievements = { showAchievements = true },
             onOpenSettings = { showSettings = true },
             onOpenLog = { showLog = true },
-            onOpenReminders = reminders?.let { { showReminders = true } },
+            onOpenReminders = { showReminders = true }.takeIf { platform.reminders.supported },
             onOpenSupport = { showSupport = true },
             modifier = modifier,
         )

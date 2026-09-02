@@ -80,6 +80,8 @@ class IosPlatform : Platform {
 
     override val torch = IosTorch()
 
+    override val reminders = IosReminders()
+
     override fun session(): SessionServices = IosSession(focus, torch)
 
     private fun open(url: String) {

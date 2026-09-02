@@ -24,14 +24,17 @@ import kotlinx.coroutines.launch
  * Offered once, and only to a phone that has never stored anything. See [Store.untouchedFlow]
  * for why that is not a flag of its own.
  *
- * [onReminder] arms the reminder with the platform's alarm clock, and is null where there is no
+ * The reminder half is armed through the platform's own scheduler, and is left out where there is no
  * such thing yet — iOS, where the question then asks about the goal alone rather than promising
  * a notification that would never come.
  */
 @Composable
-fun FirstRunSetup(onReminder: ((Reminder) -> Unit)? = null) {
+fun FirstRunSetup() {
     val store = LocalStore.current
     val platform = LocalPlatform.current
+    // null where the platform has no scheduler, which leaves the reminder half of the question
+    // out rather than offering to set one that could never arrive
+    val onReminder = platform.reminders.takeIf { it.supported }
     val scope = rememberCoroutineScope()
     val untouched by remember { store.untouchedFlow() }.collectAsState(initial = null)
 
@@ -48,7 +51,7 @@ fun FirstRunSetup(onReminder: ((Reminder) -> Unit)? = null) {
             if (wantReminder) {
                 val reminder = setupReminder()
                 store.saveReminders(listOf(reminder))
-                onReminder?.invoke(reminder)
+                onReminder?.apply(listOf(reminder))
             }
             // written last and always: two noes are an answer, and one that must not be asked again
             store.markSetupDone()

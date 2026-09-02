@@ -1,6 +1,8 @@
 package io.github.wlemkens.openbreath
 
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import platform.Foundation.NSDate
@@ -49,6 +51,18 @@ class IosFormats : Formats {
         val secondsIntoTheDay = hour * 3600.0 + minute * 60.0
         return timeOfDay.stringFromDate(NSDate.dateWithTimeIntervalSince1970(secondsIntoTheDay))
     }
+
+    /**
+     * Asked of the same formatter that prints a time, because the answer is whatever the reader's
+     * locale and their 24-Hour Time switch have settled on together, and NSDateFormatter is where
+     * those two meet. A pattern containing "a" is a 12-hour one; no "a" and it runs to 24.
+     */
+    override val uses24Hour: Boolean
+        get() = timeOfDay.dateFormat?.contains("a") != true
+
+    override fun shortDayName(day: DayOfWeek): String =
+        // shortWeekdaySymbols is Sunday-first, where isoDayNumber is Monday=1
+        (wholeDate.shortWeekdaySymbols[day.isoDayNumber % 7] as String)
 
     override fun dayLabel(date: LocalDate): String {
         val midnight = date.atStartOfDayIn(TimeZone.currentSystemDefault())

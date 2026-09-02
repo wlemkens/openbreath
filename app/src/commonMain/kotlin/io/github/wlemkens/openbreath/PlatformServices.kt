@@ -1,6 +1,7 @@
 package io.github.wlemkens.openbreath
 
 import androidx.compose.runtime.staticCompositionLocalOf
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 
 /**
@@ -130,6 +131,15 @@ interface KeepAwake {
 interface Formats {
     /** A time of day written the way this phone writes them. */
     fun clockTime(hour: Int, minute: Int): String
+
+    /**
+     * Whether the reader's clock runs to 24. Only a time *picker* needs this — everything that
+     * merely displays a time asks [clockTime] instead and never learns which it got.
+     */
+    val uses24Hour: Boolean
+
+    /** "Mon", in the reader's language, for the row of day chips a weekly reminder is set on. */
+    fun shortDayName(day: DayOfWeek): String
 
     /**
      * A whole date, spelled out — "Thursday, 13 August 2026". Localised rather than a pattern of
@@ -285,7 +295,72 @@ interface Platform {
     val focus: FocusGuard
     val torch: TorchLight
 
+    /**
+     * Reminders, where the platform has a scheduler for them. Reachable without a session for the
+     * same reason [focus] and [torch] are: the menu has to know whether there is a screen to open
+     * before anything is started.
+     */
+    val reminders: ReminderScheduler
+
     fun session(): SessionServices
+}
+
+/**
+ * Setting reminders. Android sets alarms, iOS hands them to UNUserNotificationCenter, and the
+ * desktop has neither yet — so this is the third flag of the kind [TorchLight.available] and
+ * [FocusGuard.supported] already are, and the menu leaves the item out rather than opening a
+ * screen that cannot arm anything.
+ *
+ * The recurrence rule is not here. When a reminder is next due is arithmetic, lives in
+ * Recurrence.kt, and is the same everywhere; this interface is only where the answer is taken.
+ */
+interface ReminderScheduler {
+
+    /** False where there is no scheduler at all. The menu then has no Reminders item. */
+    val supported: Boolean
+
+    /**
+     * Whether a reminder can be made to ring until it is dismissed, rather than sounding once.
+     *
+     * Android can, through an insistent notification on the alarm channel. iOS cannot without the
+     * Critical Alerts entitlement, which is applied for and granted case by case, and a tone that
+     * plays once is not that. So the switch is hidden rather than shown doing nothing — the rule
+     * every other flag here follows.
+     */
+    val canRingUntilDismissed: Boolean
+
+    /**
+     * Something true and worth saying about how late a reminder may be, or null when there is
+     * nothing to say. Android answers this when it has not been given the exact-alarm permission;
+     * [fixLateness] then opens the settings page that grants it.
+     */
+    val lateness: String?
+
+    /** Opens whatever puts [lateness] right. Does nothing where there was nothing to say. */
+    fun fixLateness()
+
+    /** Whether notifications are allowed right now. Asked again after [request]. */
+    suspend fun permitted(): Boolean
+
+    /** Asks for permission, and answers what was said. Asking twice is not asking twice. */
+    suspend fun request(): Boolean
+
+    /** Re-arms every reminder. Safe to call repeatedly — one for the same id replaces itself. */
+    fun apply(reminders: List<Reminder>)
+
+    fun cancel(id: Int)
+}
+
+/** What a platform with no scheduler answers, so the screens need no branch of their own. */
+object NoReminders : ReminderScheduler {
+    override val supported = false
+    override val canRingUntilDismissed = false
+    override val lateness: String? = null
+    override fun fixLateness() = Unit
+    override suspend fun permitted() = false
+    override suspend fun request() = false
+    override fun apply(reminders: List<Reminder>) = Unit
+    override fun cancel(id: Int) = Unit
 }
 
 val LocalPlatform = staticCompositionLocalOf<Platform> {

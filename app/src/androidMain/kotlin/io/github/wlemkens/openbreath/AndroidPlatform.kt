@@ -1,12 +1,20 @@
 package io.github.wlemkens.openbreath
 
+import android.Manifest
 import android.app.Activity
+import android.content.pm.PackageManager
 import android.os.Build
 import android.view.WindowManager
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.toJavaLocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.time.format.TextStyle
+import java.util.Locale
 
 /**
  * Android's answers to commonMain/PlatformServices.kt.
@@ -66,6 +74,12 @@ class AndroidPlatform(
     override val formats = object : Formats {
         override fun clockTime(hour: Int, minute: Int) = activity.clockTime(hour, minute)
 
+        override val uses24Hour: Boolean get() = activity.uses24Hour()
+
+        override fun shortDayName(day: DayOfWeek): String =
+            java.time.DayOfWeek.of(day.isoDayNumber)
+                .getDisplayName(TextStyle.SHORT, Locale.getDefault())
+
         override fun dayLabel(date: LocalDate): String = dayFormat.format(date.toJavaLocalDate())
     }
 
@@ -87,6 +101,51 @@ class AndroidPlatform(
         override val available: Boolean get() = flashlight.available
         override fun follow(state: PhaseState) = flashlight.follow(state)
         override fun off() = flashlight.off()
+    }
+
+    /**
+     * AlarmManager, wrapped. Everything here already existed as Context extensions in
+     * Reminders.kt; this only gives them a name the shared screen can call without a Context.
+     */
+    override val reminders = object : ReminderScheduler {
+        override val supported = true
+
+        /** An insistent notification on the alarm channel, which is Android's alone. */
+        override val canRingUntilDismissed = true
+
+        override val lateness: String?
+            get() = if (activity.canScheduleExact()) {
+                null
+            } else {
+                "Reminders may arrive a few minutes late until exact alarms are allowed."
+            }
+
+        override fun fixLateness() {
+            runCatching { activity.startActivity(exactAlarmIntent()) }
+        }
+
+        override suspend fun permitted(): Boolean =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ContextCompat.checkSelfPermission(activity, Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
+
+        /**
+         * Fires the system prompt and answers with what is true immediately afterwards, which on
+         * Android is still the old answer — the dialog outlives this call. The screen re-reads
+         * [permitted] when it comes back, which is the only moment the new answer exists.
+         */
+        override suspend fun request(): Boolean {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ActivityCompat.requestPermissions(
+                    activity, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0,
+                )
+            }
+            return permitted()
+        }
+
+        override fun apply(reminders: List<Reminder>) = activity.applyReminders(reminders)
+
+        override fun cancel(id: Int) = activity.cancelReminder(id)
     }
 
     override fun session(): SessionServices = AndroidSession(activity, focus, torch)

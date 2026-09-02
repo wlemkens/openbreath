@@ -33,11 +33,7 @@ class MainActivity : ComponentActivity() {
                 LocalPlatform provides AndroidPlatform(this, files),
             ) {
                 AppTheme {
-                    Breath(
-                        modifier = Modifier.safeDrawingPadding(),
-                        reminders = { padding, onBack -> RemindersScreen(onBack, padding) },
-                        onReminder = rememberReminderScheduler(),
-                    )
+                    Breath(Modifier.safeDrawingPadding())
                 }
             }
         }
