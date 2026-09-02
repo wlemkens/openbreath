@@ -18,8 +18,12 @@ import platform.UIKit.UIApplication
 /** Assigned by Apple when the app record was created, and stable for the life of the app. */
 private const val APP_STORE_ID = "6805899911"
 
-/** Whether the App Store page exists yet. See [Links.canRate]; flip on release day. */
-private const val LISTING_IS_LIVE = false
+/**
+ * Whether the App Store page exists yet. It does, since 2026-08-30 — the constant stays rather
+ * than being deleted, because it is the thing to set back if the listing is ever pulled, and a
+ * Rate item opening a 404 is worse than no Rate item.
+ */
+private const val LISTING_IS_LIVE = true
 
 class IosPlatform : Platform {
 
@@ -48,12 +52,13 @@ class IosPlatform : Platform {
         override fun openPayPal(euros: Int?) = open(payPalUrl(euros))
 
         /**
-         * The id exists — Apple assigned it when the app record was created, well before any
-         * submission — so the only thing still missing is the listing itself. An App Store page
-         * is a 404 until the app is released, and a menu item that opens one is worse than no
-         * menu item, so this stays off until there is something to open.
+         * True since the listing went live. Before that the id existed — Apple assigns it when the
+         * record is created, well before any submission — but the page it addresses did not, and a
+         * menu item that opens a 404 is worse than no menu item.
          *
-         * On release day this is the whole change: [LISTING_IS_LIVE] to true.
+         * The URL below carries no country, so Apple redirects each reader to their own storefront.
+         * A `/be/` link works and pins everyone to the Belgian store, which is not what a Rate item
+         * is for.
          */
         override val canRate = LISTING_IS_LIVE
 

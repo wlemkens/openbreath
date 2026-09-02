@@ -647,10 +647,16 @@ Functionality includes:
     there is a worse rejection than an empty one.
 
     The description may only name what iOS actually has. Reminders are not it.
-  - **The rate link, on release day.** The id was there all along — Apple assigns it when the
-    record is created, not at submission — so `IosPlatform` now holds it and builds the URL. What
-    it waits for is the listing being live, because an App Store page 404s until then. One
-    constant: `LISTING_IS_LIVE` to true.
+  - ~~**The rate link, on release day.**~~ Done: the listing went live on 2026-08-30 and
+    `LISTING_IS_LIVE` is true, so the Rate item appears and opens
+    https://apps.apple.com/app/id6805899911 — no country in it, so each reader lands on their own
+    storefront.
+
+    It cost one more edit than the constant, and that is the part worth remembering: turning it on
+    adds a **third** outbound link, and `docs/store/review-notes.md` item 5 enumerates them. That
+    file's own preamble warns that anything adding an outbound link makes it wrong, which is
+    exactly what happened — and it is 4000 characters at most, so the third bullet had to be paid
+    for out of items 3 and 7. A flag that reveals a link is never only a flag.
   - ~~**Publish the privacy policy.**~~ Live at
     https://wlemkens.github.io/openbreath/privacypolicy.html, which is the URL to give both
     stores — they ask for one and Play checks it resolves. Not `raw.githubusercontent.com`: it

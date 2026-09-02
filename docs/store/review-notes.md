@@ -12,10 +12,11 @@ One of the seven is not text at all: **item 1**, the recording, which is uploade
 Resolution Center. `video-script.md` beside this file is the shot list.
 
 **The Notes field takes under 4000 characters**, which the first draft of this missed by more
-than half — it was 9520. What is below is 3956 and is the only version kept, because two
-lengths of the same answers would drift and the shorter one is what actually gets pasted.
-Anything added here has to buy its space from something else. The first thing cut, if it comes
-to that again, is prose that is not answering one of Apple's seven questions.
+than half — it was 9520. It is the only version kept, because two lengths of the same answers
+would drift and the shorter one is what actually gets pasted. **Anything added has to buy its
+space from something else**: the Rate link cost a sentence of item 3 and half of item 7's
+sourcing. Check the count after editing — `awk '/^## Paste from here/{f=1;next} f&&/^```$/
+{if(++n==2)exit; next} f' docs/store/review-notes.md | wc -m`.
 
 **Item 2 goes stale, and silently.** It is a claim about machines that really ran the app, so it
 has to be re-checked rather than re-pasted:
@@ -51,8 +52,11 @@ the information one this file answers.
 Checked against 120's tree rather than 70's, because fifty commits sit between them. What
 actually moved in the shipping app: the PayPal handle and its wording, two cue sliders in
 Settings, and ± on the session length. `Info.plist` and the bundled audio are untouched, so no
-new purpose string and no new asset — items 1, 5 and 7 stand as written. `canRate` is still
-false, so the Rate item is still hidden and item 5's "two links" is still two.
+new purpose string and no new asset — items 1, 5 and 7 stand as written.
+
+`canRate` was false for build 120, hiding the Rate item. It is true now that the listing is
+live, which adds a third outbound link, so item 5 says three — correct for the next build and
+one more than build 120 actually had.
 
 **Build 120 also carries a different marketing version from 70**, so App Store Connect files it
 under version **1.0.120** and will not offer it in the build picker of the rejected 1.0.70
@@ -97,8 +101,8 @@ Targets iPhone and iPad; deployment target iOS 15.0.
 A paced breathing timer for coherence practice. You set the four phase lengths, or take a
 preset, and follow a sphere that opens and closes with the breath, with an optional sound
 at each turn so it can be followed with eyes shut. The problem it solves: counting breaths
-yourself occupies the attention the practice is meant to free. Every sitting is logged;
-goals, streaks and milestones are counted from it.
+yourself occupies the attention the practice is meant to free. Every sitting is logged, and
+goals and streaks counted from it.
 
 For anyone practising paced or coherence breathing: a general-audience wellness and timing
 app, free, with no account and no network, so the log stays on the phone. It makes no
@@ -115,12 +119,11 @@ to see it again.
 5. EXTERNAL SERVICES, TOOLS AND PLATFORMS
 
 None deliver any functionality: no data provider, authentication, payment processor,
-analytics, advertising SDK, crash reporter, AI service or backend of ours. The only
-third-party code is the Kotlin and Compose Multiplatform runtimes (Apache-2.0), carrying no
-service. The app makes no network request at all, which is also why
+analytics, advertising SDK, crash reporter, AI service or backend of ours. Third-party code
+is the Kotlin and Compose Multiplatform runtimes (Apache-2.0), carrying no service. The app makes no network request, which is also why
 ITSAppUsesNonExemptEncryption is false.
 
-Two links open Safari, and are the only outbound traffic:
+Three links open Safari, and are the only outbound traffic:
 
 - paypal.me/wlemkens, on the Support screen. An optional gift to the developer as an
   individual, under Guideline 3.2.1(vii); 100% goes to him. It grants no content, feature,
@@ -128,6 +131,7 @@ Two links open Safari, and are the only outbound traffic:
   screen says so. No payment is taken inside the app by any mechanism.
 - A Google Forms page, the Feedback menu item, for writing to the developer. Google hosts
   the form and nothing else; the app sends it nothing.
+- This app's own App Store page, from the Rate menu item.
 
 No data is collected, matching PrivacyInfo.xcprivacy: no tracking, no collected data, one
 required-reason API - NSPrivacyAccessedAPICategoryFileTimestamp, reason C617.1, the
@@ -145,8 +149,8 @@ Neither applies. A breathing timer is not a medical device or health service: no
 HealthKit, no diagnostic or therapeutic claim. The app is our own work, GPL-3.0-or-later,
 source at github.com/wlemkens/openbreath.
 
-The only assets not ours are two recorded singing bowls, cut from freesound_community's
-files on Pixabay under CC0 1.0, a public domain dedication requiring no attribution or
-permission: session_end.mp3 (Pixabay 60767), singing_bowl.mp3 (Pixabay 33366). Every other
-sound is synthesised at runtime.
+The only assets not ours are two recorded singing bowls, from freesound_community on
+Pixabay under CC0 1.0, a public domain dedication requiring no attribution or permission:
+session_end.mp3 (60767), singing_bowl.mp3 (33366). Every other sound is synthesised at
+runtime.
 ```
