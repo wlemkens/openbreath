@@ -16,70 +16,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
-import java.time.ZoneId
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
-import java.time.temporal.TemporalAdjusters
-import java.time.temporal.WeekFields
 
 /**
- * When a reminder is next due, strictly after [now]. Pure, and the whole of the recurrence
- * rule: every alarm this app sets is a single shot at this instant, rescheduled once it fires.
- * Repeating alarms drift and outlive the settings that created them.
+ * The recurrence rule moved to commonMain/Recurrence.kt when reminders stopped being Android's
+ * alone. What is left here is the alarm table: [nextFireAt] says when, AlarmManager says how.
  */
-internal fun nextFireAt(reminder: Reminder, now: LocalDateTime): LocalDateTime {
-    val time = LocalTime.of(reminder.hour, reminder.minute)
-    val today = now.toLocalDate()
-    if (reminder.repeat == Repeat.DAILY) {
-        val date = if (today.atTime(time).isAfter(now)) today else today.plusDays(1)
-        return date.atTime(time)
-    }
-
-    // weeks are walked from their Monday, so that a reminder on several days keeps them together
-    // in one week rather than each drifting into a schedule of its own
-    val thisWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-    // a stored reminder emptied of its days would have nothing to land on at all
-    val days = reminder.days.filter { it in 1..7 }.sorted().ifEmpty { listOf(today.dayOfWeek.value) }
-
-    // five weeks is more than enough: the next week of the right parity is at most two out,
-    // whichever of its days the reminder falls on
-    return generateSequence(thisWeek) { it.plusWeeks(1) }
-        .take(5)
-        .filter { reminder.repeat.covers(it) }
-        .flatMap { week -> days.map { week.plusDays((it - 1).toLong()).atTime(time) } }
-        .first { it.isAfter(now) }
-}
-
-/**
- * The ISO week number, the one a European wall planner prints. A year of 53 weeks puts two odd
- * weeks back to back over new year; that is what week numbers do, not a fault to correct.
- */
-internal fun isoWeek(date: LocalDate): Int = date.get(WeekFields.ISO.weekOfWeekBasedYear())
-
-/** Whether the week beginning on the Monday [weekStart] is one this recurrence falls in. */
-internal fun Repeat.covers(weekStart: LocalDate): Boolean = when (this) {
-    Repeat.DAILY, Repeat.WEEKLY -> true
-    Repeat.ODD_WEEKS -> isoWeek(weekStart) % 2 == 1
-    Repeat.EVEN_WEEKS -> isoWeek(weekStart) % 2 == 0
-}
-
-/**
- * " (this week)" or " (next week)". Which of the two fortnightly options is the near one depends
- * on when you are looking at them, and picking between them is impossible without being told.
- */
-internal fun Repeat.weekHint(today: LocalDate): String = when (this) {
-    Repeat.ODD_WEEKS, Repeat.EVEN_WEEKS ->
-        if (covers(today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)))) {
-            " (this week)"
-        } else {
-            " (next week)"
-        }
-
-    else -> ""
-}
 
 private const val ACTION_REMIND = "io.github.wlemkens.openbreath.REMIND"
 private const val EXTRA_ID = "id"
@@ -108,8 +53,11 @@ private fun Context.alarmIntent(id: Int) = PendingIntent.getBroadcast(
 fun Context.scheduleReminder(reminder: Reminder) {
     val manager = alarms() ?: return
     if (!reminder.enabled) return cancelReminder(reminder.id)
-    val at = nextFireAt(reminder, LocalDateTime.now())
-        .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    // the rule is shared and works in wall-clock terms; only the conversion to an instant for
+    // AlarmManager is local, and it has to use the same zone the rule was reasoned in
+    val zone = TimeZone.currentSystemDefault()
+    val at = nextFireAt(reminder, Clock.System.now().toLocalDateTime(zone))
+        .toInstant(zone).toEpochMilliseconds()
     val pending = alarmIntent(reminder.id)
     // both survive doze; only the first is to the minute, and only with the permission granted
     runCatching {

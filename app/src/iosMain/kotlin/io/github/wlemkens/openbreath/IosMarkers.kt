@@ -19,9 +19,13 @@ import platform.AVFAudio.AVAudioPlayerNode
  * player, where everything here is samples we generated and wants the engine. This class routes
  * to them and otherwise ignores them.
  *
- * A file of the reader's own is still owed, and is still silent rather than approximated with the
- * bell — someone would pick their own sound, hear a bell, and have no way to know which of the two
- * was the bug. It waits on the picker, which waits on decoding an arbitrary file.
+ * A file of the reader's own plays too, and has since the picker landed: [play] checks for one
+ * before it reaches any synthesis. This comment said it was owed and silent for a while after it
+ * stopped being either.
+ *
+ * The rule it recorded still holds for whatever is missing next: a marker that cannot be played is
+ * silent rather than approximated with the bell, because someone would pick their own sound, hear
+ * a bell, and have no way to know which of the two was the bug.
  */
 @OptIn(ExperimentalForeignApi::class)
 class IosMarkers {

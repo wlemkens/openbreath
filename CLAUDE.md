@@ -326,9 +326,14 @@ Functionality includes:
   runs on the realtime audio thread and Kotlin/Native's runtime does not belong there — a
   collection inside a render callback is a dropout you can hear.
 
-  Still owed on iOS: the two recorded bowls and a user's own mp3. They are deliberately **silent**
-  rather than falling back to the synthesised bell — pick the bowl, hear a bell, and there is no
-  way to tell which of the two is the bug.
+  Both recorded bowls and a reader's own mp3 sound on iOS now — `IosFiles.canPickAudio` is true,
+  `IosBowls.preparePicked` loads the file and `IosMarkers.play` routes to it before any synthesis
+  is reached. This paragraph said they were owed and silent long after they stopped being either;
+  check the code before repeating it.
+
+  The rule it recorded is still the rule, though, and worth keeping for the next gap: a marker
+  that cannot be played is **silent** rather than falling back to the synthesised bell — pick the
+  bowl, hear a bell, and there is no way to tell which of the two is the bug.
 
   ### The two bowls are resources, not res/raw
   `commonMain/composeResources/files/*.mp3`, read on both platforms through the generated `Res`
@@ -394,15 +399,20 @@ Functionality includes:
   bundled mp3 is still a pointer. If you clone this and the bowls are silent, that is the first
   thing to check — `git lfs pull`.
 
-  Still Android-only, and why:
+  **Two things are Android-only, and only two.** The flags the screens read are the list, so read
+  those rather than this paragraph: `Haptics.supported`, `TorchLight.available`,
+  `FocusGuard.supported`, `Files.canPickAudio`, `Links.canRate`, and whether an entry point passes
+  the `reminders` slot to `Breath`.
 
-  - **`Reminders.kt`, `RemindersScreen.kt`** — AlarmManager and a BroadcastReceiver →
-    UNUserNotificationCenter, plus the permission prompt. Now the only feature missing from *two*
-    platforms rather than one; the desktop needs its own answer again (a tray notification, or the
-    platform's own scheduler), so this is two ports and not one.
-  Settings has since moved to commonMain, and with it the mp3 picker, the colour picker and
-  backup export and import — `IosFiles` answers all three, so an iPhone reads a backup written on
-  Android. Reminders is the only screen left behind.
+  - **Do-not-disturb.** `FocusGuard.supported` is false on iOS and the desktop and always will be:
+    no public API sets a Focus. Android-only by nature, not by omission.
+  - **Reminders** — `Reminders.kt`, `RemindersScreen.kt`, AlarmManager and a BroadcastReceiver.
+    Missing from *two* platforms rather than one; the desktop needs its own answer again (a tray
+    notification, or the platform's own scheduler), so that half is still two ports.
+
+  Everything else has reached parity: haptics, the torch, the mp3 picker, the colour picker, the
+  recorded bowls, backup export and import, and the rating link. Settings moved to commonMain and
+  `IosFiles` answers the file questions, so an iPhone reads a backup written on Android.
 
   **Locale data is the recurring seam.** kotlinx-datetime carries none, on purpose, so every
   question about how a reader writes something goes to the platform. `firstDayOfWeek()` is an
