@@ -15,7 +15,9 @@ Resolution Center. `video-script.md` beside this file is the shot list.
 than half — it was 9520. It is the only version kept, because two lengths of the same answers
 would drift and the shorter one is what actually gets pasted. **Anything added has to buy its
 space from something else**: the Rate link cost a sentence of item 3 and half of item 7's
-sourcing. Check the count after editing — `awk '/^## Paste from here/{f=1;next} f&&/^```$/
+sourcing, and the notification prompt in item 1 cost the rest of that sourcing and two clauses of
+item 5's PayPal bullet. It stands at 3977, so there is room for one sentence and no more. Check
+the count after editing — `awk '/^## Paste from here/{f=1;next} f&&/^```$/
 {if(++n==2)exit; next} f' docs/store/review-notes.md | wc -m`.
 
 **Item 2 goes stale, and silently.** It is a claim about machines that really ran the app, so it
@@ -102,9 +104,11 @@ screen with the app being launched from its icon, and runs the typical flow thro
 completed one-minute sitting and the log it writes.
 
 There is no account, login, purchase, subscription, user-generated content or sharing, so
-none of those flows appear. No permission prompt appears anywhere: the app declares no
-purpose strings and needs none - the optional torch is device configuration, not capture,
-so no capture session is created.
+none of those flows appear. One permission prompt exists and is in the
+recording: the standard iOS notification alert, shown when a reminder is first added and
+only then; declining costs nothing but reminders. The app declares no purpose strings and
+needs none - the optional torch is device configuration, not capture, so no capture
+session is created.
 
 2. DEVICES AND OPERATING SYSTEMS TESTED
 
@@ -142,9 +146,9 @@ ITSAppUsesNonExemptEncryption is false.
 Three links open Safari, and are the only outbound traffic:
 
 - paypal.me/wlemkens, on the Support screen. An optional gift to the developer as an
-  individual, under Guideline 3.2.1(vii); 100% goes to him. It grants no content, feature,
-  badge or acknowledgement - the app is identical whether or not anyone uses it, and the
-  screen says so. No payment is taken inside the app by any mechanism.
+  individual, under Guideline 3.2.1(vii); 100% goes to him. It grants no content, feature
+  or badge - the app is identical whether or not anyone uses it. No payment is taken
+  inside the app.
 - A Google Forms page, the Feedback menu item, for writing to the developer. Google hosts
   the form and nothing else; the app sends it nothing.
 - This app's own App Store page, from the Rate menu item.
@@ -166,6 +170,6 @@ HealthKit, no diagnostic or therapeutic claim. The app is our own work, GPL-3.0-
 source at github.com/wlemkens/openbreath.
 
 The only assets not ours are two recorded singing bowls from freesound_community on Pixabay
-under CC0 1.0, a public domain dedication requiring no attribution or permission:
-session_end.mp3 (60767) and singing_bowl.mp3 (33366). Every other sound is synthesised.
+under CC0 1.0, which requires no attribution or permission. Every other sound is
+synthesised.
 ```

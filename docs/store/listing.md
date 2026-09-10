@@ -1,8 +1,14 @@
 # Store listing copy
 
-Two listings, deliberately not the same text. Play may promise reminders and the silencing of
-notifications; the App Store may not, because neither is ported yet — see the iOS TODO in
-CLAUDE.md. Nothing here claims a health benefit: coherence breathing is described as what it is,
+Two listings, deliberately not the same text, and the gap has narrowed to one feature. **Reminders
+are on iOS now**, so the App Store copy names them — but only as a notification: Android's alarm
+that rings until dismissed needs a tone that repeats, and the iOS equivalent is the Critical Alerts
+entitlement, granted case by case. `canRingUntilDismissed` is what the app itself asks; the copy has
+to agree with it. The **silencing of notifications** is still Android's alone and always will be:
+no public API sets a Focus.
+
+A listing may only name what that platform actually has, which is why this file has two of
+everything. Nothing here claims a health benefit: coherence breathing is described as what it is,
 a paced breath, and no store copy says it treats anything.
 
 Neither listing mentions the support link. The app gives nothing in return for a payment and the
@@ -116,9 +122,13 @@ listing has no reason to raise the subject.
       They are counted from the log, so a goal set today already credits the practice behind it.
     • Streaks, totals and milestones at 3 days, a week, a month, 100 days, half a year and a
       year — each said once, quietly.
-    • A backup of the lot — log, presets and goals — written to one file you keep and read back
-      later. Sittings merge rather than overwrite, so importing an old backup onto a phone you
-      have kept practising on keeps both sets. The log can only grow.
+    • Reminders, as many as you like, each with its own name and time: daily, on the days you
+      pick, weekly or in alternate weeks. One can be set to arrive only when the day's goal is
+      still undone.
+    • A backup of the lot — log, presets, goals and reminders — written to one file you keep and
+      read back later, on an iPhone or an Android phone. Sittings merge rather than overwrite, so
+      importing an old backup onto a phone you have kept practising on keeps both sets. The log
+      can only grow.
 
     FREE, AND FREE SOFTWARE
     No ads, no accounts, no subscriptions, no in-app purchases and nothing to unlock. OpenBreath
@@ -126,6 +136,15 @@ listing has no reason to raise the subject.
 
 **What's New** / **Release notes** (500 max on Play, 4000 on the App Store — write to Play's
 limit and the same text serves both)
+
+**This release — reminders on iPhone.** What goes in the App Store's What's New for the build
+that carries them:
+
+    Reminders. Set as many as you like, each with its own name and time: daily, on the days
+    you pick, weekly or in alternate weeks. One can arrive only when the day's goal is still
+    undone, so a day you have already practised stays quiet.
+
+**The first release, kept because the Play listing still shows it:**
 
     First release.
 
@@ -136,5 +155,8 @@ limit and the same text serves both)
     milestones. No account, no network, no ads, nothing to unlock.
 
 321 characters. Paste it unwrapped — Play preserves line breaks, so the hard wrapping above
-would show as ragged mid-sentence breaks. Later releases say what changed and nothing else;
-this one has no changes to describe, so it says what the app is.
+would show as ragged mid-sentence breaks. A release says what changed and nothing else; the
+first one had no changes to describe, so it said what the app is.
+
+Play's are generated from the commit subjects by gradle-play-publisher and land in
+`app/src/main/play/`, so this section is the App Store's copy — the one place a human writes it.

@@ -54,8 +54,12 @@ decision: dropping to family 1 drops the requirement, and the error that asks fo
 "You must upload a screenshot for 13-inch iPad displays" — says nothing about where it came from.
 Nothing is laid out for a tablet and nothing needs to be; a large screen gets a bigger sphere.
 
-Nine rather than the Android set's ten. There is no reminders screen on iOS to photograph, which is
-the same absence that keeps reminders out of the App Store copy.
+Nine rather than the Android set's ten, and now by choice rather than by absence: iOS has a
+reminders screen since the reminders port, so the tenth shot is takeable and the App Store copy
+names the feature. Adding it means a tenth case in `iosApp/StoreScreenshots` and a rerun of both
+device sets — worth doing when the listing is next revised, not worth holding a submission for. A
+listing may name what it has no screenshot of; what it may not do is show a screen the app does not
+have.
 
 They come off a simulator in CI, because nothing else here can tap one:
 

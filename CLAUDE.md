@@ -203,8 +203,9 @@ Functionality includes:
   asking to be applied.
 
   The copy is a claim too. Adding or dropping a feature means `docs/store/listing.md` changes with
-  it, and the App Store half may only name what iOS actually has — reminders and the silencing of
-  notifications are still Android's alone.
+  it, and the App Store half may only name what iOS actually has — which since the reminders port
+  is everything but the silencing of notifications, and reminders that ring until dismissed. The
+  App Store copy names reminders as a notification for exactly that reason.
 
   **The iOS set is taken the same way now**, which it was not: it used to be hand-taken on a Mac
   because `simctl` cannot tap a simulator, and the tapping is an XCUITest — `iosApp/StoreScreenshots`
@@ -221,7 +222,8 @@ Functionality includes:
   as this file used to say about a hand-taken set. The command is the difference; the discipline is
   not.
 
-  Nine shots rather than ten: no reminders screen. **Twice over**, because `TARGETED_DEVICE_FAMILY`
+  Nine shots rather than ten, and by choice since the reminders port rather than because iOS has
+  no such screen — `docs/store/README.md` says what a tenth would cost. **Twice over**, because `TARGETED_DEVICE_FAMILY`
   is `1,2` and App Store Connect then refuses a listing without a 13" iPad set as well as the 6.9"
   phone one — the device family and the screenshot script are one decision, and the error that asks
   for it says nothing about where it came from. Nothing is laid out for a tablet and nothing needs to
@@ -401,8 +403,10 @@ Functionality includes:
 
   **Two things are Android-only, and only two.** The flags the screens read are the list, so read
   those rather than this paragraph: `Haptics.supported`, `TorchLight.available`,
-  `FocusGuard.supported`, `Files.canPickAudio`, `Links.canRate`, and whether an entry point passes
-  the `reminders` slot to `Breath`.
+  `FocusGuard.supported`, `Files.canPickAudio`, `Links.canRate`,
+  `ReminderScheduler.supported` and `canRingUntilDismissed`. The last two used to be one question
+  about whether an entry point passed a `reminders` slot to `Breath`; there is no slot any more —
+  `RemindersScreen` is shared, and `App.kt` gates the menu item on the flag like everything else.
 
   - **Do-not-disturb.** `FocusGuard.supported` is false on iOS and the desktop and always will be:
     no public API sets a Focus. Android-only by nature, not by omission.
@@ -571,9 +575,10 @@ Functionality includes:
   `Breath` is in `commonMain/App.kt` now. It was the same fifty-line `when` copied into
   `MainActivity.kt` and `MainViewController.kt`, both of which said in a comment that they would
   collapse when the screens ported — and a desktop would have been a third copy. Six of the seven
-  destinations are shared; Reminders is passed in as a composable slot, null where the platform has
-  none, exactly as `FirstRunSetup(onReminder)` already worked. Android is the only caller that
-  passes anything.
+  destinations are shared — all seven, since reminders reached iOS. Reminders was the last one out:
+  it arrived as a composable slot, null where the platform had none, and the slot is gone now that
+  `RemindersScreen` is common and `ReminderScheduler.supported` gates the menu item. `Breath` takes
+  no arguments but a `Modifier`, and a platform difference is a flag rather than a parameter.
 
   This is the shape to keep: an entry point provides a `Store` and a `Platform` and hands over.
   A platform-specific navigator is now a sign that something belongs behind a flag instead.
@@ -694,7 +699,10 @@ Functionality includes:
     link, a dependency that phones home, or a paid anything makes it false**, and a false answer
     there is a worse rejection than an empty one.
 
-    The description may only name what iOS actually has. Reminders are not it.
+    The description may only name what iOS actually has. Reminders now are — `docs/store/listing.md`
+    names them in the App Store half, as a notification rather than an alarm that rings until
+    dismissed, because `canRingUntilDismissed` is false there. The silencing of notifications is
+    still Play's alone.
   - ~~**The rate link, on release day.**~~ Done: the listing went live on 2026-08-30 and
     `LISTING_IS_LIVE` is true, so the Rate item appears and opens
     https://apps.apple.com/app/id6805899911 — no country in it, so each reader lands on their own

@@ -29,7 +29,9 @@ Free, no ads, no tracking, no account. It makes no network call at all.
 - Reminders, as many as you like, each a quiet notification or an alarm that rings until dismissed.
 - Backup to one JSON file you keep. Sittings merge rather than overwrite, so a log can only grow.
 
-The Android build is the complete one. iOS has everything but reminders. The desktop builds have
+The Android build is the complete one. iOS has everything but the silencing of notifications, and
+its reminders notify once where Android's can ring until dismissed — iOS has no equivalent of
+either without an entitlement Apple grants case by case. The desktop builds have
 everything but reminders, vibration, the flashlight and the silencing of notifications — a desktop
 has no vibrator, no flashlight and no Focus a program may set, and each is left out of the settings
 screen rather than shown as a switch that does nothing.
