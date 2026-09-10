@@ -81,12 +81,25 @@ under version **1.0.120** and will not offer it in the build picker of the rejec
 record. Change that record's Version field to 1.0.120 first, or conclude wrongly that the upload
 never arrived.
 
-Build 120 is the last one this happens to. The workflow stamped `1.0.<run number>` into both
-halves of the build, which SideStore needs — it compares the advertised version against the
-bundle on the phone — and the App Store does not: there, the marketing version is the *release*
-and the build number climbs underneath it. The App Store job now stamps a stable `1.0`, so every
-upload after this lands under one record with the build number rising, and there is no version
-field to edit.
+Build 120 is the last one this happens to, but the fix took two goes and the first one is worth
+keeping. The workflow stamped `1.0.<run number>` into both halves of the build, which SideStore
+needs — it compares the advertised version against the bundle on the phone — and the App Store
+does not: there, the marketing version is the *release* and the build number climbs underneath it.
+
+Stamping a stable `1.0` was the obvious answer and **altool refused it**: a marketing version has
+to be *higher* than the last approved one, and 1.0.120 is approved and live, so 1.0 is a
+downgrade. Build 141 died on it — "CFBundleShortVersionString [1.0] must contain a higher version
+than that of the previously approved version [1.0.120]" — after which the number can only go
+forward. It is `1.1` now, bumped by hand once per release in the `app-store` job's `VERSION` and
+in `iosApp/project.yml`, with the build number climbing underneath it. **The version record in App
+Store Connect has to exist for whatever this says**, so a release still starts by creating it
+there.
+
+Build 141 is also why a green `app-store` job is no longer proof of anything on its own:
+**altool exited 0 on that failure**, printing "UPLOAD FAILED with 2 errors" as it went. The job now
+decides on the log line "No errors uploading" instead, and puts the validation errors in
+annotations, which are readable without a token. If this file is ever being read after a
+submission that "arrived" and cannot be found, read the annotations rather than the job status.
 
 **Re-run that check against whatever build is actually submitted.** These notes describe a
 binary, and the version they were written for stops being the version being sent the moment

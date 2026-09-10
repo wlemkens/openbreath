@@ -564,8 +564,16 @@ jobs:
       # so a build could not be attached to the record it was meant to fix without editing that
       # record's version number first, which looks exactly like an upload that never arrived.
       #
-      # This is also just what iosApp/project.yml already declares; CI was overriding it.
-      VERSION: "1.0"
+      # **It can only ever go up, which is what "stable" missed.** A marketing version has to be
+      # higher than the last *approved* one, and 1.0.120 is approved and live — so stamping 1.0
+      # was a downgrade and altool refused the build outright: "CFBundleShortVersionString [1.0]
+      # must contain a higher version than the previously approved version [1.0.120]". 1.1 is
+      # higher than 1.0.120 and is what a feature release wants to be called anyway.
+      #
+      # So this is bumped by hand, once per release, and `iosApp/project.yml`'s MARKETING_VERSION
+      # is kept the same so a laptop build and a store build agree. The build number underneath it
+      # keeps climbing on its own.
+      VERSION: "1.1"
       BUILD: ${{ github.run_number }}
       BUNDLE_ID: io.github.wlemkens.openbreath
       PROFILE_NAME: OpenBreath App Store
@@ -687,6 +695,12 @@ jobs:
 
       # altool wants the key on disk, in this directory, named exactly this. An API key rather
       # than an Apple ID: no password exists to leak, and it cannot be locked out by 2FA.
+      #
+      # **altool's exit code is not to be trusted.** Build 141 printed "UPLOAD FAILED with 2
+      # errors" and "Failed to upload package", and exited 0 — so `pipefail` and `||` both read it
+      # as a success and this job went green on a submission that never arrived, which is the one
+      # failure mode worse than a red build. A real upload says "No errors uploading"; that line,
+      # and not `$?`, is what decides.
       - name: Upload
         run: |
           set -o pipefail
@@ -695,7 +709,18 @@ jobs:
             > ~/private_keys/AuthKey_${{ secrets.ASC_KEY_ID }}.p8
           xcrun altool --upload-app -f "$RUNNER_TEMP/export/OpenBreath.ipa" -t ios \
             --apiKey "${{ secrets.ASC_KEY_ID }}" --apiIssuer "${{ secrets.ASC_ISSUER_ID }}" \
-            2>&1 | tee /tmp/upload.log || { .github/print-test-failures.sh /tmp/upload.log; exit 1; }
+            2>&1 | tee /tmp/upload.log || true
+          if ! grep -q "No errors uploading" /tmp/upload.log; then
+            # the validation lines carry the whole answer — and an annotation is readable without
+            # a token, which a job log is not
+            grep -E "Validation failed \([0-9]+\)|Failed to upload" /tmp/upload.log \
+              | sed -e 's/^ *//' -e 's/ (ID: .*//' | sort -u | head -5 \
+              | while IFS= read -r line; do
+                  echo "::error title=App Store upload rejected::$line"
+                done || true
+            exit 1
+          fi
+          echo "Uploaded build $BUILD as version $VERSION" >> "$GITHUB_STEP_SUMMARY"
 
       # if: always() — a failed archive still leaves a key in a keychain, and the point of a
       # throwaway keychain is that it is actually thrown away
