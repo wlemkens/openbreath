@@ -186,6 +186,23 @@ Functionality includes:
   goal defines behind; declining the goal leaves it a plain evening reminder, which is the honest
   reading. A test in `SessionTest` holds them together.
 
+  **Saying yes to the reminder has to ask for permission, and for a while it did not.** The first
+  run armed it straight through `ReminderScheduler.apply`, which arms it into nothing: iOS drops a
+  notification it has no authorisation for without a word, and Android 13+ does the same without
+  POST_NOTIFICATIONS. There was no prompt when the switch went on and no notification that evening,
+  and neither the compiler nor a test could see it, because the call that was missing was the one
+  nobody had written. `armSetupReminder` in `FirstRun.kt` is now the only way that reminder is
+  armed, it asks first, and `FirstRunReminderTest` in desktopTest asserts the order — a `request`
+  after an `apply` is the same silent bug again.
+
+  It shipped in **build 145**, which is why that build should not be filmed or submitted.
+
+  The gap this leaves: **nothing reads `ReminderScheduler.permitted()`**, on either path. A refusal
+  is therefore invisible — no line on the Reminders screen, no hint on the first run — where
+  `Settings.kt` says "Needs Do Not Disturb access" and offers a Grant button for the equivalent
+  `FocusGuard` case. That row is the pattern to copy when it is worth doing; changing the Reminders
+  screen also means retaking the Android screenshot that shows it.
+
   ### The store screenshots follow the interface
   `docs/store/android/*.png` are what the listing shows, and a screenshot is a claim about what the
   app looks like — the one part of a listing a reader believes without reading. So **any change to a

@@ -51,7 +51,7 @@ fun FirstRunSetup() {
             if (wantReminder) {
                 val reminder = setupReminder()
                 store.saveReminders(listOf(reminder))
-                onReminder?.apply(listOf(reminder))
+                armSetupReminder(onReminder, reminder)
             }
             // written last and always: two noes are an answer, and one that must not be asked again
             store.markSetupDone()
@@ -93,6 +93,30 @@ fun FirstRunSetup() {
         },
         confirmButton = { TextButton(onClick = ::finish) { Text("Continue") } },
     )
+}
+
+/**
+ * Arms the first-run reminder, and **asks for permission first**.
+ *
+ * Saying yes here used to go straight to [ReminderScheduler.apply], which arms it into nothing:
+ * iOS drops a notification it has no authorisation for without a word, and Android 13+ does the
+ * same without POST_NOTIFICATIONS. So the symptom was not a missing dialog, it was a reminder
+ * that never arrived — silently, for anyone who took the offer here rather than making their
+ * first reminder on the Reminders screen, which has always asked.
+ *
+ * Switching it on *is* the moment to ask: that screen's own comment says permission is wanted
+ * "at the moment the first reminder is made, rather than on a first run by someone who may never
+ * want one", and someone who has just turned this on is no longer that person.
+ *
+ * A refusal still arms it. [ReminderScheduler.apply] runs again on every launch, so permission
+ * granted later starts it working, where dropping the reminder would quietly lose what was asked
+ * for. Nothing reads [ReminderScheduler.permitted] yet, which is the other half of this and is
+ * still owed: a refusal is invisible on both paths.
+ */
+internal suspend fun armSetupReminder(scheduler: ReminderScheduler?, reminder: Reminder) {
+    scheduler ?: return
+    scheduler.request()
+    scheduler.apply(listOf(reminder))
 }
 
 /**
