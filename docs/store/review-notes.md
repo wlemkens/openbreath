@@ -42,11 +42,12 @@ nothing given in return. That holds — no feature, theme, badge or acknowledgem
 and the screen says so in its own words. See the Monetisation section of CLAUDE.md; if that
 check ever stops holding, this file and the submission are both wrong.
 
-## These now describe a build that does not exist yet
+## The build these describe is uploaded, and the video is what is missing
 
-Reminders landed on iOS after the app was accepted, and they change two of the answers below.
-**The recording has to be made again before the next submission**, for reasons that are not
-cosmetic:
+**Build 145, version 1.1, is on App Store Connect** as of 2026-09-10, and it is the first build
+that carries reminders. The notes below match that binary rather than running ahead of it.
+
+What is still owed is the recording, and it cannot be the one filmed for build 70:
 
 - The first-run question has **two** switches on iOS now — a goal and an evening reminder —
   where the filmed one had a single switch. Item 4 says two.
@@ -54,18 +55,17 @@ cosmetic:
   said none appeared anywhere. Apple's own letter asks for prompts to be in the recording, so a
   video without it answers item 1 wrongly twice over.
 
-Neither reaches anyone until an `app_store=true` build goes up; build 120 is live and has no
-reminders in it. Until then these notes are ahead of the binary, which is the one direction this
-file is normally wrong in and the one worth stating.
+So the order is: film 145 off TestFlight, attach the recording, paste these notes into App Review
+Information, submit. The notes are right for 145 and wrong for anything filmed before it.
 
-## What build 120 needed, kept for the next rejected version
+## What build 120 needed, kept because a rejected version asks the same questions
 
 **Build 70's Support buttons open a profile that does not exist.** Every build up to and
 including it carried `paypal.me/wimlemkens`; the handle is `wlemkens`, and the wrong one answers
 "We can't find this profile" on all three platforms. Build 120 carries the fix, and item 5 names
-the corrected link — so send these with 120, and do not leave 70 anywhere a reviewer can reach
-that screen. A link that goes nowhere is a Guideline 2.1 *bugs* rejection, a worse letter than
-the information one this file answers.
+the corrected link, as does 145 — so do not leave 70 anywhere a reviewer can reach that screen.
+A link that goes nowhere is a Guideline 2.1 *bugs* rejection, a worse letter than the information
+one this file answers.
 
 Checked against 120's tree rather than 70's, because fifty commits sit between them. What
 actually moved in the shipping app: the PayPal handle and its wording, two cue sliders in

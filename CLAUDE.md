@@ -657,16 +657,23 @@ Functionality includes:
 
     **Three things now have to move together with it**, and none of them is code:
 
-    - The App Store description may finally name reminders. It could not before, and
-      `docs/store/listing.md` still keeps the two listings deliberately different on this point.
+    - The App Store description may finally name reminders, and `docs/store/listing.md` now does —
+      as a notification, not an alarm that rings until dismissed.
     - `docs/store/review-notes.md` item 1 said no permission prompt appears anywhere. That is the
       app's **first** one, and Apple's letter asks explicitly for prompts to be in the recording.
     - So the demo video needs refilming: the first-run question has two switches on iOS now rather
       than one, and the notification prompt has to be in shot. Neither is optional — the notes and
       the recording are answers about a binary, and the binary changed.
 
-    None of this reaches anyone until an `app_store=true` build goes up. Build 120, which is what
-    is live, has none of it.
+    **Build 145, version 1.1, went up on 2026-09-10** and is the first with reminders in it, so the
+    copy and the notes are now true of a real binary. Two things about that upload are worth
+    keeping: a marketing version may only go *up*, so the stable `1.0` this workflow used to stamp
+    was refused against an approved 1.0.120 and the number is bumped by hand per release now; and
+    **altool exits 0 on a refused upload**, which is why the job greps its log for "No errors
+    uploading" rather than trusting the exit code. A green `app-store` job used to prove nothing.
+
+    Still owed before it can be submitted: the video, refilmed off 145, and the Notes field pasted
+    in by hand — neither is code and neither is in this repository.
   - ~~**Ask Apple whether a Belgian VZW is eligible for the fee waiver.**~~ Answered: yes.
     Stanistil VZW is enrolled as an organisation, team `AD8Y56HX64`, D-U-N-S 37-171-7333, KBO
     0719.384.464. **Still worth confirming once that the waiver was actually applied** rather
