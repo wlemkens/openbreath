@@ -63,14 +63,14 @@ fun AppTheme(content: @Composable () -> Unit) {
  *
  * This was the same fifty-line `when` written out in androidMain/MainActivity.kt and again in
  * iosMain/MainViewController.kt, and both of them said in a comment that they would collapse into
- * one when the screens ported. Six of the seven destinations are in commonMain, so they have; a
+ * one when the screens ported. All seven destinations are in commonMain now, so they have; a
  * desktop would otherwise have been a third copy of it.
  *
- * Reminders is the exception and the only one, because AlarmManager and a BroadcastReceiver have
- * no counterpart anywhere else yet. Both of its parameters are null where the platform has none —
- * the same rule [SessionScreen]'s nullable `onOpen…` parameters already follow, and the rule
- * [FirstRunSetup] already followed for its scheduler: the menu leaves the item out rather than
- * offering one that opens nothing.
+ * Reminders used to be the exception, passed in as a slot because AlarmManager and a
+ * BroadcastReceiver had no counterpart elsewhere. [RemindersScreen] is shared now that iOS
+ * schedules through UNUserNotificationCenter, so this takes no slots at all: the menu item is
+ * gated on [ReminderScheduler.supported] instead, which is the rule every capability flag here follows —
+ * leave the item out rather than offer one that opens nothing. The desktop is where it is false.
  */
 @Composable
 fun Breath(modifier: Modifier = Modifier) {

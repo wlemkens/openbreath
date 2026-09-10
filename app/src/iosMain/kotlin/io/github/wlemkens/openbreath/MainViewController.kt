@@ -16,9 +16,10 @@ import platform.UIKit.UIViewController
  * provide what makes a sound, then hand over — because after the port there is nothing else for
  * an entry point to do.
  *
- * It passes the navigator neither of its two optional arguments, which is the whole of what iOS
- * lacks: no reminders screen and so nothing for the first-run question to arm. Both come out as a
- * menu item that is simply absent rather than one that opens nothing.
+ * It passes the navigator nothing but a modifier, and there is nothing left to pass: [Breath] took
+ * two optional arguments for as long as reminders were Android's, and iOS now schedules its own
+ * through UNUserNotificationCenter. What each platform can do is a flag the screens read, not an
+ * argument an entry point hands over.
  */
 fun MainViewController(): UIViewController = ComposeUIViewController {
     val store = store()

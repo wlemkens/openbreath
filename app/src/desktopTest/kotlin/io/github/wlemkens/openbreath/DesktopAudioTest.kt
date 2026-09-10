@@ -2,6 +2,7 @@ package io.github.wlemkens.openbreath
 
 import kotlinx.coroutines.runBlocking
 import kotlin.math.abs
+import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -136,8 +137,15 @@ class DesktopAudioTest {
             audio.release()
         }
 
-        // the bed at full tilt, measured rather than assumed
-        val dsp = WaveDsp(44100)
+        // The bed at full tilt, measured rather than assumed — and **seeded**, which is the whole
+        // reason `WaveDsp` takes a `Random` at all. The bed is filtered noise, so its peak over a
+        // few hundred thousand samples lands anywhere between about 0.64 and 0.73 run to run,
+        // while 1.05 here allows a bed up to 0.669. Unseeded, this assertion was a coin flip that
+        // had so far come up green in CI: it failed locally at 0.726 and passed the next four
+        // times, on the same commit. A seed makes it 0.641 every time, and a marker or a bed that
+        // gets genuinely louder — the retuned constant this is here to catch — moves the whole
+        // distribution rather than one draw of it.
+        val dsp = WaveDsp(44100, Random(1))
         dsp.running = true
         dsp.openness = 1f
         dsp.wavesGain = 1f

@@ -27,7 +27,12 @@ import kotlin.random.Random
  * synth built for 44100 played at 48000 is the same sound roughly a semitone sharp and with its
  * filter corners moved to match.
  */
-class WaveDsp(private val sampleRate: Int) {
+/*
+ * `noise` is injectable for one reason: a test that measures how loud the bed gets cannot do it
+ * against a different draw of noise every run. The default is the global `Random`, so nothing
+ * about the app changes — see DesktopAudioTest's full-scale assertion for what the seed buys.
+ */
+class WaveDsp(private val sampleRate: Int, private val noise: Random = Random) {
 
     /** 0 = fully exhaled, 1 = fully inhaled. Written from the UI thread, read by the audio one. */
     @Volatile
@@ -101,7 +106,7 @@ class WaveDsp(private val sampleRate: Int) {
             cutoff += (LO_HZ + (HI_HZ - LO_HZ) * openness - cutoff) * GLIDE
 
             val a = 1f - exp(-2.0 * PI * cutoff / sampleRate).toFloat()
-            lp += a * ((Random.nextFloat() * 2f - 1f) - lp)
+            lp += a * ((noise.nextFloat() * 2f - 1f) - lp)
             hp += hpA * (lp - hp)
             // a one-pole loses amplitude as it closes; undo that so loudness is set
             // only by `gain` below and not smuggled in by the sweep
