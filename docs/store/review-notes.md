@@ -44,26 +44,34 @@ check ever stops holding, this file and the submission are both wrong.
 
 ## The build these describe is uploaded, and the video is what is missing
 
-**Build 145, version 1.1, is on App Store Connect** as of 2026-09-10, and it is the first build
-that carries reminders. The notes below match that binary rather than running ahead of it.
+**Build 150, version 1.1, is on App Store Connect** as of 2026-09-11, and it is the one to film
+and submit. The notes below match that binary rather than running ahead of it.
+
+**Skip build 145.** It was the first with reminders in it and it carries a silent bug: saying yes
+to the reminder on the first-run screen armed it without asking for notification permission, so no
+prompt appeared and no notification ever arrived. Item 1 below would be wrong of 145 in the one
+direction Apple asks about, and a recording of it would show the switch doing nothing.
 
 What is still owed is the recording, and it cannot be the one filmed for build 70:
 
 - The first-run question has **two** switches on iOS now — a goal and an evening reminder —
   where the filmed one had a single switch. Item 4 says two.
-- Adding a reminder asks for **notification permission**, the app's first and only prompt. Item 1
-  said none appeared anywhere. Apple's own letter asks for prompts to be in the recording, so a
-  video without it answers item 1 wrongly twice over.
+- Making a reminder asks for **notification permission**, the app's first and only prompt — either
+  by saying yes on the first-run screen or by adding one on the Reminders screen, and since 150
+  both ask. Item 1 said no prompt appeared anywhere. Apple's own letter asks for prompts to be in
+  the recording, so a video without it answers item 1 wrongly twice over. `video-script.md` films
+  it at step 6, with the first-run switches left off, so the prompt is seen being asked for rather
+  than arriving in the middle of a first run.
 
-So the order is: film 145 off TestFlight, attach the recording, paste these notes into App Review
-Information, submit. The notes are right for 145 and wrong for anything filmed before it.
+So the order is: film 150 off TestFlight, attach the recording, paste these notes into App Review
+Information, submit. The notes are right for 150 and wrong for anything filmed before it.
 
 ## What build 120 needed, kept because a rejected version asks the same questions
 
 **Build 70's Support buttons open a profile that does not exist.** Every build up to and
 including it carried `paypal.me/wimlemkens`; the handle is `wlemkens`, and the wrong one answers
 "We can't find this profile" on all three platforms. Build 120 carries the fix, and item 5 names
-the corrected link, as does 145 — so do not leave 70 anywhere a reviewer can reach that screen.
+the corrected link, as does 150 — so do not leave 70 anywhere a reviewer can reach that screen.
 A link that goes nowhere is a Guideline 2.1 *bugs* rejection, a worse letter than the information
 one this file answers.
 

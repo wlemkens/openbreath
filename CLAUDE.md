@@ -195,7 +195,8 @@ Functionality includes:
   armed, it asks first, and `FirstRunReminderTest` in desktopTest asserts the order — a `request`
   after an `apply` is the same silent bug again.
 
-  It shipped in **build 145**, which is why that build should not be filmed or submitted.
+  It shipped in **build 145**, which is why that build is not to be filmed or submitted; **150**
+  carries the fix.
 
   The gap this leaves: **nothing reads `ReminderScheduler.permitted()`**, on either path. A refusal
   is therefore invisible — no line on the Reminders screen, no hint on the first run — where
@@ -682,14 +683,16 @@ Functionality includes:
       than one, and the notification prompt has to be in shot. Neither is optional — the notes and
       the recording are answers about a binary, and the binary changed.
 
-    **Build 145, version 1.1, went up on 2026-09-10** and is the first with reminders in it, so the
-    copy and the notes are now true of a real binary. Two things about that upload are worth
+    **Build 150, version 1.1, went up on 2026-09-11** and is the one to film and submit. Build 145
+    was the first with reminders in it and is to be skipped: it armed the first-run reminder without
+    asking for notification permission, so it neither prompted nor ever notified — see the first-run
+    notes above. Two things about that upload are worth
     keeping: a marketing version may only go *up*, so the stable `1.0` this workflow used to stamp
     was refused against an approved 1.0.120 and the number is bumped by hand per release now; and
     **altool exits 0 on a refused upload**, which is why the job greps its log for "No errors
     uploading" rather than trusting the exit code. A green `app-store` job used to prove nothing.
 
-    Still owed before it can be submitted: the video, refilmed off 145, and the Notes field pasted
+    Still owed before it can be submitted: the video, refilmed off 150, and the Notes field pasted
     in by hand — neither is code and neither is in this repository.
   - ~~**Ask Apple whether a Belgian VZW is eligible for the fee waiver.**~~ Answered: yes.
     Stanistil VZW is enrolled as an organisation, team `AD8Y56HX64`, D-U-N-S 37-171-7333, KBO
