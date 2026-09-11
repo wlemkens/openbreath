@@ -76,15 +76,28 @@ listing has no reason to raise the subject.
 
     OpenBreath
 
-**Subtitle** (30 max)
+**Subtitle** (30 max) — **too long as written: 62 characters in a 30-character field**
 
     Free paced breathing.
     No costs, no ads, no tracking, no catch.
 
-**Promotional text** (170 max, changeable without review)
+App Store Connect cannot take this, so whatever is on the live listing is something else and this
+file has never matched it. Play's short description is the same two lines and fits, which is
+probably how it went unnoticed. `Free paced breathing.` is 21 and would fit; the second line is
+where the promotional text above now lives, and that field has room for it.
 
-    Set the four phases, pick a sound for each, and keep a log that is yours. No account, no
-    network, no ads — the app makes no connection at all.
+**Promotional text** (170 max, changeable without review) — **fixed copy, do not reword**
+
+    Free paced breathing.
+    No costs, no ads, no tracking, no catch.
+
+62 characters. **This one is not to be rewritten** — not for length, not for polish, and not to
+announce a new feature, which is what promotional text is usually used for and what would quietly
+erode it. It is four claims and nothing else, and the only reason to touch it is that one of them
+has stopped being true: the app is no longer free, or takes a payment for something, or carries an
+advertisement, or collects anything. Each of those is a change this repository could not make
+quietly anyway — see the Monetisation section of CLAUDE.md, which is the same check from the other
+side. Anything short of that, leave it alone.
 
 **Keywords** (100 max, commas, no spaces)
 

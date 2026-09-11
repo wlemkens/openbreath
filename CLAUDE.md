@@ -220,6 +220,12 @@ Functionality includes:
   screen`, the script is out of date with the interface it photographs, and that is the same rule
   asking to be applied.
 
+  **The promotional text is fixed copy.** "Free paced breathing. No costs, no ads, no tracking, no
+  catch." is not to be reworded — not for length, not for polish, and not to announce a feature,
+  which is what that field is usually used for. It is four claims, and the only reason to change it
+  is that one of them has stopped being true, which is the Monetisation check from the other side.
+  `docs/store/listing.md` says the same thing where the field is.
+
   The copy is a claim too. Adding or dropping a feature means `docs/store/listing.md` changes with
   it, and the App Store half may only name what iOS actually has — which since the reminders port
   is everything but the silencing of notifications, and reminders that ring until dismissed. The
