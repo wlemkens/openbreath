@@ -63,7 +63,7 @@ targets:
         CURRENT_PROJECT_VERSION: 1
         # kept the same as the app-store job's VERSION in build.yml, which overrides it there. A
         # marketing version may only go up, and 1.0.120 is approved — see that job's comment.
-        MARKETING_VERSION: "1.1"
+        MARKETING_VERSION: "1.2"
         # the Kotlin framework is built into this directory by the gradle phase below, and is a
         # static framework, so it is linked rather than embedded
         FRAMEWORK_SEARCH_PATHS:

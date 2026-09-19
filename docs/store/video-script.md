@@ -7,10 +7,19 @@ sent — it is why they ask.
 
 **Film it off the build being submitted, never a newer one** — a video of code the reviewer does
 not have invites a second round of the same letter. The first take was build 70's; the reminders
-build needs its own, because two of the answers changed rather than the wording of them: the
+build needed its own, because two of the answers changed rather than the wording of them: the
 first-run question has two switches now, and adding a reminder raises the app's only permission
 prompt. Apple's letter asks for prompts to be in the recording, so a take without it answers
 item 1 wrongly.
+
+**This has been sent, and it worked**: the take off build 150 answered the letter and 1.1 went
+live on 2026-09-12. What follows is kept for the next time App Review asks — which is the only
+reason to film again, since an ordinary update owes no video.
+
+Two notes for that next take, so it is not re-derived. Step 5 changed with the one-sound-for-the-
+whole-breath work and is updated below. Nothing else did: the milestone badges are earned, and
+this take is made on a fresh install, so there are none to show; and the app being in three
+languages changes nothing a reviewer filming in English would see.
 
 ## Before pressing record
 
@@ -44,9 +53,13 @@ reading, not watching.
 4. **Menu (⋮) opened and closed once**, slowly enough to read: Settings, Reminders, Goals,
    Achievements, Log, Feedback, Support the app. This is the whole app in one frame.
 5. **Settings.** Three things, or it becomes a tour: the cue shape and colour (change one and
-   let it redraw), the sound for a phase — pick the singing bowl, so the marker sounds in the
+   let it redraw), the **Sound** section — pick the singing bowl, so the marker sounds in the
    take — and scroll to the **Backup** section so Export and Import are seen in passing. Back
    out. Do not tap Export yet; it gets its own beat at step 10.
+
+   Standard sets one sound for the whole breath now, so that is one chip rather than four rows.
+   Tapping **Advanced** afterwards and resting a beat on the per-phase list is worth the five
+   seconds: it says the simple screen is a choice and not the whole app. Then back to Standard.
 6. **Reminders → add one.** The menu item, then +, then a time. Saving it raises the app's only
    permission prompt — the standard iOS notification alert — and **this is the beat item 1 is
    about**, so let it sit on screen before you tap Allow. Apple's letter asks for prompts to be

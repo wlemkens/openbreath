@@ -570,10 +570,16 @@ jobs:
       # must contain a higher version than the previously approved version [1.0.120]". 1.1 is
       # higher than 1.0.120 and is what a feature release wants to be called anyway.
       #
+      # It happened again on 2026-09-19, one version later and for the better reason: 1.1 went
+      # live on 2026-09-12, so leaving this at 1.1 got both halves of the same refusal at once —
+      # "The train version '1.1' is closed for new build submissions" and the approved-version
+      # message above with [1.1] on both sides. **A shipped version closes its train**, so this
+      # line is bumped as part of deciding to release, not after an upload is refused.
+      #
       # So this is bumped by hand, once per release, and `iosApp/project.yml`'s MARKETING_VERSION
       # is kept the same so a laptop build and a store build agree. The build number underneath it
       # keeps climbing on its own.
-      VERSION: "1.1"
+      VERSION: "1.2"
       BUILD: ${{ github.run_number }}
       BUNDLE_ID: io.github.wlemkens.openbreath
       PROFILE_NAME: OpenBreath App Store

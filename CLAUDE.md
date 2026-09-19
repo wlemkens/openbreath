@@ -208,8 +208,8 @@ Functionality includes:
   armed, it asks first, and `FirstRunReminderTest` in desktopTest asserts the order — a `request`
   after an `apply` is the same silent bug again.
 
-  It shipped in **build 145**, which is why that build is not to be filmed or submitted; **150**
-  carries the fix.
+  It shipped in **build 145**, which is why that build was not to be filmed or submitted; **150**
+  carried the fix, and 150 is what went live as 1.1.
 
   The gap this leaves: **nothing reads `ReminderScheduler.permitted()`**, on either path. A refusal
   is therefore invisible — no line on the Reminders screen, no hint on the first run — where
@@ -754,17 +754,31 @@ Functionality includes:
       than one, and the notification prompt has to be in shot. Neither is optional — the notes and
       the recording are answers about a binary, and the binary changed.
 
-    **Build 150, version 1.1, went up on 2026-09-11** and is the one to film and submit. Build 145
-    was the first with reminders in it and is to be skipped: it armed the first-run reminder without
-    asking for notification permission, so it neither prompted nor ever notified — see the first-run
-    notes above. Two things about that upload are worth
-    keeping: a marketing version may only go *up*, so the stable `1.0` this workflow used to stamp
-    was refused against an approved 1.0.120 and the number is bumped by hand per release now; and
-    **altool exits 0 on a refused upload**, which is why the job greps its log for "No errors
-    uploading" rather than trusting the exit code. A green `app-store` job used to prove nothing.
+    **Version 1.1 went live on 2026-09-12**, which closed all of this: build 150 was submitted and
+    approved, the Guideline 2.1 letter is answered, and the video and the Notes it asked for were
+    delivered. The reminders release is out. Build 145 remains the one that was never to be
+    submitted — it armed the first-run reminder without asking for notification permission, so it
+    neither prompted nor ever notified; see the first-run notes above.
 
-    Still owed before it can be submitted: the video, refilmed off 150, and the Notes field pasted
-    in by hand — neither is code and neither is in this repository.
+    **This file believed 1.1 was still pending for a week**, and the way that surfaced is the
+    lesson: an upload was refused with "The train version '1.1' is closed for new build
+    submissions". A *shipped* version closes its train, so the refusal was the App Store saying the
+    release had happened. `curl -s "https://itunes.apple.com/lookup?id=6805899911"` answers what is
+    live in one line and needs no key — ask it before believing a date in here.
+
+    So the next release is **1.2**, and the version is bumped as part of deciding to release rather
+    than after an upload is refused. Two numbers, and they are not the same number: the App Store
+    build is `github.run_number` and Play's versionCode is the commit count, so one commit is build
+    158 on one store and versionCode 168 on the other.
+
+    **altool exits 0 on a refused upload**, which is why the job greps its log for "No errors
+    uploading" rather than trusting the exit code. That grep is what caught this one; a green
+    `app-store` job used to prove nothing.
+
+    Still owed before a submission: the Notes field pasted in by hand, which is not version
+    controlled and is invisible when empty until the letter arrives. A new demo video is **not**
+    owed for an ordinary update — that recording answered a 2.1 rejection, and it is wanted again
+    only if App Review asks again.
   - ~~**Ask Apple whether a Belgian VZW is eligible for the fee waiver.**~~ Answered: yes.
     Stanistil VZW is enrolled as an organisation, team `AD8Y56HX64`, D-U-N-S 37-171-7333, KBO
     0719.384.464. **Still worth confirming once that the waiver was actually applied** rather
