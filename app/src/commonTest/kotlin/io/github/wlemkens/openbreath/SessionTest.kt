@@ -430,4 +430,13 @@ class SessionTest {
         // yesterday's sitting is not today's
         assertFalse(goals.allReached(listOf(on(11)), evening, zone))
     }
+
+    @Test
+    fun `the standard sound is what all four phases agree on`() {
+        val marker = PhaseSound(mode = SoundMode.MARKER, tone = MarkerTone.GONG)
+        val same = Preset().let { p -> Phase.entries.fold(p) { acc, ph -> acc.withSound(ph) { marker } } }
+        assertEquals(marker, same.commonSound)
+        // one phase out of step and Standard has nothing to select
+        assertEquals(null, same.withSound(Phase.EXHALE) { it.copy(tone = MarkerTone.BELL) }.commonSound)
+    }
 }

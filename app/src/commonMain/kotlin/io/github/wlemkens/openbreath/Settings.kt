@@ -65,11 +65,18 @@ fun SettingsScreen(
 
     val advanced = config.advancedSettings
     var renaming by remember { mutableStateOf(false) }
-    var pendingPhase by remember { mutableStateOf<Phase?>(null) }
-    fun pickMp3(phase: Phase) = files.pickAudio { handle ->
-        if (handle != null) {
-            editPreset { it.withSound(phase) { s -> s.copy(markerUri = handle, mode = SoundMode.MARKER) } }
+    // a null phase is all four at once: Standard sets one sound for the lot, and when the four
+    // disagree it starts from the default rather than from whichever phase happens to be first
+    fun editSound(phase: Phase?, f: (PhaseSound) -> PhaseSound) {
+        if (phase != null) {
+            editPreset { it.withSound(phase, f) }
+        } else {
+            val next = f(preset.commonSound ?: PhaseSound())
+            editPreset { p -> Phase.entries.fold(p) { acc, ph -> acc.withSound(ph) { next } } }
         }
+    }
+    fun pickMp3(phase: Phase?) = files.pickAudio { handle ->
+        if (handle != null) editSound(phase) { it.copy(markerUri = handle, mode = SoundMode.MARKER) }
     }
 
     // what the import found, held until it has been agreed to: an import overwrites settings
@@ -212,84 +219,8 @@ fun SettingsScreen(
             )
         }
 
-        if (advanced) item { SectionLabel("Sound per phase") }
-        if (advanced) for (phase in Phase.entries) {
-            item(key = "sound-${phase.name}") {
-                val sound = preset.soundOf(phase)
-                Column(Modifier.padding(vertical = 4.dp)) {
-                    Text(
-                        when (phase) {
-                            Phase.HOLD_IN -> "Hold in"
-                            Phase.HOLD_OUT -> "Hold out"
-                            else -> phase.label
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                    // four modes no longer fit a line on a narrow phone
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        SoundMode.entries.forEach { mode ->
-                            FilterChip(
-                                selected = sound.mode == mode,
-                                onClick = { editPreset { it.withSound(phase) { s -> s.copy(mode = mode) } } },
-                                label = { Text(mode.label) },
-                            )
-                        }
-                    }
-                    if (sound.mode == SoundMode.AMBIENT) {
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            AmbientVoice.entries.forEach { voice ->
-                                FilterChip(
-                                    selected = sound.voice == voice,
-                                    onClick = {
-                                        editPreset { it.withSound(phase) { s -> s.copy(voice = voice) } }
-                                    },
-                                    label = { Text(voice.label) },
-                                )
-                            }
-                        }
-                    }
-                    if (sound.mode == SoundMode.MARKER) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (files.canPickAudio) {
-                                TextButton(onClick = {
-                                    pickMp3(phase)
-                                }) { Text(if (sound.markerUri == null) "Choose mp3" else "Change") }
-                            }
-                            Text(
-                                sound.markerUri?.let { files.audioName(it) }
-                                    ?: "built-in ${sound.tone.label.lowercase()}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.weight(1f),
-                            )
-                            if (sound.markerUri != null) {
-                                TextButton(onClick = {
-                                    editPreset { it.withSound(phase) { s -> s.copy(markerUri = null) } }
-                                }) { Text("Clear") }
-                            }
-                        }
-                        // only meaningful while no mp3 of their own is standing in for it
-                        if (sound.markerUri == null) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                MarkerTone.entries.forEach { tone ->
-                                    FilterChip(
-                                        selected = sound.tone == tone,
-                                        onClick = {
-                                            editPreset { it.withSound(phase) { s -> s.copy(tone = tone) } }
-                                        },
-                                        label = { Text(tone.label) },
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
+        // straight after the lengths above, and in Standard it still follows Timing: the sound
+        // sections in between are the only thing that moved
         item { SectionLabel("Session length") }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -338,6 +269,36 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+
+        // Standard: one sound for the whole breath. Advanced still sets each phase, and when
+        // it has left them disagreeing this shows nothing selected until a mode is picked here
+        if (!advanced) item { SectionLabel("Sound") }
+        if (!advanced) item {
+            SoundPicker(
+                label = null,
+                sound = preset.commonSound,
+                files = files,
+                onPick = { pickMp3(null) },
+                onEdit = { f -> editSound(null, f) },
+            )
+        }
+
+        if (advanced) item { SectionLabel("Sound per phase") }
+        if (advanced) for (phase in Phase.entries) {
+            item(key = "sound-${phase.name}") {
+                SoundPicker(
+                    label = when (phase) {
+                        Phase.HOLD_IN -> "Hold in"
+                        Phase.HOLD_OUT -> "Hold out"
+                        else -> phase.label
+                    },
+                    sound = preset.soundOf(phase),
+                    files = files,
+                    onPick = { pickMp3(phase) },
+                    onEdit = { f -> editSound(phase, f) },
+                )
+            }
         }
 
         item { SectionLabel("During a session") }
@@ -537,6 +498,79 @@ fun SettingsScreen(
             },
             dismissButton = { TextButton(onClick = { renaming = false }) { Text("Cancel") } },
         )
+    }
+}
+
+/**
+ * One phase's sound, or all four at once. A null [sound] is Standard's "the phases disagree":
+ * nothing is selected and no sub-choice is offered until a mode is picked, which sets the lot.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SoundPicker(
+    label: String?,
+    sound: PhaseSound?,
+    files: Files,
+    onPick: () -> Unit,
+    onEdit: ((PhaseSound) -> PhaseSound) -> Unit,
+) {
+    Column(Modifier.padding(vertical = 4.dp)) {
+        if (label != null) Text(label, style = MaterialTheme.typography.bodyMedium)
+        // four modes no longer fit a line on a narrow phone
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SoundMode.entries.forEach { mode ->
+                FilterChip(
+                    selected = sound?.mode == mode,
+                    onClick = { onEdit { it.copy(mode = mode) } },
+                    label = { Text(mode.label) },
+                )
+            }
+        }
+        if (sound?.mode == SoundMode.AMBIENT) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                AmbientVoice.entries.forEach { voice ->
+                    FilterChip(
+                        selected = sound.voice == voice,
+                        onClick = { onEdit { it.copy(voice = voice) } },
+                        label = { Text(voice.label) },
+                    )
+                }
+            }
+        }
+        if (sound?.mode == SoundMode.MARKER) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (files.canPickAudio) {
+                    TextButton(onClick = onPick) {
+                        Text(if (sound.markerUri == null) "Choose mp3" else "Change")
+                    }
+                }
+                Text(
+                    sound.markerUri?.let { files.audioName(it) }
+                        ?: "built-in ${sound.tone.label.lowercase()}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                if (sound.markerUri != null) {
+                    TextButton(onClick = { onEdit { it.copy(markerUri = null) } }) { Text("Clear") }
+                }
+            }
+            // only meaningful while no mp3 of their own is standing in for it
+            if (sound.markerUri == null) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MarkerTone.entries.forEach { tone ->
+                        FilterChip(
+                            selected = sound.tone == tone,
+                            onClick = { onEdit { it.copy(tone = tone) } },
+                            label = { Text(tone.label) },
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

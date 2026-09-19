@@ -131,12 +131,13 @@ def main():
             tap("Done", exact=True)
 
         tap("⋮", exact=True); tap("Settings", exact=True); tap("Advanced")
-        swipe(1600, 700)                                 # the sound section, with one marker set
+        # the sound section, with one marker set; two swipes because one long one flings past it
+        swipe(1600, 700); swipe(1000, 620)
         tap("Marker", exact=True)
         shot("sound-per-phase")
         # stops with "Breath cue" at the top: the chips and the two sliders under them read as a
         # section, and a headless row of chips does not
-        swipe(1600, 700); swipe(1600, 1080)
+        swipe(1600, 700); swipe(1000, 700)
         shot("settings-options")
     finally:
         sh("shell", "wm", "size", "reset")

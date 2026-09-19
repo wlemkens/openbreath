@@ -95,6 +95,10 @@ data class Preset(
         Phase.HOLD_OUT -> holdOutSound
     }
 
+    /** The one sound all four phases share, or null when they do not agree. */
+    val commonSound: PhaseSound?
+        get() = listOf(inhaleSound, holdInSound, exhaleSound, holdOutSound).distinct().singleOrNull()
+
     fun withSound(p: Phase, f: (PhaseSound) -> PhaseSound) = when (p) {
         Phase.INHALE -> copy(inhaleSound = f(inhaleSound))
         Phase.HOLD_IN -> copy(holdInSound = f(holdInSound))
