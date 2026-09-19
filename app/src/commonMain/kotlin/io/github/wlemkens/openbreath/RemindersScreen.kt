@@ -32,7 +32,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.*
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.isoDayNumber
@@ -48,9 +51,11 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     val reminders by remember { store.remindersFlow() }.collectAsState(initial = emptyList())
     var editing by remember { mutableStateOf<Reminder?>(null) }
 
-    fun save(list: List<Reminder>) {
+    // arming and storing in one coroutine: arming reads the words the notification will carry,
+    // which is a resource lookup and therefore suspends
+    fun save(list: List<Reminder>) = scope.launch {
         scheduler.apply(list)
-        scope.launch { store.saveReminders(list) }
+        store.saveReminders(list)
     }
 
     LazyColumn(
@@ -59,15 +64,19 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     ) {
         item {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Reminders", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
-                TextButton(onClick = onBack) { Text("Done") }
+                Text(
+                    stringResource(Res.string.reminders_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onBack) { Text(stringResource(Res.string.action_done)) }
             }
         }
 
         if (reminders.isEmpty()) {
             item {
                 Text(
-                    "None yet. A reminder is a notification at a time you choose, nothing more.",
+                    stringResource(Res.string.reminders_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 12.dp, bottom = 8.dp),
@@ -84,8 +93,16 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     Text(reminder.name, style = MaterialTheme.typography.bodyLarge)
                     Text(
                         reminder.summary(platform.formats) +
-                            (if (reminder.alarm && scheduler.canRingUntilDismissed) " · alarm" else "") +
-                            (if (reminder.onlyIfBehind) " · only when behind" else ""),
+                            (if (reminder.alarm && scheduler.canRingUntilDismissed) {
+                                stringResource(Res.string.reminder_tag_alarm)
+                            } else {
+                                ""
+                            }) +
+                            (if (reminder.onlyIfBehind) {
+                                stringResource(Res.string.reminder_tag_only_behind)
+                            } else {
+                                ""
+                            }),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -111,22 +128,22 @@ fun RemindersScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     editing = Reminder(id = (reminders.maxOfOrNull { it.id } ?: 0) + 1)
                 },
                 modifier = Modifier.padding(top = 12.dp),
-            ) { Text("Add a reminder") }
+            ) { Text(stringResource(Res.string.reminders_add)) }
         }
 
         // Android says something here when it has not been given the exact-alarm permission,
         // which it stopped granting by default in 14: the reminder still comes, just not
-        // necessarily to the minute. iOS has nothing to say and answers null.
-        scheduler.lateness?.takeIf { reminders.isNotEmpty() }?.let { late ->
+        // necessarily to the minute. iOS has nothing to say and answers false.
+        if (scheduler.late && reminders.isNotEmpty()) {
             item {
                 Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        late,
+                        stringResource(Res.string.reminder_lateness),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.weight(1f),
                     )
-                    TextButton(onClick = { scheduler.fixLateness() }) { Text("Fix") }
+                    TextButton(onClick = { scheduler.fixLateness() }) { Text(stringResource(Res.string.action_fix)) }
                 }
             }
         }
@@ -168,13 +185,19 @@ private fun ReminderDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (reminder.name.isBlank()) "Reminder" else reminder.name) },
+        // the name is the user's own text and stays as they typed it
+        title = {
+            Text(
+                if (reminder.name.isBlank()) stringResource(Res.string.reminder_untitled)
+                else reminder.name
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = draft.name,
                     onValueChange = { draft = draft.copy(name = it) },
-                    label = { Text("Name") },
+                    label = { Text(stringResource(Res.string.reminder_name)) },
                     singleLine = true,
                 )
                 TimeInput(time)
@@ -188,7 +211,13 @@ private fun ReminderDialog(
                         FilterChip(
                             selected = draft.repeat == repeat,
                             onClick = { draft = draft.copy(repeat = repeat) },
-                            label = { Text(repeat.label + repeat.weekHint(today)) },
+                            label = {
+                                val hint = repeat.weekHint(today)
+                                Text(
+                                    stringResource(repeat.label) +
+                                        if (hint != null) stringResource(hint) else ""
+                                )
+                            },
                         )
                     }
                 }
@@ -198,28 +227,24 @@ private fun ReminderDialog(
                 // something says so, rather than offering a switch that does something quieter
                 // than it promises.
                 if (scheduler.canRingUntilDismissed) {
-                    ToggleRow("Ring until dismissed", draft.alarm) { draft = draft.copy(alarm = it) }
+                    ToggleRow(stringResource(Res.string.reminder_ring), draft.alarm) { draft = draft.copy(alarm = it) }
                     Text(
-                        if (draft.alarm) {
-                            "The alarm tone, over and over, heard through a silenced ringer. " +
-                                "Dismiss the notification to stop it."
-                        } else {
-                            "One notification, at the volume everything else arrives at."
-                        },
+                        stringResource(
+                            if (draft.alarm) Res.string.reminder_ring_on
+                            else Res.string.reminder_ring_off
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                ToggleRow("Only when behind on a goal", draft.onlyIfBehind) {
+                ToggleRow(stringResource(Res.string.reminder_only_behind), draft.onlyIfBehind) {
                     draft = draft.copy(onlyIfBehind = it)
                 }
                 Text(
-                    if (draft.onlyIfBehind) {
-                        "Stays quiet once every goal is reached. With no goals set there is " +
-                            "nothing to be ahead of, so it comes as usual."
-                    } else {
-                        "Comes whether or not you have already practised."
-                    },
+                    stringResource(
+                        if (draft.onlyIfBehind) Res.string.reminder_only_behind_on
+                        else Res.string.reminder_only_behind_off
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -248,25 +273,17 @@ private fun ReminderDialog(
         },
         confirmButton = {
             TextButton(onClick = { onSave(draft.copy(hour = time.hour, minute = time.minute)) }) {
-                Text("Save")
+                Text(stringResource(Res.string.action_save))
             }
         },
-        dismissButton = { TextButton(onClick = onDelete) { Text("Delete") } },
+        dismissButton = {
+            TextButton(onClick = onDelete) { Text(stringResource(Res.string.action_delete)) }
+        },
     )
 }
 
 /** The week starting where the reader's own calendar starts it, which is not Monday everywhere. */
-private fun weekDays(): List<DayOfWeek> {
+internal fun weekDays(): List<DayOfWeek> {
     val first = firstDayOfWeek().isoDayNumber
     return (0..6).map { DayOfWeek.entries[(first - 1 + it) % 7] }
-}
-
-/** "Weekly Mon, Thu · 8:00 AM", in the reader's own conventions throughout. */
-internal fun Reminder.summary(formats: Formats): String {
-    val at = formats.clockTime(hour, minute)
-    val on =
-        if (repeat == Repeat.DAILY) ""
-        else " " + weekDays().filter { it.isoDayNumber in days }
-            .joinToString(", ") { formats.shortDayName(it) }
-    return "${repeat.label}$on · $at"
 }

@@ -19,6 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.*
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Who the money reaches is said plainly, and that is not only good manners.
@@ -34,15 +37,10 @@ import androidx.compose.ui.unit.dp
  * person.
  */
 private val SUPPORT = listOf(
-    "OpenBreath is free, and it stays free — no trial, no unlock, no subscription.",
-    "Plenty of apps like this one charge before you have tried them, or ask for a yearly " +
-        "subscription. For something that sits quietly and counts your breathing, that seems " +
-        "a lot to ask.",
-    "So there is no price here. If the app has been good to you and you feel like it, send a " +
-        "coffee, or more. If not, that is genuinely fine — it is the same app either way.",
-    "Anything you send goes to Wim Lemkens, who writes the app — personally, not to any " +
-        "organisation, and not for anything in return. It buys you nothing here and unlocks " +
-        "nothing, because there is nothing to unlock.",
+    Res.string.support_p1,
+    Res.string.support_p2,
+    Res.string.support_p3,
+    Res.string.support_p4,
 )
 
 /** The amounts on the buttons. Anything else goes through PayPal's own field. */
@@ -61,15 +59,15 @@ fun SupportScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     ) {
         Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Support the app",
+                stringResource(Res.string.support_title),
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = onBack) { Text("Done") }
+            TextButton(onClick = onBack) { Text(stringResource(Res.string.action_done)) }
         }
 
         SUPPORT.forEach { paragraph ->
-            Text(paragraph, style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(paragraph), style = MaterialTheme.typography.bodyMedium)
         }
 
         FlowRow(
@@ -79,13 +77,11 @@ fun SupportScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             AMOUNTS.forEach { euros ->
                 Button(onClick = { pay(euros) }) { Text("€$euros") }
             }
-            OutlinedButton(onClick = { pay(null) }) { Text("Another amount") }
+            OutlinedButton(onClick = { pay(null) }) { Text(stringResource(Res.string.support_another)) }
         }
 
         Text(
-            "Opens PayPal in your browser, or in the PayPal app if you have it, paying the " +
-                "developer directly. Nothing is charged from here, and the app is not told " +
-                "whether you went through with it.",
+            stringResource(Res.string.support_note),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 24.dp),

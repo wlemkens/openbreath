@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -37,7 +38,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.*
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 import kotlin.time.Clock
 import kotlin.math.exp
 import kotlin.math.ln
@@ -89,9 +94,10 @@ fun SettingsScreen(
     // the part that suspends and a picker callback is not a place to start a coroutine
     fun exportBackup() = scope.launch {
         val backup = store.exportBackup(Clock.System.now().toEpochMilliseconds())
+        val saved = getString(Res.string.backup_saved, backup.summary())
+        val failed = getString(Res.string.backup_write_failed)
         files.exportText(backupFileName(), encodeBackup(backup)) { ok ->
-            backupMessage =
-                if (ok) "Saved ${backup.summary}." else "Could not write that file. Nothing has changed."
+            backupMessage = if (ok) saved else failed
         }
     }
 
@@ -100,7 +106,7 @@ fun SettingsScreen(
         // Telling those apart matters — one is a decision, the other is a mistake to correct
         if (text != null) {
             pendingImport = decodeBackup(text)
-            if (pendingImport == null) backupMessage = "That is not an OpenBreath backup."
+            if (pendingImport == null) scope.launch { backupMessage = getString(Res.string.backup_not_ours) }
         }
     }
 
@@ -110,8 +116,12 @@ fun SettingsScreen(
     ) {
         item {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Settings", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
-                TextButton(onClick = onBack) { Text("Done") }
+                Text(
+                    stringResource(Res.string.settings_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onBack) { Text(stringResource(Res.string.action_done)) }
             }
         }
         item {
@@ -121,19 +131,19 @@ fun SettingsScreen(
                 FilterChip(
                     selected = !advanced,
                     onClick = { onChange(config.copy(advancedSettings = false)) },
-                    label = { Text("Standard") },
+                    label = { Text(stringResource(Res.string.settings_standard)) },
                 )
                 FilterChip(
                     selected = advanced,
                     onClick = { onChange(config.copy(advancedSettings = true)) },
-                    label = { Text("Advanced") },
+                    label = { Text(stringResource(Res.string.settings_advanced)) },
                 )
             }
         }
 
         // Advanced: Standard shows the Timing sliders alone, which edit whichever preset is
         // active — "Custom" until someone picks another here
-        if (advanced) item { SectionLabel("Preset") }
+        if (advanced) item { SectionLabel(stringResource(Res.string.settings_section_preset)) }
         if (advanced) item {
             // FlowRow, not Row: the preset count and their names are both user data, so a
             // single line runs off the screen edge as soon as there are a few
@@ -155,13 +165,14 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                AssistChip(onClick = { renaming = true }, label = { Text("Rename") })
+                AssistChip(onClick = { renaming = true }, label = { Text(stringResource(Res.string.settings_rename)) })
+                val copySuffix = stringResource(Res.string.settings_preset_copy, preset.name)
                 AssistChip(
                     onClick = {
-                        val copy = preset.copy(name = "${preset.name} copy")
+                        val copy = preset.copy(name = copySuffix)
                         onChange(config.copy(presets = config.presets + copy, activeIndex = config.presets.size))
                     },
-                    label = { Text("Duplicate") },
+                    label = { Text(stringResource(Res.string.settings_duplicate)) },
                 )
                 if (config.presets.size > 1) {
                     AssistChip(
@@ -173,23 +184,19 @@ fun SettingsScreen(
                                 )
                             )
                         },
-                        label = { Text("Delete") },
+                        label = { Text(stringResource(Res.string.action_delete)) },
                     )
                 }
             }
         }
 
-        item { SectionLabel("Timing") }
+        item { SectionLabel(stringResource(Res.string.settings_section_timing)) }
         for (phase in Phase.entries) {
             item(key = "time-${phase.name}") {
                 val isHold = phase == Phase.HOLD_IN || phase == Phase.HOLD_OUT
                 SecondsSlider(
                     // both holds are labelled "Hold"; say which one
-                    label = when (phase) {
-                        Phase.HOLD_IN -> "Hold in"
-                        Phase.HOLD_OUT -> "Hold out"
-                        else -> phase.label
-                    },
+                    label = stringResource(phase.longLabel),
                     ms = preset.timing.durationOf(phase),
                     // a breath needs an actual inhale and exhale; holds may be skipped
                     minMs = if (isHold) 0 else 1000,
@@ -200,8 +207,11 @@ fun SettingsScreen(
         }
         item {
             Text(
-                "One breath: ${formatOneDecimal(preset.timing.cycleMs / 1000f)} s" +
-                    "  •  ${formatOneDecimal(60_000f / preset.timing.cycleMs)} breaths per minute",
+                stringResource(
+                    Res.string.settings_one_breath,
+                    formatOneDecimal(preset.timing.cycleMs / 1000f),
+                    formatOneDecimal(60_000f / preset.timing.cycleMs),
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -211,7 +221,7 @@ fun SettingsScreen(
             // in Timing rather than a section of its own: it is the one length here that is not
             // breathed, and it is still a length of the thing you just pressed Start on
             SecondsSlider(
-                label = "Get ready",
+                label = stringResource(Res.string.settings_lead_in),
                 ms = config.leadInMs,
                 minMs = 0,
                 maxMs = 20_000,
@@ -221,25 +231,25 @@ fun SettingsScreen(
 
         // straight after the lengths above, and in Standard it still follows Timing: the sound
         // sections in between are the only thing that moved
-        item { SectionLabel("Session length") }
+        item { SectionLabel(stringResource(Res.string.settings_section_length)) }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(
                     selected = !config.limitIsCycles,
                     onClick = { onChange(config.copy(limitIsCycles = false)) },
-                    label = { Text("By time") },
+                    label = { Text(stringResource(Res.string.settings_by_time)) },
                 )
                 FilterChip(
                     selected = config.limitIsCycles,
                     onClick = { onChange(config.copy(limitIsCycles = true)) },
-                    label = { Text("By breaths") },
+                    label = { Text(stringResource(Res.string.settings_by_breaths)) },
                 )
             }
         }
         item {
             if (config.limitIsCycles) {
                 LabelledSlider(
-                    label = "Breaths",
+                    label = stringResource(Res.string.settings_breaths),
                     value = config.cycles.toFloat(),
                     range = 1f..100f,
                     steps = 98,
@@ -249,11 +259,11 @@ fun SettingsScreen(
                 )
             } else {
                 LabelledSlider(
-                    label = "Minutes",
+                    label = stringResource(Res.string.settings_minutes),
                     value = config.durationMs / 60_000f,
                     range = 1f..60f,
                     steps = 58,
-                    readout = "${(config.durationMs / 60_000L)} min",
+                    readout = stringResource(Res.string.settings_minutes_readout, (config.durationMs / 60_000L).toInt()),
                     onStep = { dir ->
                         val min = (config.durationMs / 60_000L + dir).coerceIn(1L, 60L)
                         onChange(config.copy(durationMs = min * 60_000L))
@@ -263,9 +273,11 @@ fun SettingsScreen(
             }
             val total = config.limit.totalMs(preset.timing)
             Text(
-                "Rounds up to whole breaths: ${total / 60_000}:" +
-                    "${(total / 1000 % 60).toString().padStart(2, '0')}, " +
-                    "${total / preset.timing.cycleMs} breaths",
+                stringResource(
+                    Res.string.settings_rounds_up,
+                    mmss(total),
+                    (total / preset.timing.cycleMs).toInt(),
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -273,7 +285,7 @@ fun SettingsScreen(
 
         // Standard: one sound for the whole breath. Advanced still sets each phase, and when
         // it has left them disagreeing this shows nothing selected until a mode is picked here
-        if (!advanced) item { SectionLabel("Sound") }
+        if (!advanced) item { SectionLabel(stringResource(Res.string.settings_section_sound)) }
         if (!advanced) item {
             SoundPicker(
                 label = null,
@@ -284,15 +296,11 @@ fun SettingsScreen(
             )
         }
 
-        if (advanced) item { SectionLabel("Sound per phase") }
+        if (advanced) item { SectionLabel(stringResource(Res.string.settings_section_sound_per_phase)) }
         if (advanced) for (phase in Phase.entries) {
             item(key = "sound-${phase.name}") {
                 SoundPicker(
-                    label = when (phase) {
-                        Phase.HOLD_IN -> "Hold in"
-                        Phase.HOLD_OUT -> "Hold out"
-                        else -> phase.label
-                    },
+                    label = stringResource(phase.longLabel),
                     sound = preset.soundOf(phase),
                     files = files,
                     onPick = { pickMp3(phase) },
@@ -301,47 +309,47 @@ fun SettingsScreen(
             }
         }
 
-        item { SectionLabel("During a session") }
+        item { SectionLabel(stringResource(Res.string.settings_section_during)) }
         // a switch for hardware the machine hasn't got is just a puzzle; the setting stays stored
         // either way, so a phone that does have one still finds it turned on
         if (platform.haptics.supported) {
             item {
-                ToggleRow("Vibrate at each phase change", config.vibrate) {
+                ToggleRow(stringResource(Res.string.settings_vibrate), config.vibrate) {
                     onChange(config.copy(vibrate = it))
                 }
             }
         }
         if (torch.available) {
             item {
-                ToggleRow("Flashlight follows the breath", config.flashlight) {
+                ToggleRow(stringResource(Res.string.settings_flashlight), config.flashlight) {
                     onChange(config.copy(flashlight = it))
                 }
             }
         }
         item {
-            ToggleRow("Bowl at the end of the session", config.endSound) {
+            ToggleRow(stringResource(Res.string.settings_end_bowl), config.endSound) {
                 onChange(config.copy(endSound = it))
             }
         }
         item {
             if (dnd.supported) {
-                ToggleRow("Silence notifications", config.muteNotifications) {
+                ToggleRow(stringResource(Res.string.settings_silence), config.muteNotifications) {
                     onChange(config.copy(muteNotifications = it))
                 }
             }
             if (dnd.supported && config.muteNotifications && !dnd.granted) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "Needs Do Not Disturb access",
+                        stringResource(Res.string.settings_needs_dnd),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                     )
-                    TextButton(onClick = { dnd.requestAccess() }) { Text("Grant") }
+                    TextButton(onClick = { dnd.requestAccess() }) { Text(stringResource(Res.string.action_grant)) }
                 }
             }
         }
 
-        if (advanced) item { SectionLabel("Breath cue") }
+        if (advanced) item { SectionLabel(stringResource(Res.string.settings_section_cue)) }
         if (advanced) item {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -361,7 +369,7 @@ fun SettingsScreen(
                                 ),
                             )
                         },
-                        label = { Text(style.label) },
+                        label = { Text(stringResource(style.label)) },
                     )
                 }
             }
@@ -372,7 +380,7 @@ fun SettingsScreen(
             // cue, and between 1000 and 1040 is nothing at all. Linear spends most of the travel
             // on the half of the range where nothing changes.
             LabelledSlider(
-                label = "Points",
+                label = stringResource(Res.string.settings_points),
                 value = ln(config.cuePoints.toFloat()),
                 range = ln(MIN_CUE_POINTS.toFloat())..ln(MAX_CUE_POINTS.toFloat()),
                 steps = 0,
@@ -383,7 +391,7 @@ fun SettingsScreen(
                 },
             )
             LabelledSlider(
-                label = "Point size",
+                label = stringResource(Res.string.settings_point_size),
                 value = config.cueDot,
                 range = MIN_CUE_DOT..MAX_CUE_DOT,
                 steps = 0,
@@ -393,52 +401,51 @@ fun SettingsScreen(
         }
         if (advanced) item { CueColour(config.cueColor) { onChange(config.copy(cueColor = it)) } }
         if (advanced) item {
-            ToggleRow("Vivid", config.vividCue) { onChange(config.copy(vividCue = it)) }
+            ToggleRow(stringResource(Res.string.settings_vivid), config.vividCue) { onChange(config.copy(vividCue = it)) }
             Text(
-                "The same hue with the grey taken out, past what the sliders can reach.",
+                stringResource(Res.string.settings_vivid_note),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
-        item { SectionLabel("Progress on screen") }
+        item { SectionLabel(stringResource(Res.string.settings_section_progress)) }
         item {
-            ToggleRow("Dots", config.showDots) { onChange(config.copy(showDots = it)) }
+            ToggleRow(stringResource(Res.string.settings_dots), config.showDots) { onChange(config.copy(showDots = it)) }
         }
         // a clock and a tally are the two things a meditation is better off not counting for
         // you, so they are here for whoever wants them rather than in front of everyone
         if (advanced) item {
-            ToggleRow("Time remaining", config.showTime) { onChange(config.copy(showTime = it)) }
+            ToggleRow(stringResource(Res.string.settings_time_remaining), config.showTime) { onChange(config.copy(showTime = it)) }
         }
         if (advanced) item {
-            ToggleRow("Breath count", config.showBreaths) { onChange(config.copy(showBreaths = it)) }
+            ToggleRow(stringResource(Res.string.settings_breath_count), config.showBreaths) { onChange(config.copy(showBreaths = it)) }
         }
         // Advanced: moving a log between phones is a thing you go looking for, and Import is
         // the one control here that can overwrite what you already have. Neither belongs in
         // front of someone who opened Settings to lengthen their exhale.
-        if (advanced) item { SectionLabel("Backup") }
+        if (advanced) item { SectionLabel(stringResource(Res.string.settings_section_backup)) }
         if (advanced) item {
             Text(
-                "Your practice log, presets, goals and reminders in one file. The only way to " +
-                    "carry them to another phone, and yours to keep.",
+                stringResource(Res.string.backup_blurb),
                 style = MaterialTheme.typography.bodySmall,
             )
         }
         if (advanced) item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { exportBackup() }) { Text("Export") }
+                Button(onClick = { exportBackup() }) { Text(stringResource(Res.string.backup_export)) }
                 // application/json alone hides backups on the phones whose file picker types
                 // them octet-stream, which is most of them once a file has been off the device
-                TextButton(onClick = { importBackup() }) { Text("Import") }
+                TextButton(onClick = { importBackup() }) { Text(stringResource(Res.string.backup_import)) }
             }
         }
         // last, and only under Advanced: it is here to be quoted in a bug report, not read
-        if (advanced) item { SectionLabel("This build") }
+        if (advanced) item { SectionLabel(stringResource(Res.string.settings_section_build)) }
         if (advanced) item {
             Text(
                 // the commit is the part that actually answers "which build is this": a version
                 // says what was intended, a sha says what the binary was made of
-                "OpenBreath ${platform.version} · $BUILD_SHA",
+                stringResource(Res.string.settings_build, platform.version, BUILD_SHA),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -449,13 +456,11 @@ fun SettingsScreen(
     pendingImport?.let { backup ->
         AlertDialog(
             onDismissRequest = { pendingImport = null },
-            title = { Text("Import this backup?") },
+            title = { Text(stringResource(Res.string.backup_import_title)) },
             text = {
-                Text(
-                    "It holds ${backup.summary}.\n\nSittings are added to the ones already " +
-                        "here — none are lost, whichever phone they were breathed on. Presets, " +
-                        "goals and reminders are replaced by the ones in the file."
-                )
+                // the same sentence the export message uses, so the two cannot drift apart
+                val what by produceState("", backup) { value = backup.summary() }
+                Text(stringResource(Res.string.backup_import_body, what))
             },
             confirmButton = {
                 Button(onClick = {
@@ -463,21 +468,25 @@ fun SettingsScreen(
                     scope.launch {
                         backupMessage = runCatching {
                             store.importBackup(backup)
-                            "Imported."
-                        }.getOrElse { "Could not read that backup. Nothing has changed." }
+                            getString(Res.string.backup_imported)
+                        }.getOrElse { getString(Res.string.backup_import_failed) }
                     }
-                }) { Text("Import") }
+                }) { Text(stringResource(Res.string.backup_import)) }
             },
-            dismissButton = { TextButton(onClick = { pendingImport = null }) { Text("Cancel") } },
+            dismissButton = {
+                TextButton(onClick = { pendingImport = null }) { Text(stringResource(Res.string.action_cancel)) }
+            },
         )
     }
 
     backupMessage?.let { message ->
         AlertDialog(
             onDismissRequest = { backupMessage = null },
-            title = { Text("Backup") },
+            title = { Text(stringResource(Res.string.backup_title)) },
             text = { Text(message) },
-            confirmButton = { TextButton(onClick = { backupMessage = null }) { Text("OK") } },
+            confirmButton = {
+                TextButton(onClick = { backupMessage = null }) { Text(stringResource(Res.string.action_ok)) }
+            },
         )
     }
 
@@ -485,7 +494,7 @@ fun SettingsScreen(
         var draft by remember { mutableStateOf(preset.name) }
         AlertDialog(
             onDismissRequest = { renaming = false },
-            title = { Text("Preset name") },
+            title = { Text(stringResource(Res.string.settings_preset_name)) },
             text = {
                 OutlinedTextField(value = draft, onValueChange = { draft = it }, singleLine = true)
             },
@@ -494,9 +503,11 @@ fun SettingsScreen(
                     val name = draft.trim().ifEmpty { preset.name }
                     editPreset { it.copy(name = name) }
                     renaming = false
-                }) { Text("Save") }
+                }) { Text(stringResource(Res.string.action_save)) }
             },
-            dismissButton = { TextButton(onClick = { renaming = false }) { Text("Cancel") } },
+            dismissButton = {
+                TextButton(onClick = { renaming = false }) { Text(stringResource(Res.string.action_cancel)) }
+            },
         )
     }
 }
@@ -525,7 +536,7 @@ private fun SoundPicker(
                 FilterChip(
                     selected = sound?.mode == mode,
                     onClick = { onEdit { it.copy(mode = mode) } },
-                    label = { Text(mode.label) },
+                    label = { Text(stringResource(mode.label)) },
                 )
             }
         }
@@ -535,7 +546,7 @@ private fun SoundPicker(
                     FilterChip(
                         selected = sound.voice == voice,
                         onClick = { onEdit { it.copy(voice = voice) } },
-                        label = { Text(voice.label) },
+                        label = { Text(stringResource(voice.label)) },
                     )
                 }
             }
@@ -544,18 +555,25 @@ private fun SoundPicker(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (files.canPickAudio) {
                     TextButton(onClick = onPick) {
-                        Text(if (sound.markerUri == null) "Choose mp3" else "Change")
+                        Text(
+                            stringResource(
+                                if (sound.markerUri == null) Res.string.settings_choose_mp3
+                                else Res.string.action_change
+                            )
+                        )
                     }
                 }
                 Text(
                     sound.markerUri?.let { files.audioName(it) }
-                        ?: "built-in ${sound.tone.label.lowercase()}",
+                        ?: stringResource(Res.string.settings_built_in, stringResource(sound.tone.label).lowercase()),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f),
                 )
                 if (sound.markerUri != null) {
-                    TextButton(onClick = { onEdit { it.copy(markerUri = null) } }) { Text("Clear") }
+                    TextButton(onClick = { onEdit { it.copy(markerUri = null) } }) {
+                        Text(stringResource(Res.string.action_clear))
+                    }
                 }
             }
             // only meaningful while no mp3 of their own is standing in for it
@@ -565,7 +583,7 @@ private fun SoundPicker(
                         FilterChip(
                             selected = sound.tone == tone,
                             onClick = { onEdit { it.copy(tone = tone) } },
-                            label = { Text(tone.label) },
+                            label = { Text(stringResource(tone.label)) },
                         )
                     }
                 }
@@ -611,7 +629,7 @@ private fun CueColour(argb: Int, onChange: (Int) -> Unit) {
         Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(28.dp).clip(CircleShape).background(Color(picked)))
             Text(
-                "Cue and dots",
+                stringResource(Res.string.settings_cue_and_dots),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f).padding(start = 12.dp),
             )
@@ -619,11 +637,14 @@ private fun CueColour(argb: Int, onChange: (Int) -> Unit) {
                 val reset = argbToHsv(DEFAULT_CUE_COLOR)
                 h = reset[0]; s = reset[1]; v = reset[2]
                 onChange(DEFAULT_CUE_COLOR)
-            }) { Text("Reset") }
+            }) { Text(stringResource(Res.string.action_reset)) }
         }
-        LabelledSlider("Hue", h, 0f..360f, 0, "${h.roundToInt()}°", commit) { h = it }
-        LabelledSlider("Saturation", s, 0f..1f, 0, "${(s * 100).roundToInt()}%", commit) { s = it }
-        LabelledSlider("Brightness", v, 0f..1f, 0, "${(v * 100).roundToInt()}%", commit) { v = it }
+        val hue = stringResource(Res.string.settings_hue)
+        val saturation = stringResource(Res.string.settings_saturation)
+        val brightness = stringResource(Res.string.settings_brightness)
+        LabelledSlider(hue, h, 0f..360f, 0, "${h.roundToInt()}°", commit) { h = it }
+        LabelledSlider(saturation, s, 0f..1f, 0, "${(s * 100).roundToInt()}%", commit) { s = it }
+        LabelledSlider(brightness, v, 0f..1f, 0, "${(v * 100).roundToInt()}%", commit) { v = it }
     }
 }
 

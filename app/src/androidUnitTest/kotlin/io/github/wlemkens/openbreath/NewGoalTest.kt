@@ -17,7 +17,7 @@ class NewGoalTest {
         assertEquals(1, goal.target)
         // and it survives the coercion every goal is put through on the way to being stored
         assertEquals(goal, goal.sane())
-        assertEquals("1 sitting a day", goal.description)
+        // what it reads as is StringsTest's, in all three languages
     }
 
     @Test

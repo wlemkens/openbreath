@@ -6,7 +6,11 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.plus
 import kotlin.test.Test
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.week_hint_next
+import io.github.wlemkens.openbreath.media.week_hint_this
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -113,15 +117,16 @@ class RecurrenceTest {
     @Test
     fun `the near one of the two is named since which it is depends on when you look`() {
         val wednesday = wednesdayNoon.date // odd week 33
-        assertEquals(" (this week)", Repeat.ODD_WEEKS.weekHint(wednesday))
-        assertEquals(" (next week)", Repeat.EVEN_WEEKS.weekHint(wednesday))
+        // which string, not which words: what they say in three languages is StringsTest's
+        assertEquals(Res.string.week_hint_this, Repeat.ODD_WEEKS.weekHint(wednesday))
+        assertEquals(Res.string.week_hint_next, Repeat.EVEN_WEEKS.weekHint(wednesday))
         // a week on, the labels have swapped over
         val next = wednesday.plus(1, DateTimeUnit.WEEK)
-        assertEquals(" (next week)", Repeat.ODD_WEEKS.weekHint(next))
-        assertEquals(" (this week)", Repeat.EVEN_WEEKS.weekHint(next))
+        assertEquals(Res.string.week_hint_next, Repeat.ODD_WEEKS.weekHint(next))
+        assertEquals(Res.string.week_hint_this, Repeat.EVEN_WEEKS.weekHint(next))
         // and the other two are not a fortnight at all, so they say nothing
-        assertEquals("", Repeat.DAILY.weekHint(wednesday))
-        assertEquals("", Repeat.WEEKLY.weekHint(wednesday))
+        assertNull(Repeat.DAILY.weekHint(wednesday))
+        assertNull(Repeat.WEEKLY.weekHint(wednesday))
     }
 
     // --- what the move added, rather than carried over -----------------------------------------

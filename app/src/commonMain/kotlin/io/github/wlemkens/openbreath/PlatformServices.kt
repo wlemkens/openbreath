@@ -330,13 +330,16 @@ interface ReminderScheduler {
     val canRingUntilDismissed: Boolean
 
     /**
-     * Something true and worth saying about how late a reminder may be, or null when there is
-     * nothing to say. Android answers this when it has not been given the exact-alarm permission;
-     * [fixLateness] then opens the settings page that grants it.
+     * Whether a reminder may arrive a few minutes late, which the screen then says out loud.
+     * Android answers true when it has not been given the exact-alarm permission; [fixLateness]
+     * then opens the settings page that grants it.
+     *
+     * A flag rather than the sentence it used to be: the words are the screen's business now that
+     * the screen speaks three languages, and this is a fact about the platform.
      */
-    val lateness: String?
+    val late: Boolean
 
-    /** Opens whatever puts [lateness] right. Does nothing where there was nothing to say. */
+    /** Opens whatever puts [late] right. Does nothing where there was nothing to put right. */
     fun fixLateness()
 
     /** Whether notifications are allowed right now. Asked again after [request]. */
@@ -345,8 +348,14 @@ interface ReminderScheduler {
     /** Asks for permission, and answers what was said. Asking twice is not asking twice. */
     suspend fun request(): Boolean
 
-    /** Re-arms every reminder. Safe to call repeatedly — one for the same id replaces itself. */
-    fun apply(reminders: List<Reminder>)
+    /**
+     * Re-arms every reminder. Safe to call repeatedly — one for the same id replaces itself.
+     *
+     * Suspends because a scheduler that hands the notification to the system up front, as iOS
+     * does, has to read the words it will carry, and a translated string is read rather than
+     * written down.
+     */
+    suspend fun apply(reminders: List<Reminder>)
 
     fun cancel(id: Int)
 }
@@ -355,11 +364,11 @@ interface ReminderScheduler {
 object NoReminders : ReminderScheduler {
     override val supported = false
     override val canRingUntilDismissed = false
-    override val lateness: String? = null
+    override val late = false
     override fun fixLateness() = Unit
     override suspend fun permitted() = false
     override suspend fun request() = false
-    override fun apply(reminders: List<Reminder>) = Unit
+    override suspend fun apply(reminders: List<Reminder>) = Unit
     override fun cancel(id: Int) = Unit
 }
 

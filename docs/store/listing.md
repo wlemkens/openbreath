@@ -14,6 +14,15 @@ a paced breath, and no store copy says it treats anything.
 Neither listing mentions the support link. The app gives nothing in return for a payment and the
 listing has no reason to raise the subject.
 
+**`listing.nl.md` and `listing.fr.md` are this file in Dutch and French**, since the app is. Every
+rule above applies to each of them — the platform split, no health claim, no support link, and the
+four claims of the short description, which a translation is four claims of. Adding or dropping a
+feature means all three change together, and a listing that names something one language's app
+does not have is the same mistake as naming something one platform does not have.
+
+One thing the translations do that this file cannot: the App Store subtitle is **one line** in
+both, which is the fix noted below and never applied here.
+
 ## Google Play
 
 **App name** (30 max)

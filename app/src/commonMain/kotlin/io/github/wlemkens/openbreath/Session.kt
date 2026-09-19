@@ -4,11 +4,11 @@ import kotlin.math.PI
 import kotlin.math.ceil
 import kotlin.math.cos
 
-enum class Phase(val label: String) {
-    INHALE("Breathe in"),
-    HOLD_IN("Hold"),
-    EXHALE("Breathe out"),
-    HOLD_OUT("Hold"),
+enum class Phase {
+    INHALE,
+    HOLD_IN,
+    EXHALE,
+    HOLD_OUT,
 }
 
 /** Phase lengths in ms. A phase of 0 is skipped entirely. */

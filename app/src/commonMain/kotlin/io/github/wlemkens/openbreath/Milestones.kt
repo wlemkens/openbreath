@@ -32,6 +32,9 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.random.Random
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.*
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Watches the run of days on which everything was done, and marks the lengths worth marking.
@@ -65,7 +68,9 @@ fun MilestoneWatch(config: Config, goals: List<Goal>) {
 private fun MilestoneDialog(days: Int, glow: Color, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(milestoneLabel(days), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) },
+        title = {
+            Text(milestoneLabel(days), modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+        },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Fireworks(glow, Modifier.fillMaxWidth().height(180.dp))
@@ -78,7 +83,9 @@ private fun MilestoneDialog(days: Int, glow: Color, onDismiss: () -> Unit) {
         },
         // not "Resume": this can land over a paused session, and a button that reads like a
         // session control on a screen that has one is a button pressed by mistake
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Onwards") } },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(Res.string.milestone_onwards)) }
+        },
     )
 }
 

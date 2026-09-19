@@ -3,6 +3,7 @@
 Everything a listing needs that lives in the repository rather than in a console.
 
     listing.md                        copy for both stores, with the character counts checked
+    listing.nl.md, listing.fr.md      the same two listings in Dutch and French
     review-notes.md                   the App Review Information notes Apple asked for by name
     video-script.md                   the shot list for the demo recording that letter wanted
     play-icon-512.png                 Play's app icon, from the same 1024 IconGen writes for iOS

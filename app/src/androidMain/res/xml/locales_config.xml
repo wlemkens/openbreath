@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The languages the app is written in. Android 13+ reads this to offer OpenBreath its own entry
+  under Settings ▸ Apps ▸ Language, which is the whole of the in-app language switch: the app has
+  none of its own, and needs none.
+
+  It has to agree with composeResources/values-* — a language listed here with no strings behind
+  it is an empty choice, and one translated but not listed simply never gets offered.
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="nl" />
+    <locale android:name="fr" />
+</locale-config>

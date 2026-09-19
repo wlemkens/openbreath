@@ -28,6 +28,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlin.time.Clock
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.*
+import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 
 @Composable
@@ -50,16 +53,19 @@ fun GoalsScreen(
     ) {
         item {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Goals", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
-                TextButton(onClick = onBack) { Text("Done") }
+                Text(
+                    stringResource(Res.string.goals_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onBack) { Text(stringResource(Res.string.action_done)) }
             }
         }
 
         if (goals.isEmpty()) {
             item {
                 Text(
-                    "None yet. A goal is an amount to reach in a day or a week — one sitting a " +
-                        "day, a hundred breaths, twenty minutes. Keep as many as you like.",
+                    stringResource(Res.string.goals_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 12.dp, bottom = 8.dp),
@@ -79,7 +85,7 @@ fun GoalsScreen(
             Button(
                 onClick = { editing = newGoal(goals) },
                 modifier = Modifier.padding(top = 12.dp),
-            ) { Text("Add a goal") }
+            ) { Text(stringResource(Res.string.goals_add)) }
         }
     }
 
@@ -145,7 +151,7 @@ private fun GoalDialog(
                         FilterChip(
                             selected = draft.metric == metric,
                             onClick = { edit { it.copy(metric = metric) } },
-                            label = { Text(metric.label.replaceFirstChar(Char::uppercase)) },
+                            label = { Text(metric.chipLabel()) },
                         )
                     }
                 }
@@ -154,12 +160,12 @@ private fun GoalDialog(
                         FilterChip(
                             selected = draft.period == period,
                             onClick = { edit { it.copy(period = period) } },
-                            label = { Text(period.label) },
+                            label = { Text(stringResource(period.label)) },
                         )
                     }
                 }
                 LabelledSlider(
-                    label = "Target",
+                    label = stringResource(Res.string.goals_target),
                     value = draft.target.toFloat() / draft.metric.step,
                     range = (draft.metric.min.toFloat() / draft.metric.step)..
                         (draft.metric.max.toFloat() / draft.metric.step),
@@ -169,7 +175,11 @@ private fun GoalDialog(
                 )
             }
         },
-        confirmButton = { TextButton(onClick = { onSave(draft) }) { Text("Save") } },
-        dismissButton = { TextButton(onClick = onDelete) { Text("Delete") } },
+        confirmButton = {
+            TextButton(onClick = { onSave(draft) }) { Text(stringResource(Res.string.action_save)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDelete) { Text(stringResource(Res.string.action_delete)) }
+        },
     )
 }

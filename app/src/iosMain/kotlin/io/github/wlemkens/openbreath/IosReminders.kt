@@ -1,5 +1,9 @@
 package io.github.wlemkens.openbreath
 
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.notification_body
+import org.jetbrains.compose.resources.getString
+
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.datetime.TimeZone
@@ -60,7 +64,7 @@ class IosReminders : ReminderScheduler {
     override val canRingUntilDismissed = false
 
     /** Nothing to say: iOS delivers to the minute and has no permission that changes it. */
-    override val lateness: String? = null
+    override val late = false
 
     override fun fixLateness() = Unit
 
@@ -94,8 +98,11 @@ class IosReminders : ReminderScheduler {
      * a notification is identified by a string we chose, and yesterday's string is not recomputed
      * from today's reminder.
      */
-    override fun apply(reminders: List<Reminder>) {
+    override suspend fun apply(reminders: List<Reminder>) {
         center.removeAllPendingNotificationRequests()
+        // read once for the lot: the body is the same on every occurrence of every reminder, and
+        // it is a resource lookup rather than a constant now that the app speaks three languages
+        val body = getString(Res.string.notification_body)
         val zone = TimeZone.currentSystemDefault()
         var now = Clock.System.now().toLocalDateTime(zone)
         for (reminder in reminders) {
@@ -103,7 +110,7 @@ class IosReminders : ReminderScheduler {
             var at = now
             repeat(OCCURRENCES) {
                 at = nextFireAt(reminder, at)
-                schedule(reminder, at.hour, at.minute, at.date.year, at.date.monthNumber, at.date.dayOfMonth)
+                schedule(reminder, body, at.hour, at.minute, at.date.year, at.date.monthNumber, at.date.dayOfMonth)
             }
         }
     }
@@ -119,10 +126,19 @@ class IosReminders : ReminderScheduler {
         )
     }
 
-    private fun schedule(reminder: Reminder, hour: Int, minute: Int, year: Int, month: Int, day: Int) {
+    private fun schedule(
+        reminder: Reminder,
+        body: String,
+        hour: Int,
+        minute: Int,
+        year: Int,
+        month: Int,
+        day: Int,
+    ) {
         val content = UNMutableNotificationContent().apply {
+            // the name is the user's own text; the body is ours, and translated
             setTitle(reminder.name)
-            setBody("Time to breathe")
+            setBody(body)
             // the default tone, once. See canRingUntilDismissed for why there is no other option
             setSound(UNNotificationSound.defaultSound)
         }

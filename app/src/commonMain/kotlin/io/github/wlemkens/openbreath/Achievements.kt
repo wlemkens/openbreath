@@ -19,6 +19,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlin.time.Clock
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.*
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * What the log adds up to. Every figure here is read back out of the sittings, so a goal set
@@ -37,18 +40,18 @@ fun AchievementsScreen(goals: List<Goal>, onBack: () -> Unit, modifier: Modifier
         item {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "Achievements",
+                    stringResource(Res.string.achievements_title),
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.weight(1f),
                 )
-                TextButton(onClick = onBack) { Text("Done") }
+                TextButton(onClick = onBack) { Text(stringResource(Res.string.action_done)) }
             }
         }
 
         if (history.isEmpty()) {
             item {
                 Text(
-                    "Nothing to show yet. Sit for a while and this fills itself in.",
+                    stringResource(Res.string.achievements_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 12.dp),
@@ -60,15 +63,16 @@ fun AchievementsScreen(goals: List<Goal>, onBack: () -> Unit, modifier: Modifier
         // your own goals first: they are the ones you chose, and the tallies below are the same
         // for everybody
         if (goals.isNotEmpty()) {
-            item { SectionLabel("Goals") }
+            item { SectionLabel(stringResource(Res.string.achievements_section_goals)) }
             items(goals, key = { it.id }) { goal ->
                 val run = history.streak(goal, now)
                 val met = goal.reached(history.towards(goal, periodStartMs(goal.period, now)))
                 Column(Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                    Text(goal.description, style = MaterialTheme.typography.bodyLarge)
+                    Text(goal.description(), style = MaterialTheme.typography.bodyLarge)
                     Text(
                         // a run of nothing is not "0 days in a row", it is a run not started
-                        if (run == 0) "Not yet" else goal.period.run(run) + if (met) " ✓" else "",
+                        if (run == 0) stringResource(Res.string.achievements_not_yet)
+                        else goal.period.run(run) + if (met) " ✓" else "",
                         style = MaterialTheme.typography.bodyMedium,
                         color =
                             if (run == 0) MaterialTheme.colorScheme.onSurfaceVariant
@@ -78,20 +82,20 @@ fun AchievementsScreen(goals: List<Goal>, onBack: () -> Unit, modifier: Modifier
             }
         }
 
-        item { SectionLabel("Practice") }
+        item { SectionLabel(stringResource(Res.string.achievements_section_practice)) }
         item {
             val days = history.streak(EVERY_DAY, now)
-            Stat("Days in a row", if (days == 0) "—" else days.toString())
+            Stat(stringResource(Res.string.achievements_days_in_row), if (days == 0) "—" else days.toString())
         }
-        item { Stat("Sittings", history.size.toString()) }
-        item { Stat("Breaths", history.tally(GoalMetric.BREATHS).toString()) }
-        item { Stat("Minutes", history.tally(GoalMetric.MINUTES).toString()) }
+        item { Stat(stringResource(Res.string.achievements_sittings), history.size.toString()) }
+        item { Stat(stringResource(Res.string.achievements_breaths), history.tally(GoalMetric.BREATHS).toString()) }
+        item { Stat(stringResource(Res.string.achievements_minutes), history.tally(GoalMetric.MINUTES).toString()) }
         item {
             val today = history.towards(
                 EVERY_DAY.copy(metric = GoalMetric.MINUTES),
                 periodStartMs(GoalPeriod.DAY, now),
             )
-            Stat("Minutes today", today.toString())
+            Stat(stringResource(Res.string.achievements_minutes_today), today.toString())
         }
     }
 }

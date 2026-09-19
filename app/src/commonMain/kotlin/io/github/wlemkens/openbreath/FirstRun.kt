@@ -14,7 +14,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.*
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * What the very first launch offers: a goal, and a reminder for the evenings it has not been
@@ -62,7 +65,7 @@ fun FirstRunSetup() {
         // tapping outside is an answer too, and applies whatever is switched on: a dialog that
         // comes back tomorrow because it was dismissed the wrong way is nagging
         onDismissRequest = ::finish,
-        title = { Text("Welcome") },
+        title = { Text(stringResource(Res.string.welcome_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 // the sentence follows the switches. Promising "a reminder for the evenings it has
@@ -70,28 +73,24 @@ fun FirstRunSetup() {
                 // it does not have, in the one place a reader has no way to check — and it read
                 // that way on iOS from the day the question was written
                 Text(
-                    if (onReminder != null) {
-                        "A breathing meditation every day is what we would recommend. We can set " +
-                            "that up as a goal, and a reminder for the evenings it has not " +
-                            "happened yet. Neither is needed, and both can be changed or dropped " +
-                            "later."
-                    } else {
-                        "A breathing meditation every day is what we would recommend. We can set " +
-                            "that up as a goal. It is not needed, and it can be changed or " +
-                            "dropped later."
-                    },
+                    stringResource(
+                        if (onReminder != null) Res.string.welcome_body
+                        else Res.string.welcome_body_goal_only
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                ToggleRow("A goal of one sitting a day", wantGoal) { wantGoal = it }
+                ToggleRow(stringResource(Res.string.welcome_goal), wantGoal) { wantGoal = it }
                 if (onReminder != null) {
                     val at = platform.formats.clockTime(SETUP_REMINDER_HOUR, 0)
-                    ToggleRow("A reminder at $at when it is still undone", wantReminder) {
+                    ToggleRow(stringResource(Res.string.welcome_reminder, at), wantReminder) {
                         wantReminder = it
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = ::finish) { Text("Continue") } },
+        confirmButton = {
+            TextButton(onClick = ::finish) { Text(stringResource(Res.string.action_continue)) }
+        },
     )
 }
 

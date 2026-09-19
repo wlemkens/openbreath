@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Typographic apostrophes throughout: ’ needs no escaping in XML, and it is the right
+     character in French anyway. -->
+<resources>
+
+    <string name="action_done">Terminé</string>
+    <string name="action_save">Enregistrer</string>
+    <string name="action_delete">Supprimer</string>
+    <string name="action_cancel">Annuler</string>
+    <string name="action_ok">OK</string>
+    <string name="action_continue">Continuer</string>
+    <string name="action_grant">Autoriser</string>
+    <string name="action_fix">Corriger</string>
+    <string name="action_reset">Réinitialiser</string>
+    <string name="action_change">Changer</string>
+    <string name="action_clear">Effacer</string>
+
+    <string name="phase_inhale">Inspirez</string>
+    <string name="phase_hold">Retenez</string>
+    <string name="phase_exhale">Expirez</string>
+    <string name="phase_hold_in">Rétention haute</string>
+    <string name="phase_hold_out">Rétention basse</string>
+
+    <string name="menu_settings">Réglages</string>
+    <string name="menu_goals">Objectifs</string>
+    <string name="menu_reminders">Rappels</string>
+    <string name="menu_achievements">Accomplissements</string>
+    <string name="menu_log">Journal</string>
+    <string name="menu_feedback">Commentaires</string>
+    <string name="menu_support">Soutenir l’app</string>
+    <string name="menu_rate">Noter</string>
+    <string name="session_done">Terminé</string>
+    <string name="session_get_ready">Préparez-vous</string>
+    <string name="session_breath_of">respiration %1$d sur %2$d</string>
+    <string name="session_again">Encore</string>
+    <string name="session_pause">Pause</string>
+    <string name="session_resume">Reprendre</string>
+    <string name="session_start">Démarrer</string>
+    <string name="session_reset">Réinitialiser</string>
+
+    <string name="settings_title">Réglages</string>
+    <string name="settings_standard">Standard</string>
+    <string name="settings_advanced">Avancé</string>
+    <string name="settings_section_preset">Préréglage</string>
+    <string name="settings_rename">Renommer</string>
+    <string name="settings_duplicate">Dupliquer</string>
+    <string name="settings_preset_copy">%1$s copie</string>
+    <string name="settings_preset_name">Nom du préréglage</string>
+    <string name="settings_section_timing">Durées</string>
+    <string name="settings_one_breath">Une respiration : %1$s s  •  %2$s respirations par minute</string>
+    <string name="settings_lead_in">Préparez-vous</string>
+    <string name="settings_section_length">Durée de la séance</string>
+    <string name="settings_by_time">Par durée</string>
+    <string name="settings_by_breaths">Par respirations</string>
+    <string name="settings_breaths">Respirations</string>
+    <string name="settings_minutes">Minutes</string>
+    <string name="settings_minutes_readout">%1$d min</string>
+    <string name="settings_rounds_up">Arrondi à des respirations entières : %1$s, %2$d respirations</string>
+    <string name="settings_section_sound">Son</string>
+    <string name="settings_section_sound_per_phase">Son par phase</string>
+    <string name="settings_choose_mp3">Choisir un mp3</string>
+    <string name="settings_built_in">son intégré : %1$s</string>
+    <string name="settings_section_during">Pendant une séance</string>
+    <string name="settings_vibrate">Vibrer à chaque changement de phase</string>
+    <string name="settings_flashlight">La lampe suit la respiration</string>
+    <string name="settings_end_bowl">Bol chantant à la fin de la séance</string>
+    <string name="settings_silence">Couper les notifications</string>
+    <string name="settings_needs_dnd">Nécessite l’accès au mode Ne pas déranger</string>
+    <string name="settings_section_cue">Guide de respiration</string>
+    <string name="settings_points">Points</string>
+    <string name="settings_point_size">Taille des points</string>
+    <string name="settings_cue_and_dots">Guide et points</string>
+    <string name="settings_hue">Teinte</string>
+    <string name="settings_saturation">Saturation</string>
+    <string name="settings_brightness">Luminosité</string>
+    <string name="settings_vivid">Éclatant</string>
+    <string name="settings_vivid_note">La même teinte sans le gris, au-delà de ce que les curseurs atteignent.</string>
+    <string name="settings_section_progress">Progression à l’écran</string>
+    <string name="settings_dots">Points</string>
+    <string name="settings_time_remaining">Temps restant</string>
+    <string name="settings_breath_count">Nombre de respirations</string>
+    <string name="settings_section_build">Cette version</string>
+    <string name="settings_build">OpenBreath %1$s · %2$s</string>
+
+    <string name="slider_down">diminuer %1$s</string>
+    <string name="slider_up">augmenter %1$s</string>
+
+    <string name="sound_ambient">Ambiance</string>
+    <string name="sound_marker">Repère</string>
+    <string name="sound_silent">Silence</string>
+    <string name="voice_waves">Vagues</string>
+    <string name="voice_soundwave">Onde sonore</string>
+    <string name="tone_bell">Cloche</string>
+    <string name="tone_gong">Gong</string>
+    <string name="tone_tick">Tic</string>
+
+    <string name="cue_cloud">Nuage</string>
+    <string name="cue_bubbles">Bulles</string>
+    <string name="cue_stars">Étoiles</string>
+    <string name="cue_glow">Halo</string>
+
+    <string name="settings_section_backup">Sauvegarde</string>
+    <string name="backup_blurb">Votre journal de pratique, vos préréglages, vos objectifs et vos rappels dans un seul fichier. Le seul moyen de les emporter sur un autre appareil, et il est à vous.</string>
+    <string name="backup_export">Exporter</string>
+    <string name="backup_import">Importer</string>
+    <string name="backup_title">Sauvegarde</string>
+    <string name="backup_saved">Enregistré : %1$s.</string>
+    <string name="backup_write_failed">Ce fichier n’a pas pu être écrit. Rien n’a changé.</string>
+    <string name="backup_not_ours">Ce n’est pas une sauvegarde OpenBreath.</string>
+    <string name="backup_import_title">Importer cette sauvegarde ?</string>
+    <string name="backup_import_body">Elle contient %1$s.\n\nLes séances s’ajoutent à celles déjà présentes — aucune n’est perdue, quel que soit l’appareil sur lequel elles ont été respirées. Les préréglages, les objectifs et les rappels sont remplacés par ceux du fichier.</string>
+    <string name="backup_imported">Importé.</string>
+    <string name="backup_import_failed">Cette sauvegarde n’a pas pu être lue. Rien n’a changé.</string>
+    <string name="backup_summary">%1$s, %2$s, %3$s et %4$s</string>
+    <string name="dialog_save_backup">Enregistrer la sauvegarde</string>
+    <string name="dialog_open_backup">Ouvrir une sauvegarde</string>
+    <string name="dialog_choose_sound">Choisir un son</string>
+
+    <string name="goals_title">Objectifs</string>
+    <string name="goals_empty">Aucun pour l’instant. Un objectif est une quantité à atteindre dans une journée ou une semaine — une séance par jour, cent respirations, vingt minutes. Gardez-en autant que vous voulez.</string>
+    <string name="goals_add">Ajouter un objectif</string>
+    <string name="goals_target">Cible</string>
+    <string name="goal_each_day">Chaque jour</string>
+    <string name="goal_each_week">Chaque semaine</string>
+    <string name="goal_today">Aujourd’hui</string>
+    <string name="goal_this_week">Cette semaine</string>
+    <string name="goal_headline">%1$s : %2$d %4$s sur %3$d</string>
+    <string name="goal_description">%1$d %2$s %3$s</string>
+    <string name="goal_per_day">par jour</string>
+    <string name="goal_per_week">par semaine</string>
+
+    <string name="achievements_title">Accomplissements</string>
+    <string name="achievements_empty">Rien à montrer pour l’instant. Pratiquez un peu et cela se remplira tout seul.</string>
+    <string name="achievements_section_goals">Objectifs</string>
+    <string name="achievements_section_practice">Pratique</string>
+    <string name="achievements_not_yet">Pas encore</string>
+    <string name="achievements_days_in_row">Jours d’affilée</string>
+    <string name="achievements_sittings">Séances</string>
+    <string name="achievements_breaths">Respirations</string>
+    <string name="achievements_minutes">Minutes</string>
+    <string name="achievements_minutes_today">Minutes aujourd’hui</string>
+
+    <string name="log_title">Journal</string>
+    <string name="log_empty">Rien pour l’instant. Une séance apparaît ici dès qu’elle a duré %1$d secondes, terminée ou non.</string>
+    <string name="log_total">%1$d %2$s, %3$s en tout</string>
+    <string name="log_hours_minutes">%1$d h %2$d min</string>
+    <string name="log_minutes">%1$d min</string>
+    <string name="log_entry">%1$s · %2$d %3$s</string>
+
+    <string name="reminders_title">Rappels</string>
+    <string name="reminders_empty">Aucun pour l’instant. Un rappel est une notification à l’heure que vous choisissez, rien de plus.</string>
+    <string name="reminders_add">Ajouter un rappel</string>
+    <string name="reminder_untitled">Rappel</string>
+    <string name="reminder_name">Nom</string>
+    <string name="reminder_tag_alarm"> · alarme</string>
+    <string name="reminder_tag_only_behind"> · seulement en retard</string>
+    <string name="reminder_summary">%1$s%2$s · %3$s</string>
+    <string name="repeat_daily">Quotidien</string>
+    <string name="repeat_weekly">Hebdomadaire</string>
+    <string name="repeat_odd_weeks">Chaque semaine impaire</string>
+    <string name="repeat_even_weeks">Chaque semaine paire</string>
+    <string name="week_hint_this"> (cette semaine)</string>
+    <string name="week_hint_next"> (semaine prochaine)</string>
+    <string name="reminder_ring">Sonner jusqu’à ce que vous l’arrêtiez</string>
+    <string name="reminder_ring_on">La sonnerie d’alarme, encore et encore, audible même sonnerie coupée. Fermez la notification pour l’arrêter.</string>
+    <string name="reminder_ring_off">Une notification, au volume auquel tout le reste arrive.</string>
+    <string name="reminder_only_behind">Seulement en retard sur un objectif</string>
+    <string name="reminder_only_behind_on">Reste silencieux dès que tous les objectifs sont atteints. Sans objectif, il n’y a pas d’avance possible, donc il arrive normalement.</string>
+    <string name="reminder_only_behind_off">Arrive que vous ayez déjà pratiqué ou non.</string>
+    <string name="reminder_lateness">Les rappels peuvent arriver avec quelques minutes de retard tant que les alarmes exactes ne sont pas autorisées.</string>
+    <string name="notification_body">Le moment de respirer</string>
+    <string name="notification_body_alarm">Le moment de respirer — touchez pour arrêter</string>
+    <string name="notification_channel_reminders">Rappels</string>
+    <string name="notification_channel_alarms">Alarmes</string>
+
+    <string name="welcome_title">Bienvenue</string>
+    <string name="welcome_body">Une méditation respiratoire chaque jour, voilà ce que nous conseillerions. Nous pouvons en faire un objectif, et un rappel pour les soirs où cela n’a pas encore eu lieu. Ni l’un ni l’autre n’est nécessaire, et les deux se changent ou s’abandonnent plus tard.</string>
+    <string name="welcome_body_goal_only">Une méditation respiratoire chaque jour, voilà ce que nous conseillerions. Nous pouvons en faire un objectif. Ce n’est pas nécessaire, et cela se change ou s’abandonne plus tard.</string>
+    <string name="welcome_goal">Un objectif d’une séance par jour</string>
+    <string name="welcome_reminder">Un rappel à %1$s si ce n’est toujours pas fait</string>
+
+    <string name="milestone_week">Une semaine</string>
+    <string name="milestone_month">Un mois</string>
+    <string name="milestone_half_year">Six mois</string>
+    <string name="milestone_year">Un an</string>
+    <string name="milestone_onwards">En avant</string>
+    <string name="milestone_3">Trois jours d’affilée, tout ce que vous vous étiez fixé accompli. C’est ainsi qu’une pratique commence.</string>
+    <string name="milestone_7">Une semaine, chaque objectif atteint. Cela commence à tenir.</string>
+    <string name="milestone_30">Un mois sans manquer ce que vous vous étiez demandé. Ce n’est plus le hasard.</string>
+    <string name="milestone_100">Cent jours. Peu de choses durent aussi longtemps. Celle-ci, oui.</string>
+    <string name="milestone_182">Six mois à tenir parole envers vous-même, une respiration à la fois.</string>
+    <string name="milestone_365">Un an. Chaque jour, tout ce que vous vous étiez fixé, accompli.</string>
+    <string name="milestone_500">Cinq cents jours. Il reste peu à dire.</string>
+    <string name="milestone_years">%1$d ans sans interruption.</string>
+
+    <string name="support_title">Soutenir l’app</string>
+    <string name="support_p1">OpenBreath est gratuite, et le reste — pas d’essai, pas de déblocage, pas d’abonnement.</string>
+    <string name="support_p2">Beaucoup d’applications comme celle-ci se font payer avant même d’être essayées, ou demandent un abonnement annuel. Pour quelque chose qui compte tranquillement votre respiration, cela semble beaucoup demander.</string>
+    <string name="support_p3">Il n’y a donc pas de prix ici. Si l’app vous a fait du bien et que le cœur vous en dit, offrez un café, ou plus. Sinon, c’est très bien ainsi — c’est la même app dans les deux cas.</string>
+    <string name="support_p4">Ce que vous envoyez va à Wim Lemkens, qui écrit l’app — à lui personnellement, pas à une organisation, et sans contrepartie. Cela ne vous achète rien ici et ne débloque rien, car il n’y a rien à débloquer.</string>
+    <string name="support_another">Un autre montant</string>
+    <string name="support_note">Ouvre PayPal dans votre navigateur, ou dans l’app PayPal si vous l’avez, en payant directement le développeur. Rien n’est prélevé ici, et l’app n’est pas informée si vous êtes allé au bout.</string>
+
+    <plurals name="sittings">
+        <item quantity="one">séance</item>
+        <item quantity="other">séances</item>
+    </plurals>
+    <plurals name="breaths">
+        <item quantity="one">respiration</item>
+        <item quantity="other">respirations</item>
+    </plurals>
+    <plurals name="minutes">
+        <item quantity="one">minute</item>
+        <item quantity="other">minutes</item>
+    </plurals>
+    <plurals name="presets">
+        <item quantity="one">préréglage</item>
+        <item quantity="other">préréglages</item>
+    </plurals>
+    <plurals name="goals">
+        <item quantity="one">objectif</item>
+        <item quantity="other">objectifs</item>
+    </plurals>
+    <plurals name="reminders">
+        <item quantity="one">rappel</item>
+        <item quantity="other">rappels</item>
+    </plurals>
+    <plurals name="breath_cycles">
+        <item quantity="one">cycle respiratoire</item>
+        <item quantity="other">cycles respiratoires</item>
+    </plurals>
+    <plurals name="streak_days">
+        <item quantity="one">%1$d jour d’affilée</item>
+        <item quantity="other">%1$d jours d’affilée</item>
+    </plurals>
+    <plurals name="streak_weeks">
+        <item quantity="one">%1$d semaine d’affilée</item>
+        <item quantity="other">%1$d semaines d’affilée</item>
+    </plurals>
+    <plurals name="milestone_days">
+        <item quantity="one">%1$d jour</item>
+        <item quantity="other">%1$d jours</item>
+    </plurals>
+    <plurals name="milestone_years_label">
+        <item quantity="one">%1$d an</item>
+        <item quantity="other">%1$d ans</item>
+    </plurals>
+</resources>

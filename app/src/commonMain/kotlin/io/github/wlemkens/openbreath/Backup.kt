@@ -51,17 +51,6 @@ fun backupFileName(): String =
 fun decodeBackup(text: String?): Backup? =
     text?.let { runCatching { json.decodeFromString<Backup>(it) }.getOrNull() }
 
-private fun count(n: Int, one: String) = "$n ${if (n == 1) one else "${one}s"}"
-
-/**
- * What is in it, for the dialog that asks whether to import. In commonMain because the
- * question is the same on any platform, and because "1 presets" is the kind of thing that
- * looks like nobody was paying attention.
- */
-val Backup.summary: String
-    get() = "${count(history.size, "sitting")}, ${count(config.presets.size, "preset")}, " +
-        "${count(goals.size, "goal")} and ${count(reminders.size, "reminder")}"
-
 /**
  * This backup applied on top of what is already here.
  *

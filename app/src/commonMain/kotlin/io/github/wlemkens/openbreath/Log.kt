@@ -21,6 +21,10 @@ import androidx.compose.ui.unit.dp
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.*
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 
 /** Every sitting worth the name, newest first, under the day it happened on. */
 @Composable
@@ -39,16 +43,19 @@ fun LogScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
     ) {
         item {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Log", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.weight(1f))
-                TextButton(onClick = onBack) { Text("Done") }
+                Text(
+                    stringResource(Res.string.log_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onBack) { Text(stringResource(Res.string.action_done)) }
             }
         }
 
         if (history.isEmpty()) {
             item {
                 Text(
-                    "Nothing yet. A sitting shows up here once it has run for " +
-                        "${LOGGED_MIN_MS / 1000} seconds, finished or not.",
+                    stringResource(Res.string.log_empty, (LOGGED_MIN_MS / 1000).toInt()),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 12.dp),
@@ -58,8 +65,12 @@ fun LogScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
             item {
                 val total = history.sumOf { it.durationMs }
                 Text(
-                    "${history.size} ${if (history.size == 1) "sitting" else "sittings"}, " +
-                        "${hoursMinutes(total)} in all",
+                    stringResource(
+                        Res.string.log_total,
+                        history.size,
+                        pluralStringResource(Res.plurals.sittings, history.size),
+                        hoursMinutes(total),
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -88,8 +99,12 @@ fun LogScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
                     // what was actually breathed
                     if (entry.pattern.isNotEmpty()) {
                         Text(
-                            "${entry.pattern} · ${entry.cycles} " +
-                                if (entry.cycles == 1) "breath cycle" else "breath cycles",
+                            stringResource(
+                                Res.string.log_entry,
+                                entry.pattern,
+                                entry.cycles,
+                                pluralStringResource(Res.plurals.breath_cycles, entry.cycles),
+                            ),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -107,7 +122,9 @@ private fun Long.zoned() =
 // read at a glance and wants the reader's own conventions for date order and for whether a clock
 // says 14:00 or 2 PM. kotlinx-datetime answers neither — it carries no locale data at all
 
+@Composable
 private fun hoursMinutes(ms: Long): String {
-    val minutes = ms / 60_000
-    return if (minutes < 60) "${minutes}m" else "${minutes / 60}h ${minutes % 60}m"
+    val minutes = (ms / 60_000).toInt()
+    return if (minutes < 60) stringResource(Res.string.log_minutes, minutes)
+    else stringResource(Res.string.log_hours_minutes, minutes / 60, minutes % 60)
 }

@@ -1,5 +1,8 @@
 package io.github.wlemkens.openbreath
 
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.week_hint_next
+import io.github.wlemkens.openbreath.media.week_hint_this
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
@@ -8,6 +11,7 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.isoDayNumber
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
+import org.jetbrains.compose.resources.StringResource
 
 /**
  * When a reminder is next due, and which weeks it falls in. Pure arithmetic over a wall clock,
@@ -72,12 +76,13 @@ internal fun Repeat.covers(weekStart: LocalDate): Boolean = when (this) {
 }
 
 /**
- * " (this week)" or " (next week)". Which of the two fortnightly options is the near one depends
- * on when you are looking at them, and picking between them is impossible without being told.
+ * " (this week)" or " (next week)", and null for the repeats that are neither. Which of the two
+ * fortnightly options is the near one depends on when you are looking at them, and picking
+ * between them is impossible without being told.
  */
-internal fun Repeat.weekHint(today: LocalDate): String = when (this) {
+internal fun Repeat.weekHint(today: LocalDate): StringResource? = when (this) {
     Repeat.ODD_WEEKS, Repeat.EVEN_WEEKS ->
-        if (covers(today.mondayOfWeek())) " (this week)" else " (next week)"
+        if (covers(today.mondayOfWeek())) Res.string.week_hint_this else Res.string.week_hint_next
 
-    else -> ""
+    else -> null
 }

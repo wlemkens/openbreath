@@ -112,20 +112,6 @@ class StorageTest {
     }
 
     @Test
-    fun `a backup says what is in it without writing '1 sittings'`() {
-        val one = Backup(
-            config = Config(presets = listOf(Preset())),
-            history = listOf(Entry(1L, 300_000L, "x")),
-            goals = listOf(Goal(id = 1)),
-            reminders = listOf(Reminder(id = 1)),
-        )
-        assertEquals("1 sitting, 1 preset, 1 goal and 1 reminder", one.summary)
-        // and nothing at all reads as nothing, not as an error
-        assertEquals("0 sittings, 0 presets, 0 goals and 0 reminders",
-            Backup(config = Config(presets = emptyList())).summary)
-    }
-
-    @Test
     fun `importing merges the log both ways and never drops a sitting`() {
         fun sitting(at: Long) = Entry(at, 300_000L, "Coherence 5.5", cycles = 27)
         val onThisPhone = Backup(history = listOf(sitting(2), sitting(3)), celebrated = 30)

@@ -113,12 +113,7 @@ class AndroidPlatform(
         /** An insistent notification on the alarm channel, which is Android's alone. */
         override val canRingUntilDismissed = true
 
-        override val lateness: String?
-            get() = if (activity.canScheduleExact()) {
-                null
-            } else {
-                "Reminders may arrive a few minutes late until exact alarms are allowed."
-            }
+        override val late: Boolean get() = !activity.canScheduleExact()
 
         override fun fixLateness() {
             runCatching { activity.startActivity(exactAlarmIntent()) }
@@ -143,7 +138,7 @@ class AndroidPlatform(
             return permitted()
         }
 
-        override fun apply(reminders: List<Reminder>) = activity.applyReminders(reminders)
+        override suspend fun apply(reminders: List<Reminder>) = activity.applyReminders(reminders)
 
         override fun cancel(id: Int) = activity.cancelReminder(id)
     }

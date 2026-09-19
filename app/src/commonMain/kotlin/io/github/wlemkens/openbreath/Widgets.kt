@@ -14,6 +14,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.*
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * The two pieces of chrome more than one screen draws. They lived in Settings.kt, which is
@@ -49,7 +52,7 @@ internal fun LabelledSlider(
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             // a glyph rather than material-icons, as elsewhere: a whole dependency for two signs
-            if (onStep != null) StepButton("−", "$label down") { onStep(-1) }
+            if (onStep != null) StepButton("−", stringResource(Res.string.slider_down, label)) { onStep(-1) }
             Slider(
                 value = value,
                 onValueChange = onChange,
@@ -58,7 +61,7 @@ internal fun LabelledSlider(
                 steps = steps.coerceAtLeast(0),
                 modifier = Modifier.weight(1f),
             )
-            if (onStep != null) StepButton("+", "$label up") { onStep(1) }
+            if (onStep != null) StepButton("+", stringResource(Res.string.slider_up, label)) { onStep(1) }
         }
     }
 }

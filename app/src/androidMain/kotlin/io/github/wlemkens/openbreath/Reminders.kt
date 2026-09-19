@@ -1,5 +1,12 @@
 package io.github.wlemkens.openbreath
 
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.notification_body
+import io.github.wlemkens.openbreath.media.notification_body_alarm
+import io.github.wlemkens.openbreath.media.notification_channel_alarms
+import io.github.wlemkens.openbreath.media.notification_channel_reminders
+import org.jetbrains.compose.resources.getString
+
 import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
@@ -114,8 +121,8 @@ class ReminderReceiver : BroadcastReceiver() {
  * silenced ringer. A channel is fixed once created, so its settings are what a user who never
  * touches them gets — and what they change is theirs to keep.
  */
-private fun alarmChannel() =
-    NotificationChannel(CHANNEL_ALARM, "Alarms", NotificationManager.IMPORTANCE_HIGH).apply {
+private fun alarmChannel(name: String) =
+    NotificationChannel(CHANNEL_ALARM, name, NotificationManager.IMPORTANCE_HIGH).apply {
         setSound(
             RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
             AudioAttributes.Builder()
@@ -129,15 +136,19 @@ private fun alarmChannel() =
         setBypassDnd(true)
     }
 
-private fun Context.ring(reminder: Reminder) {
+private suspend fun Context.ring(reminder: Reminder) {
     val manager = getSystemService(NotificationManager::class.java) ?: return
     // creating it every time is cheap and idempotent, and saves tracking whether this install
     // has been through a run since the channel was added
     manager.createNotificationChannel(
         if (reminder.alarm) {
-            alarmChannel()
+            alarmChannel(getString(Res.string.notification_channel_alarms))
         } else {
-            NotificationChannel(CHANNEL, "Reminders", NotificationManager.IMPORTANCE_DEFAULT)
+            NotificationChannel(
+                CHANNEL,
+                getString(Res.string.notification_channel_reminders),
+                NotificationManager.IMPORTANCE_DEFAULT,
+            )
         }
     )
     val open = PendingIntent.getActivity(
@@ -149,7 +160,13 @@ private fun Context.ring(reminder: Reminder) {
     val notification = Notification.Builder(this, if (reminder.alarm) CHANNEL_ALARM else CHANNEL)
         .setSmallIcon(R.drawable.ic_notification)
         .setContentTitle(reminder.name)
-        .setContentText(if (reminder.alarm) "Time to breathe — tap to stop" else "Time to breathe")
+        // the title is the reminder's name, which is the user's own text; the line under it is
+        // ours, and translated
+        .setContentText(
+            getString(
+                if (reminder.alarm) Res.string.notification_body_alarm else Res.string.notification_body
+            )
+        )
         .setContentIntent(open)
         .setCategory(if (reminder.alarm) Notification.CATEGORY_ALARM else Notification.CATEGORY_REMINDER)
         // dismissible on purpose: an ongoing alarm you cannot swipe away is one you cannot stop

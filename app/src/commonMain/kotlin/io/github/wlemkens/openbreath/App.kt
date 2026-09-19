@@ -37,6 +37,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.*
+import org.jetbrains.compose.resources.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.NonCancellable
@@ -313,45 +316,43 @@ fun SessionScreen(
                     DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                         if (onOpenSettings != null) {
                             DropdownMenuItem(
-                                text = { Text("Settings") },
+                                text = { Text(stringResource(Res.string.menu_settings)) },
                                 onClick = { menuOpen = false; onOpenSettings() },
                             )
                         }
                         DropdownMenuItem(
-                            text = { Text("Goals") },
+                            text = { Text(stringResource(Res.string.menu_goals)) },
                             onClick = { menuOpen = false; onOpenGoals() },
                         )
                         if (onOpenReminders != null) {
                             DropdownMenuItem(
-                                text = { Text("Reminders") },
+                                text = { Text(stringResource(Res.string.menu_reminders)) },
                                 onClick = { menuOpen = false; onOpenReminders() },
                             )
                         }
                         DropdownMenuItem(
-                            text = { Text("Achievements") },
+                            text = { Text(stringResource(Res.string.menu_achievements)) },
                             onClick = { menuOpen = false; onOpenAchievements() },
                         )
                         if (onOpenLog != null) {
                             DropdownMenuItem(
-                                text = { Text("Log") },
+                                text = { Text(stringResource(Res.string.menu_log)) },
                                 onClick = { menuOpen = false; onOpenLog() },
                             )
                         }
                         DropdownMenuItem(
-                            text = { Text("Feedback") },
+                            text = { Text(stringResource(Res.string.menu_feedback)) },
                             onClick = { menuOpen = false; platform.links.openFeedback() },
                         )
                         if (onOpenSupport != null) {
                             DropdownMenuItem(
-                                // "the app", because a menu item reading only "Support" is
-                                // where someone goes to ask for help, not to offer any
-                                text = { Text("Support the app") },
+                                text = { Text(stringResource(Res.string.menu_support)) },
                                 onClick = { menuOpen = false; onOpenSupport() },
                             )
                         }
                         if (platform.links.canRate) {
                             DropdownMenuItem(
-                                text = { Text("Rate") },
+                                text = { Text(stringResource(Res.string.menu_rate)) },
                                 onClick = { menuOpen = false; platform.links.openRating() },
                             )
                         }
@@ -363,9 +364,10 @@ fun SessionScreen(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 when {
-                    finished -> "Done"
-                    leadInLeft > 0L -> "Get ready"
-                    running -> state.phase.label
+                    finished -> stringResource(Res.string.session_done)
+                    leadInLeft > 0L -> stringResource(Res.string.session_get_ready)
+                    running -> stringResource(state.phase.label)
+                    // the preset's name is the user's own text, in whatever language they wrote it
                     else -> preset.name
                 },
                 style = MaterialTheme.typography.headlineMedium,
@@ -403,7 +405,11 @@ fun SessionScreen(
             if (config.showDots) Dots(cycles, elapsed.toFloat() / total, glow)
             if (config.showBreaths) {
                 Text(
-                    "breath ${(state.cycle + 1).coerceAtMost(cycles)} of $cycles",
+                    stringResource(
+                        Res.string.session_breath_of,
+                        (state.cycle + 1).coerceAtMost(cycles),
+                        cycles,
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -413,15 +419,17 @@ fun SessionScreen(
                 Button(onClick = { if (finished) elapsed = 0L else running = !running }) {
                     Text(
                         when {
-                            finished -> "Again"
-                            running -> "Pause"
-                            elapsed > 0L -> "Resume"
-                            else -> "Start"
+                            finished -> stringResource(Res.string.session_again)
+                            running -> stringResource(Res.string.session_pause)
+                            elapsed > 0L -> stringResource(Res.string.session_resume)
+                            else -> stringResource(Res.string.session_start)
                         }
                     )
                 }
                 if (elapsed > 0L && !finished) {
-                    TextButton(onClick = { running = false; elapsed = 0L }) { Text("Reset") }
+                    TextButton(onClick = { running = false; elapsed = 0L }) {
+                        Text(stringResource(Res.string.session_reset))
+                    }
                 }
             }
         }

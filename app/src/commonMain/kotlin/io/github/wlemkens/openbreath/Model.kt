@@ -22,30 +22,30 @@ import kotlin.time.Instant
  * practice log before.
  */
 
-enum class SoundMode(val label: String) {
+enum class SoundMode {
     /** A sound for the whole phase, riding the breath. Which one is [PhaseSound.voice]. */
-    AMBIENT("Ambient"),
+    AMBIENT,
 
     /** One sound at the moment the phase ends. Which one is [PhaseSound.tone]. */
-    MARKER("Marker"),
-    SILENT("Silent"),
+    MARKER,
+    SILENT,
 }
 
 /** The continuous sounds. A group under [SoundMode.AMBIENT], as the tones are under MARKER. */
-enum class AmbientVoice(val label: String) {
-    WAVES("Waves"),
-    SOUNDWAVE("Soundwave"),
+enum class AmbientVoice {
+    WAVES,
+    SOUNDWAVE,
 }
 
 /** The built-in marker sounds, used when the user hasn't pointed a phase at their own mp3. */
-enum class MarkerTone(val label: String) {
-    BELL("Bell"),
+enum class MarkerTone {
+    BELL,
 
     /** Pitched by phase — see [markerHz]. */
-    GONG("Gong"),
+    GONG,
 
     /** A metronome's click, pitched by phase like the gong. */
-    TICK("Tick"),
+    TICK,
 }
 
 /** What the breath cue on the session screen looks like. */
@@ -53,18 +53,18 @@ enum class MarkerTone(val label: String) {
  * Three of these draw the same turning lattice of points and differ only in how one point is
  * drawn — see `PointLook`. The names are stored, so they are added to rather than renamed.
  */
-enum class CueStyle(val label: String) {
+enum class CueStyle {
     /** Points packed into a core at the bottom of the breath, opening into a sphere at the top. */
-    CLOUD("Cloud"),
+    CLOUD,
 
     /** The same cloud, each point a white centre in a tight glow. */
-    BUBBLES("Bubbles"),
+    BUBBLES,
 
     /** The same again, the centre harder and the glow wider and fainter around it. */
-    STARS("Stars"),
+    STARS,
 
     /** The plain gradient sphere. */
-    GLOW("Glow"),
+    GLOW,
 }
 
 @Serializable
@@ -275,21 +275,16 @@ internal fun List<Entry>.logging(entry: Entry): List<Entry> =
     else (filterNot { it.at == entry.at } + entry).takeLast(HISTORY_MAX)
 
 /** What a [Goal] counts. The range is the metric's own: ten sittings and ten breaths differ. */
-enum class GoalMetric(val label: String, val singular: String, val min: Int, val max: Int, val step: Int) {
-    SITTINGS("sittings", "sitting", 1, 10, 1),
-    BREATHS("breaths", "breath", 10, 300, 10),
-    MINUTES("minutes", "minute", 5, 120, 5),
+enum class GoalMetric(val min: Int, val max: Int, val step: Int) {
+    SITTINGS(1, 10, 1),
+    BREATHS(10, 300, 10),
+    MINUTES(5, 120, 5),
 }
 
-fun GoalMetric.unit(count: Int) = if (count == 1) singular else label
-
-enum class GoalPeriod(val label: String, val heading: String, val each: String, val unit: String) {
-    DAY("Each day", "Today", "a day", "day"),
-    WEEK("Each week", "This week", "a week", "week"),
+enum class GoalPeriod {
+    DAY,
+    WEEK,
 }
-
-/** "5 days in a row", the length of a streak said in this period's own unit. */
-fun GoalPeriod.run(count: Int) = "$count ${if (count == 1) unit else "${unit}s"} in a row"
 
 /**
  * One thing to aim at, e.g. one sitting a day or a hundred breaths a week. Several can be kept
@@ -303,12 +298,6 @@ data class Goal(
     val period: GoalPeriod = GoalPeriod.DAY,
     val target: Int = 10,
 ) {
-    /** "Today: 7 of 10 minutes" — what you have done, against what you said you would. */
-    fun headline(done: Int) = "${period.heading}: $done of $target ${metric.unit(target)}"
-
-    /** "1 sitting a day", the goal said plainly. */
-    val description: String get() = "$target ${metric.unit(target)} ${period.each}"
-
     fun reached(done: Int) = done >= target
 
     /** A target stored against one metric is nonsense against another. */
@@ -446,31 +435,6 @@ internal fun isMilestone(days: Int) = days in MILESTONE_DAYS || (days > 500 && d
 internal fun dueMilestone(days: Int, celebrated: Int): Int? =
     (celebrated + 1..days).lastOrNull { isMilestone(it) }
 
-internal fun milestoneLabel(days: Int): String = when {
-    days == 7 -> "A week"
-    days == 30 -> "A month"
-    days == 182 -> "Half a year"
-    days == 365 -> "A year"
-    days > 365 && days % 365 == 0 -> "${days / 365} years"
-    else -> "$days days"
-}
-
-/**
- * Says what was done and what it means. Written per length rather than from a template: a
- * hundred days is not three days with a bigger number in it, and a line that fits both fits
- * neither well.
- */
-internal fun milestoneMessage(days: Int): String = when {
-    days <= 3 -> "Three days in a row, everything you set yourself done. This is how a practice begins."
-    days <= 7 -> "A week of it, every goal met. It is starting to stick."
-    days <= 30 -> "A month without missing what you asked of yourself. That is not chance any more."
-    days <= 100 -> "A hundred days. Most things do not last that long. This one has."
-    days <= 182 -> "Half a year of keeping your word to yourself, one breath at a time."
-    days <= 365 -> "A year. Every day, everything you set yourself, done."
-    days <= 500 -> "Five hundred days. There is little left to say."
-    else -> "${days / 365} years of it, unbroken."
-}
-
 /** Practising at all, once a day, is a streak worth keeping whether or not a goal says so. */
 internal val EVERY_DAY = Goal(id = 0, metric = GoalMetric.SITTINGS, period = GoalPeriod.DAY, target = 1)
 
@@ -479,11 +443,11 @@ internal val EVERY_DAY = Goal(id = 0, metric = GoalMetric.SITTINGS, period = Goa
  * counting from the day you set them, so "every odd week" means the same weeks to you as it does
  * to a wall planner.
  */
-enum class Repeat(val label: String) {
-    DAILY("Daily"),
-    WEEKLY("Weekly"),
-    ODD_WEEKS("Every odd week"),
-    EVEN_WEEKS("Every even week"),
+enum class Repeat {
+    DAILY,
+    WEEKLY,
+    ODD_WEEKS,
+    EVEN_WEEKS,
 }
 
 @Serializable

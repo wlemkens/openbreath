@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="action_done">Klaar</string>
+    <string name="action_save">Opslaan</string>
+    <string name="action_delete">Verwijderen</string>
+    <string name="action_cancel">Annuleren</string>
+    <string name="action_ok">OK</string>
+    <string name="action_continue">Doorgaan</string>
+    <string name="action_grant">Toestaan</string>
+    <string name="action_fix">Oplossen</string>
+    <string name="action_reset">Terugzetten</string>
+    <string name="action_change">Wijzigen</string>
+    <string name="action_clear">Wissen</string>
+
+    <string name="phase_inhale">Adem in</string>
+    <string name="phase_hold">Houd vast</string>
+    <string name="phase_exhale">Adem uit</string>
+    <string name="phase_hold_in">Vasthouden in</string>
+    <string name="phase_hold_out">Vasthouden uit</string>
+
+    <string name="menu_settings">Instellingen</string>
+    <string name="menu_goals">Doelen</string>
+    <string name="menu_reminders">Herinneringen</string>
+    <string name="menu_achievements">Prestaties</string>
+    <string name="menu_log">Logboek</string>
+    <string name="menu_feedback">Feedback</string>
+    <string name="menu_support">Steun de app</string>
+    <string name="menu_rate">Beoordelen</string>
+    <string name="session_done">Klaar</string>
+    <string name="session_get_ready">Maak je klaar</string>
+    <string name="session_breath_of">ademhaling %1$d van %2$d</string>
+    <string name="session_again">Opnieuw</string>
+    <string name="session_pause">Pauze</string>
+    <string name="session_resume">Hervatten</string>
+    <string name="session_start">Start</string>
+    <string name="session_reset">Terugzetten</string>
+
+    <string name="settings_title">Instellingen</string>
+    <string name="settings_standard">Standaard</string>
+    <string name="settings_advanced">Geavanceerd</string>
+    <string name="settings_section_preset">Voorinstelling</string>
+    <string name="settings_rename">Hernoemen</string>
+    <string name="settings_duplicate">Dupliceren</string>
+    <string name="settings_preset_copy">%1$s kopie</string>
+    <string name="settings_preset_name">Naam voorinstelling</string>
+    <string name="settings_section_timing">Tijden</string>
+    <string name="settings_one_breath">Eén ademhaling: %1$s s  •  %2$s ademhalingen per minuut</string>
+    <string name="settings_lead_in">Maak je klaar</string>
+    <string name="settings_section_length">Sessieduur</string>
+    <string name="settings_by_time">Op tijd</string>
+    <string name="settings_by_breaths">Op ademhalingen</string>
+    <string name="settings_breaths">Ademhalingen</string>
+    <string name="settings_minutes">Minuten</string>
+    <string name="settings_minutes_readout">%1$d min</string>
+    <string name="settings_rounds_up">Afgerond op hele ademhalingen: %1$s, %2$d ademhalingen</string>
+    <string name="settings_section_sound">Geluid</string>
+    <string name="settings_section_sound_per_phase">Geluid per fase</string>
+    <string name="settings_choose_mp3">Kies een mp3</string>
+    <string name="settings_built_in">ingebouwde %1$s</string>
+    <string name="settings_section_during">Tijdens een sessie</string>
+    <string name="settings_vibrate">Tril bij elke faseovergang</string>
+    <string name="settings_flashlight">Zaklamp volgt de ademhaling</string>
+    <string name="settings_end_bowl">Klankschaal aan het einde van de sessie</string>
+    <string name="settings_silence">Meldingen dempen</string>
+    <string name="settings_needs_dnd">Vereist toegang tot Niet storen</string>
+    <string name="settings_section_cue">Ademindicator</string>
+    <string name="settings_points">Punten</string>
+    <string name="settings_point_size">Puntgrootte</string>
+    <string name="settings_cue_and_dots">Indicator en stippen</string>
+    <string name="settings_hue">Kleurtoon</string>
+    <string name="settings_saturation">Verzadiging</string>
+    <string name="settings_brightness">Helderheid</string>
+    <string name="settings_vivid">Levendig</string>
+    <string name="settings_vivid_note">Dezelfde kleurtoon met het grijs eruit, verder dan de schuifregelaars reiken.</string>
+    <string name="settings_section_progress">Voortgang op het scherm</string>
+    <string name="settings_dots">Stippen</string>
+    <string name="settings_time_remaining">Resterende tijd</string>
+    <string name="settings_breath_count">Aantal ademhalingen</string>
+    <string name="settings_section_build">Deze versie</string>
+    <string name="settings_build">OpenBreath %1$s · %2$s</string>
+
+    <string name="slider_down">%1$s omlaag</string>
+    <string name="slider_up">%1$s omhoog</string>
+
+    <string name="sound_ambient">Sfeergeluid</string>
+    <string name="sound_marker">Markering</string>
+    <string name="sound_silent">Stil</string>
+    <string name="voice_waves">Golven</string>
+    <string name="voice_soundwave">Geluidsgolf</string>
+    <string name="tone_bell">Bel</string>
+    <string name="tone_gong">Gong</string>
+    <string name="tone_tick">Tik</string>
+
+    <string name="cue_cloud">Wolk</string>
+    <string name="cue_bubbles">Bellen</string>
+    <string name="cue_stars">Sterren</string>
+    <string name="cue_glow">Gloed</string>
+
+    <string name="settings_section_backup">Back-up</string>
+    <string name="backup_blurb">Je oefenlogboek, voorinstellingen, doelen en herinneringen in één bestand. De enige manier om ze naar een ander toestel mee te nemen, en van jou om te bewaren.</string>
+    <string name="backup_export">Exporteren</string>
+    <string name="backup_import">Importeren</string>
+    <string name="backup_title">Back-up</string>
+    <string name="backup_saved">%1$s bewaard.</string>
+    <string name="backup_write_failed">Dat bestand kon niet geschreven worden. Er is niets veranderd.</string>
+    <string name="backup_not_ours">Dat is geen OpenBreath-back-up.</string>
+    <string name="backup_import_title">Deze back-up importeren?</string>
+    <string name="backup_import_body">Ze bevat %1$s.\n\nSessies komen bij wat er al is — er gaat er geen verloren, op welk toestel ze ook geademd zijn. Voorinstellingen, doelen en herinneringen worden vervangen door die uit het bestand.</string>
+    <string name="backup_imported">Geïmporteerd.</string>
+    <string name="backup_import_failed">Die back-up kon niet gelezen worden. Er is niets veranderd.</string>
+    <string name="backup_summary">%1$s, %2$s, %3$s en %4$s</string>
+    <string name="dialog_save_backup">Back-up bewaren</string>
+    <string name="dialog_open_backup">Een back-up openen</string>
+    <string name="dialog_choose_sound">Kies een geluid</string>
+
+    <string name="goals_title">Doelen</string>
+    <string name="goals_empty">Nog geen. Een doel is een hoeveelheid die je op een dag of in een week haalt — één sessie per dag, honderd ademhalingen, twintig minuten. Houd er zoveel als je wilt.</string>
+    <string name="goals_add">Doel toevoegen</string>
+    <string name="goals_target">Streefwaarde</string>
+    <string name="goal_each_day">Elke dag</string>
+    <string name="goal_each_week">Elke week</string>
+    <string name="goal_today">Vandaag</string>
+    <string name="goal_this_week">Deze week</string>
+    <string name="goal_headline">%1$s: %2$d van %3$d %4$s</string>
+    <string name="goal_description">%1$d %2$s %3$s</string>
+    <string name="goal_per_day">per dag</string>
+    <string name="goal_per_week">per week</string>
+
+    <string name="achievements_title">Prestaties</string>
+    <string name="achievements_empty">Nog niets te tonen. Zit een tijdje en dit vult zichzelf.</string>
+    <string name="achievements_section_goals">Doelen</string>
+    <string name="achievements_section_practice">Oefening</string>
+    <string name="achievements_not_yet">Nog niet</string>
+    <string name="achievements_days_in_row">Dagen op rij</string>
+    <string name="achievements_sittings">Sessies</string>
+    <string name="achievements_breaths">Ademhalingen</string>
+    <string name="achievements_minutes">Minuten</string>
+    <string name="achievements_minutes_today">Minuten vandaag</string>
+
+    <string name="log_title">Logboek</string>
+    <string name="log_empty">Nog niets. Een sessie verschijnt hier zodra ze %1$d seconden geduurd heeft, afgemaakt of niet.</string>
+    <string name="log_total">%1$d %2$s, %3$s in totaal</string>
+    <string name="log_hours_minutes">%1$du %2$dm</string>
+    <string name="log_minutes">%1$dm</string>
+    <string name="log_entry">%1$s · %2$d %3$s</string>
+
+    <string name="reminders_title">Herinneringen</string>
+    <string name="reminders_empty">Nog geen. Een herinnering is een melding op een tijdstip dat jij kiest, meer niet.</string>
+    <string name="reminders_add">Herinnering toevoegen</string>
+    <string name="reminder_untitled">Herinnering</string>
+    <string name="reminder_name">Naam</string>
+    <string name="reminder_tag_alarm"> · wekker</string>
+    <string name="reminder_tag_only_behind"> · alleen bij achterstand</string>
+    <string name="reminder_summary">%1$s%2$s · %3$s</string>
+    <string name="repeat_daily">Dagelijks</string>
+    <string name="repeat_weekly">Wekelijks</string>
+    <string name="repeat_odd_weeks">Elke oneven week</string>
+    <string name="repeat_even_weeks">Elke even week</string>
+    <string name="week_hint_this"> (deze week)</string>
+    <string name="week_hint_next"> (volgende week)</string>
+    <string name="reminder_ring">Rinkelt tot je hem wegveegt</string>
+    <string name="reminder_ring_on">De wekkertoon, keer op keer, ook door een gedempte beltoon heen. Veeg de melding weg om te stoppen.</string>
+    <string name="reminder_ring_off">Eén melding, op het volume waarop al het andere binnenkomt.</string>
+    <string name="reminder_only_behind">Alleen bij achterstand op een doel</string>
+    <string name="reminder_only_behind_on">Blijft stil zodra elk doel gehaald is. Zonder doelen is er niets om op voor te liggen, dus komt ze gewoon.</string>
+    <string name="reminder_only_behind_off">Komt of je al geoefend hebt of niet.</string>
+    <string name="reminder_lateness">Herinneringen kunnen enkele minuten te laat komen zolang exacte alarmen niet toegestaan zijn.</string>
+    <string name="notification_body">Tijd om te ademen</string>
+    <string name="notification_body_alarm">Tijd om te ademen — tik om te stoppen</string>
+    <string name="notification_channel_reminders">Herinneringen</string>
+    <string name="notification_channel_alarms">Wekkers</string>
+
+    <string name="welcome_title">Welkom</string>
+    <string name="welcome_body">Elke dag een ademhalingsmeditatie is wat we zouden aanraden. We kunnen dat als doel instellen, en een herinnering voor de avonden dat het er nog niet van gekomen is. Geen van beide is nodig, en allebei kun je later wijzigen of laten vallen.</string>
+    <string name="welcome_body_goal_only">Elke dag een ademhalingsmeditatie is wat we zouden aanraden. We kunnen dat als doel instellen. Het is niet nodig, en je kunt het later wijzigen of laten vallen.</string>
+    <string name="welcome_goal">Een doel van één sessie per dag</string>
+    <string name="welcome_reminder">Een herinnering om %1$s als het er nog niet van gekomen is</string>
+
+    <string name="milestone_week">Een week</string>
+    <string name="milestone_month">Een maand</string>
+    <string name="milestone_half_year">Een half jaar</string>
+    <string name="milestone_year">Een jaar</string>
+    <string name="milestone_onwards">Verder</string>
+    <string name="milestone_3">Drie dagen op rij, alles wat je jezelf voornam gedaan. Zo begint een oefening.</string>
+    <string name="milestone_7">Een week lang, elk doel gehaald. Het begint te blijven hangen.</string>
+    <string name="milestone_30">Een maand zonder te missen wat je van jezelf vroeg. Dat is geen toeval meer.</string>
+    <string name="milestone_100">Honderd dagen. De meeste dingen houden het niet zo lang vol. Dit wel.</string>
+    <string name="milestone_182">Een half jaar je woord houden tegenover jezelf, ademhaling voor ademhaling.</string>
+    <string name="milestone_365">Een jaar. Elke dag, alles wat je jezelf voornam, gedaan.</string>
+    <string name="milestone_500">Vijfhonderd dagen. Er valt weinig meer te zeggen.</string>
+    <string name="milestone_years">%1$d jaar onafgebroken.</string>
+
+    <string name="support_title">Steun de app</string>
+    <string name="support_p1">OpenBreath is gratis, en blijft gratis — geen proefperiode, geen ontgrendeling, geen abonnement.</string>
+    <string name="support_p2">Genoeg apps als deze vragen geld voor je ze geprobeerd hebt, of een jaarabonnement. Voor iets dat stilletjes je ademhaling telt, lijkt dat veel gevraagd.</string>
+    <string name="support_p3">Dus er staat hier geen prijs. Als de app je goed gedaan heeft en je hebt er zin in, stuur dan een koffie, of meer. Zo niet, dan is dat echt prima — het is dezelfde app hoe dan ook.</string>
+    <string name="support_p4">Wat je stuurt gaat naar Wim Lemkens, die de app schrijft — persoonlijk, niet naar een organisatie, en niet in ruil voor iets. Het koopt je hier niets en ontgrendelt niets, want er valt niets te ontgrendelen.</string>
+    <string name="support_another">Een ander bedrag</string>
+    <string name="support_note">Opent PayPal in je browser, of in de PayPal-app als je die hebt, en betaalt rechtstreeks aan de ontwikkelaar. Er wordt hier niets afgeschreven, en de app verneemt niet of je het doorgezet hebt.</string>
+
+    <plurals name="sittings">
+        <item quantity="one">sessie</item>
+        <item quantity="other">sessies</item>
+    </plurals>
+    <plurals name="breaths">
+        <item quantity="one">ademhaling</item>
+        <item quantity="other">ademhalingen</item>
+    </plurals>
+    <plurals name="minutes">
+        <item quantity="one">minuut</item>
+        <item quantity="other">minuten</item>
+    </plurals>
+    <plurals name="presets">
+        <item quantity="one">voorinstelling</item>
+        <item quantity="other">voorinstellingen</item>
+    </plurals>
+    <plurals name="goals">
+        <item quantity="one">doel</item>
+        <item quantity="other">doelen</item>
+    </plurals>
+    <plurals name="reminders">
+        <item quantity="one">herinnering</item>
+        <item quantity="other">herinneringen</item>
+    </plurals>
+    <plurals name="breath_cycles">
+        <item quantity="one">ademcyclus</item>
+        <item quantity="other">ademcycli</item>
+    </plurals>
+    <plurals name="streak_days">
+        <item quantity="one">%1$d dag op rij</item>
+        <item quantity="other">%1$d dagen op rij</item>
+    </plurals>
+    <plurals name="streak_weeks">
+        <item quantity="one">%1$d week op rij</item>
+        <item quantity="other">%1$d weken op rij</item>
+    </plurals>
+    <plurals name="milestone_days">
+        <item quantity="one">%1$d dag</item>
+        <item quantity="other">%1$d dagen</item>
+    </plurals>
+    <plurals name="milestone_years_label">
+        <item quantity="one">%1$d jaar</item>
+        <item quantity="other">%1$d jaar</item>
+    </plurals>
+</resources>

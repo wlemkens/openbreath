@@ -21,14 +21,14 @@ class FirstRunReminderTest {
         val calls = mutableListOf<String>()
         override val supported = true
         override val canRingUntilDismissed = false
-        override val lateness: String? = null
+        override val late = false
         override fun fixLateness() = Unit
         override suspend fun permitted() = allow
         override suspend fun request(): Boolean {
             calls += "request"
             return allow
         }
-        override fun apply(reminders: List<Reminder>) {
+        override suspend fun apply(reminders: List<Reminder>) {
             calls += "apply ${reminders.map { it.id }}"
         }
         override fun cancel(id: Int) {

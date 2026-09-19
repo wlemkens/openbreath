@@ -1,5 +1,13 @@
 package io.github.wlemkens.openbreath
 
+import io.github.wlemkens.openbreath.media.Res
+import io.github.wlemkens.openbreath.media.dialog_choose_sound
+import io.github.wlemkens.openbreath.media.dialog_open_backup
+import io.github.wlemkens.openbreath.media.dialog_save_backup
+import kotlinx.coroutines.runBlocking
+import org.jetbrains.compose.resources.StringResource
+import org.jetbrains.compose.resources.getString
+
 import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
@@ -21,7 +29,7 @@ import java.io.File
 class DesktopFiles(private val owner: Frame?) : Files {
 
     override fun exportText(suggestedName: String, text: String, onDone: (Boolean) -> Unit) {
-        val target = ask(FileDialog.SAVE, "Save the backup", suggestedName)
+        val target = ask(FileDialog.SAVE, title(Res.string.dialog_save_backup), suggestedName)
         if (target == null) {
             onDone(false)
             return
@@ -32,7 +40,7 @@ class DesktopFiles(private val owner: Frame?) : Files {
     }
 
     override fun importText(onResult: (String?) -> Unit) {
-        val source = ask(FileDialog.LOAD, "Open a backup")
+        val source = ask(FileDialog.LOAD, title(Res.string.dialog_open_backup))
         onResult(source?.let { runCatching { it.readText() }.getOrNull() })
     }
 
@@ -48,7 +56,7 @@ class DesktopFiles(private val owner: Frame?) : Files {
      * its tone — the same behaviour, from the same rule, as on the other two.
      */
     override fun pickAudio(onPicked: (String?) -> Unit) {
-        onPicked(ask(FileDialog.LOAD, "Choose a sound")?.path)
+        onPicked(ask(FileDialog.LOAD, title(Res.string.dialog_choose_sound))?.path)
     }
 
     /** The name, not the path: nobody recognises their own file by its directory. */
@@ -67,3 +75,10 @@ class DesktopFiles(private val owner: Frame?) : Files {
         return File(dialog.directory ?: ".", name)
     }
 }
+
+/**
+ * ponytail: blocking read of one word for a dialog that is itself modal. The picker callbacks are
+ * not suspend and a file dialog is about to take over the screen anyway; make these suspend the
+ * day anything here does real work.
+ */
+private fun title(res: StringResource): String = runBlocking { getString(res) }

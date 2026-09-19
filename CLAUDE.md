@@ -260,6 +260,58 @@ Functionality includes:
   shipping code that exists for the screenshots. Deleting it silently empties the log, achievements
   and milestone shots.
 
+  ## English, Dutch and French
+  Every word the app says is in `app/src/commonMain/composeResources/values{,-nl,-fr}/strings.xml`,
+  read through the generated `Res` — the same mechanism the two bowls come through, so it costs no
+  dependency and works identically on all three platforms. `Strings.kt` holds the other half: the
+  map from a stored constant to the word for it, and the sentences assembled out of several words.
+
+  **The language is the system's, and there is no picker.** Android 13+ and iOS both offer a
+  per-app language entry in their own settings, and `res/xml/locales_config.xml` and
+  `CFBundleLocalizations` in `iosApp/project.yml` are what make them offer it. Both list `en`, `nl`,
+  `fr` and **have to stay in step with the `values-*` directories**: a language translated but not
+  declared is never offered, and on iOS it is worse than that — an undeclared language means the
+  bundle is English-only and `values-fr` is never read at all, on a phone set to French, with
+  nothing failing anywhere.
+
+  **What is not translated is what the reader wrote.** A preset's name and a reminder's name are
+  their text, including the ones the app ships with — "Coherence 5.5", "Box 4", "Breathe". They are
+  stored, they appear in the log against sittings already breathed, and translating them would
+  rewrite someone's own history in a language they may not have been using at the time.
+
+  Four rules the catalogue rests on, each of which has a line in `StringsTest`:
+
+  - **A stored enum constant never carries its own label again.** `SoundMode("Ambient")` was one
+    rename away from being a stored name and a displayed word at once, which is the trap the
+    storage section above is entirely about. The names are stored; `Strings.kt` maps them to a
+    `StringResource`, and that map is free to change with every translation.
+  - **A number and the word after it are one plural, not a concatenation.** `%d` lives in the
+    sentence and the counted word in a `<plurals>`, so the platform picks the form. French counts
+    **zero as singular** — "0 séance" — which is right, and is the sort of thing no hand-rolled
+    `if (n == 1)` was ever going to know.
+  - **A translation may reorder the arguments.** `%1$s` and friends are positional and compose
+    resources honours that: the French goal headline puts the unit before the target where English
+    puts it after. Any sentence built by `+` in Kotlin has quietly decided the word order for
+    every language, which is why the assembled ones live in `Strings.kt` and not at their call site.
+  - **`values-fr` uses the typographic apostrophe `’`.** Nothing then has to be escaped, and it is
+    the right character in French anyway. A straight `'` would want `\'`, which is one more thing
+    to get wrong in 200 strings.
+
+  Two things moved to make it work, both worth knowing before they look arbitrary.
+  `ReminderScheduler.apply` **suspends** now: iOS hands its notifications to the system when they
+  are armed rather than when they fire, so it has to read the body then, and reading a translated
+  string suspends. And `lateness` became the flag `late`, because the sentence it used to carry is
+  the screen's business once the screen speaks three languages — which is the rule every other
+  capability flag here already followed.
+
+  **The listings are drafted here and typed in by hand, in all three.** `docs/store/listing.md` is
+  the English copy and `listing.nl.md` and `listing.fr.md` are the same two listings beside it;
+  Play and App Store Connect keep per-language listings and neither is published from this
+  repository, so **a feature added or dropped changes three files, not one**. The promotional-text
+  rule above is unchanged and applies to each of them — it is four claims, and a translation is
+  four claims. The screenshots stay English: they are taken from an English emulator and simulator,
+  and a second set per language is a store decision rather than something the scripts owe.
+
   ## The iOS port
   The module is Kotlin Multiplatform with Compose Multiplatform, targeting `androidTarget()`
   plus `iosArm64` and `iosSimulatorArm64`. There is no `iosX64`: Compose Multiplatform stopped

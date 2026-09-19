@@ -91,6 +91,17 @@ targets:
       path: Sources/Info.plist
       properties:
         CFBundleDisplayName: OpenBreath
+        # The languages the app is written in. Without this iOS reports the bundle as English-only,
+        # and a phone set to Dutch or French is handed English however many values-* there are —
+        # the strings resolve against the app's declared localisations, not against the catalogue.
+        # It also decides whether iOS offers OpenBreath its own entry in Settings ▸ Language, which
+        # is the in-app language switch the app deliberately does not have. Keep in step with
+        # app/src/commonMain/composeResources/values-*.
+        CFBundleLocalizations:
+          - en
+          - nl
+          - fr
+        CFBundleDevelopmentRegion: en
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen: {}
