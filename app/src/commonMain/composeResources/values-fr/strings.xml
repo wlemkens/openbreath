@@ -132,6 +132,7 @@
     <string name="achievements_title">Accomplissements</string>
     <string name="achievements_empty">Rien à montrer pour l’instant. Pratiquez un peu et cela se remplira tout seul.</string>
     <string name="achievements_section_goals">Objectifs</string>
+    <string name="achievements_section_milestones">Étapes</string>
     <string name="achievements_section_practice">Pratique</string>
     <string name="achievements_not_yet">Pas encore</string>
     <string name="achievements_days_in_row">Jours d’affilée</string>

@@ -152,6 +152,19 @@ Functionality includes:
   That was weighed against carrying a practice log to a new phone, and the carrying won. It is
   a decision, not an oversight — the manifest says so too.
 
+  ### A milestone, once earned, is kept
+  The achievements screen lists every milestone passed, each with a star in the cue's own colour,
+  and **a broken streak takes none of them away**. That is not a second thing to store: the earned
+  list is read back out of `celebrated` by `milestonesReached`, and `celebrated` is a high-water
+  mark — `dueMilestone` only ever hands out the longest milestone reached, so it only ever grows.
+  The run itself is counted back out of the log and may be zero today; the two are unrelated on
+  purpose.
+
+  So the rule for anything added here: **do not add a stored list of earned badges.** One already
+  exists implicitly, it cannot disagree with itself, and a list that could would be one more thing
+  an import has to merge. If a badge is ever wanted that a number cannot express, that is the
+  moment to weigh a new key — and the storage rules above apply to it in full.
+
   ### Export and import
   `Backup.kt` writes the log, config, goals, celebrated mark and reminders to one JSON file the
   user keeps. It is the only way anything leaves the phone, and the only route to an iPhone,

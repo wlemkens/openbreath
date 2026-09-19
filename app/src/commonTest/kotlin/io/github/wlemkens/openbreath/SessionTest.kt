@@ -1,6 +1,7 @@
 package io.github.wlemkens.openbreath
 
 import kotlin.test.Test
+import kotlin.time.Clock
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -376,6 +377,26 @@ class SessionTest {
         // past the last fixed length it is every anniversary, and nothing in between
         assertEquals(null, dueMilestone(days = 700, celebrated = 500))
         assertEquals(730, dueMilestone(days = 730, celebrated = 500))
+    }
+
+    @Test
+    fun `every milestone passed is kept and a broken run takes none of them back`() {
+        assertEquals(emptyList(), milestonesReached(0))
+        assertEquals(listOf(3), milestonesReached(3))
+        // the ones below the last one celebrated were all passed on the way to it
+        assertEquals(listOf(3, 7, 30), milestonesReached(30))
+        // between two of them nothing is added, and nothing is lost either
+        assertEquals(listOf(3, 7, 30), milestonesReached(99))
+        assertEquals(listOf(3, 7, 30, 100, 182, 365, 500), milestonesReached(500))
+        // past the last named one, every anniversary joins the list
+        assertEquals(listOf(3, 7, 30, 100, 182, 365, 500, 730, 1095), milestonesReached(1095))
+
+        // the point of the screen: today's run can go to nothing without touching what was earned.
+        // `celebrated` is a high-water mark, so a streak that breaks is a streak of 0 and a list
+        // that is exactly as long as it was yesterday
+        val afterAYear = milestonesReached(365)
+        assertEquals(0, emptyList<Entry>().allReachedStreak(emptyList(), Clock.System.now()))
+        assertEquals(afterAYear, milestonesReached(365))
     }
 
     @Test

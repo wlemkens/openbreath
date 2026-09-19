@@ -130,6 +130,7 @@
     <string name="achievements_title">Prestaties</string>
     <string name="achievements_empty">Nog niets te tonen. Zit een tijdje en dit vult zichzelf.</string>
     <string name="achievements_section_goals">Doelen</string>
+    <string name="achievements_section_milestones">Mijlpalen</string>
     <string name="achievements_section_practice">Oefening</string>
     <string name="achievements_not_yet">Nog niet</string>
     <string name="achievements_days_in_row">Dagen op rij</string>

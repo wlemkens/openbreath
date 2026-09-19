@@ -7,8 +7,11 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -87,6 +91,43 @@ private fun MilestoneDialog(days: Int, glow: Color, onDismiss: () -> Unit) {
             TextButton(onClick = onDismiss) { Text(stringResource(Res.string.milestone_onwards)) }
         },
     )
+}
+
+/**
+ * One milestone, kept. Drawn rather than imported, like every other mark this app makes: a star
+ * in the cue's own colour over the faint disc its points wear — the same [glow] the
+ * fireworks use, because a badge and the burst that announced it are one achievement seen twice.
+ */
+@Composable
+internal fun MilestoneBadge(days: Int, glow: Color, modifier: Modifier = Modifier) {
+    Row(
+        modifier.fillMaxWidth().padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Canvas(Modifier.size(28.dp)) {
+            drawCircle(glow.copy(alpha = 0.18f), size.minDimension / 2f)
+            drawPath(star(center, size.minDimension * 0.34f), glow)
+        }
+        Text(
+            milestoneLabel(days),
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(start = 12.dp),
+        )
+    }
+}
+
+/** Five points, one of them up. Ten vertices alternating between [radius] and its inner third. */
+private fun star(center: Offset, radius: Float): Path {
+    val path = Path()
+    repeat(10) { i ->
+        val r = if (i % 2 == 0) radius else radius * 0.4f
+        val angle = -PI.toFloat() / 2f + i * PI.toFloat() / 5f
+        val x = center.x + cos(angle) * r
+        val y = center.y + sin(angle) * r
+        if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+    }
+    path.close()
+    return path
 }
 
 /** One spark's whole life, decided once so the burst is the same shape every time it runs. */

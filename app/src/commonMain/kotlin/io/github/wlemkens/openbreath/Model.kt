@@ -435,6 +435,22 @@ internal fun isMilestone(days: Int) = days in MILESTONE_DAYS || (days > 500 && d
 internal fun dueMilestone(days: Int, celebrated: Int): Int? =
     (celebrated + 1..days).lastOrNull { isMilestone(it) }
 
+/**
+ * Every milestone earned so far, in the order they were reached.
+ *
+ * Read back out of [celebrated] rather than stored as a list of its own, which costs no new key
+ * and no migration: [dueMilestone] only ever hands out the longest milestone reached, so
+ * `celebrated` only ever grows, and every milestone at or below it has been passed.
+ *
+ * **A broken streak takes none of them away**, and that falls out of the same fact. The run is
+ * counted back out of the log and can go to zero any day; `celebrated` is the high-water mark and
+ * has nothing to do with today. Something earned is not something you can stop having earned.
+ */
+internal fun milestonesReached(celebrated: Int): List<Int> =
+    MILESTONE_DAYS.filter { it <= celebrated } +
+        // past the last named one, every anniversary — the same rule [isMilestone] applies
+        generateSequence(730) { it + 365 }.takeWhile { it <= celebrated }
+
 /** Practising at all, once a day, is a streak worth keeping whether or not a goal says so. */
 internal val EVERY_DAY = Goal(id = 0, metric = GoalMetric.SITTINGS, period = GoalPeriod.DAY, target = 1)
 

@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlin.time.Clock
 import io.github.wlemkens.openbreath.media.Res
@@ -31,6 +32,14 @@ import org.jetbrains.compose.resources.stringResource
 fun AchievementsScreen(goals: List<Goal>, onBack: () -> Unit, modifier: Modifier = Modifier) {
     val store = LocalStore.current
     val history by remember { store.historyFlow() }.collectAsState(initial = emptyList())
+    // read only, never written back from here, so a first frame of "none yet" costs a frame and
+    // not a milestone — which is the whole of the empty-list trap the storage notes warn about
+    val celebrated by remember { store.celebratedFlow() }.collectAsState(initial = 0)
+    // for the badges alone, and read here rather than passed in: the colour of a milestone is the
+    // colour its fireworks were, and falls back to the theme's until the config has loaded
+    val config by remember { store.configFlow() }.collectAsState(initial = null)
+    val glow = config?.let { Color(it.cueColor).let { c -> if (it.vividCue) c.vivid() else c } }
+        ?: MaterialTheme.colorScheme.primary
     val now = Clock.System.now()
 
     LazyColumn(
@@ -80,6 +89,15 @@ fun AchievementsScreen(goals: List<Goal>, onBack: () -> Unit, modifier: Modifier
                     )
                 }
             }
+        }
+
+        // between the goals you set yourself and the tallies that are the same for everybody:
+        // these were earned, and unlike the streak above them they are not lost by missing a day
+        val earned = milestonesReached(celebrated)
+        if (earned.isNotEmpty()) {
+            item { SectionLabel(stringResource(Res.string.achievements_section_milestones)) }
+            // in the order they were reached
+            items(earned, key = { "milestone-$it" }) { days -> MilestoneBadge(days, glow) }
         }
 
         item { SectionLabel(stringResource(Res.string.achievements_section_practice)) }

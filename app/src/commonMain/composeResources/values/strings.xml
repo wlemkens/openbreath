@@ -154,6 +154,7 @@
     <string name="achievements_title">Achievements</string>
     <string name="achievements_empty">Nothing to show yet. Sit for a while and this fills itself in.</string>
     <string name="achievements_section_goals">Goals</string>
+    <string name="achievements_section_milestones">Milestones</string>
     <string name="achievements_section_practice">Practice</string>
     <string name="achievements_not_yet">Not yet</string>
     <string name="achievements_days_in_row">Days in a row</string>
