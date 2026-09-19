@@ -121,6 +121,13 @@ final class StoreScreenshots: XCTestCase {
         // list is not obviously wrong in a diff
         let marker = scroll(to: "Marker")
         marker.tap()
+        // the tone chips are what this shot is for, and they exist only once the tap above has
+        // landed — so say *that* went wrong, rather than letting the next scroll report a missing
+        // anchor and leave someone reading it looking for a renamed button
+        guard element("Tick").waitForExistence(timeout: 5) else {
+            print("::error title=Marker did not take::Tapped Marker and no tone chips followed. On screen: \(visible())")
+            return XCTFail("tapping Marker left no tone chips")
+        }
         // And then scrolled on, because `scroll(to:)` stops the instant a label becomes hittable
         // — at the bottom edge — so anchoring on the first thing in a section frames everything
         // *above* it. This shot was three quarters Preset and Timing with "Sound per phase" as a
@@ -221,12 +228,24 @@ final class StoreScreenshots: XCTestCase {
         XCTFail(what)
     }
 
-    /// Swipes up until the label is on screen. Ten is generous for the longest list in the app and
-    /// short enough to fail rather than swipe forever.
+    /// Swipes up until the label is **wholly** on screen. Ten is generous for the longest list in
+    /// the app and short enough to fail rather than swipe forever.
+    ///
+    /// `exists && isHittable` is not enough, and the day it stopped being enough cost a CI round:
+    /// a Compose `LazyColumn` composes a little beyond the viewport, so a chip just under the fold
+    /// exists, reports hittable, and is tapped at a point that is not on the screen — the tap
+    /// lands somewhere else and the failure surfaces later, as the *next* anchor never appearing.
+    /// That is what "never scrolled to 'Tick'" was: the Marker above it was tapped into thin air.
+    /// It only started happening when the sound section moved below Session length and changed
+    /// which row the scroll stops on, which is why a test that had passed began failing with no
+    /// change to itself.
+    ///
+    /// Requiring containment also frames better, and the callers below already wanted it: a label
+    /// resting fully inside the bottom edge puts its whole section above it on screen.
     private func scroll(to label: String) -> XCUIElement {
         let el = element(label)
         for _ in 0..<10 {
-            if el.exists && el.isHittable { return el }
+            if el.exists && el.isHittable && app.frame.contains(el.frame) { return el }
             app.swipeUp()
         }
         print("::error title=Never scrolled to '\(label)'::On screen: \(visible())")
