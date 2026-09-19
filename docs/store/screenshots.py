@@ -45,7 +45,14 @@ def demo_backup() -> str:
     return json.dumps({
         "version": 1,
         "config": {"presets": [{"name": n, "inhaleMs": i, "holdInMs": hi, "exhaleMs": e,
-                                "holdOutMs": ho} for n, i, hi, e, ho in presets],
+                                "holdOutMs": ho,
+                                # the sound shot is of a phase in Marker mode, and that is data
+                                # rather than a gesture: both drivers used to tap the chip, and on
+                                # iOS the tap stopped selecting it — Compose's chip, XCUITest's
+                                # tap, and a section that had moved down the list. A backup can
+                                # simply say so, and neither script has to hit a 90pt target.
+                                "inhaleSound": {"mode": "MARKER", "tone": "BELL"}}
+                               for n, i, hi, e, ho in presets],
                    "activeIndex": 0, "durationMs": 300000, "vibrate": True, "endSound": True},
         "history": history,
         "goals": [{"id": 1, "metric": "SITTINGS", "period": "DAY", "target": 1},
@@ -133,7 +140,6 @@ def main():
         tap("⋮", exact=True); tap("Settings", exact=True); tap("Advanced")
         # the sound section, with one marker set; two swipes because one long one flings past it
         swipe(1600, 700); swipe(1000, 620)
-        tap("Marker", exact=True)
         shot("sound-per-phase")
         # stops with "Breath cue" at the top: the chips and the two sliders under them read as a
         # section, and a headless row of chips does not

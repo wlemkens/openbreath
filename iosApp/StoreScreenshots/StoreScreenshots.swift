@@ -119,25 +119,18 @@ final class StoreScreenshots: XCTestCase {
         // scrolled to rather than swiped a counted number of times: XCUITest's swipe has its own
         // velocity and would not land where adb's does, and a screenshot of the wrong part of a
         // list is not obviously wrong in a diff
-        let marker = scroll(to: "Marker")
-        marker.tap()
-        // the tone chips are what this shot is for, and they exist only once the tap above has
-        // landed — so say *that* went wrong, rather than letting the next scroll report a missing
-        // anchor and leave someone reading it looking for a renamed button
-        guard element("Tick").waitForExistence(timeout: 5) else {
-            print("::error title=Marker did not take::Tapped Marker and no tone chips followed. On screen: \(visible())")
-            return XCTFail("tapping Marker left no tone chips")
-        }
-        // And then scrolled on, because `scroll(to:)` stops the instant a label becomes hittable
-        // — at the bottom edge — so anchoring on the first thing in a section frames everything
-        // *above* it. This shot was three quarters Preset and Timing with "Sound per phase" as a
-        // sliver along the bottom, where Android's is the section itself: Breathe in set to
-        // Marker, the mp3 row, and the bowl/bell/tick choice under it. That choice is what the
-        // picture is selling, and it was not in it.
+        // Breathe in arrives already in Marker mode, because the demo backup says so — see
+        // `demo_backup()` in docs/store/screenshots.py. It used to be a tap on the chip here, and
+        // that tap stopped selecting anything when the sound section moved down the list: the
+        // chip was found, the tap was delivered, and Compose did not take it. A screenshot of a
+        // state is better arranged by putting the app in that state than by driving the UI into
+        // it, and the backup is already how the log, the goals and the reminders get here.
         //
-        // "Tick" is the anchor because it is unique — the tone chips exist only for a phase in
-        // Marker mode, which is the one just tapped — and because stopping with it at the bottom
-        // puts the section header and every chip above it on screen.
+        // "Tick" is still the anchor: the tone chips exist only for a phase in Marker mode, so
+        // the label is unique, and `scroll(to:)` leaves it resting inside the bottom edge — which
+        // puts the section header and every chip above it on screen. Anchoring on the header
+        // instead framed everything *above* the section, which is how this shot was once three
+        // quarters Preset and Timing with "Sound per phase" as a sliver along the bottom.
         _ = scroll(to: "Tick")
         shot("sound-per-phase")
 
