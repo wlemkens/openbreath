@@ -44,7 +44,8 @@ raison : la seule raison d’y toucher est que l’une d’elles a cessé d’ê
       durée que vous voulez.
     • Une sphère qui s’ouvre à l’inspiration et se referme à l’expiration, en nuage de points, en
       bulles, en étoiles ou en halo, dans la couleur de votre choix.
-    • Un son par phase : des vagues qui montent et redescendent avec le souffle, une onde sonore
+    • Un seul son pour toute la respiration, ou un par phase : des vagues qui montent et
+      redescendent avec le souffle, une onde sonore
       dont les harmoniques se rassemblent et se dissolvent, un repère à chaque changement — bol
       chantant, cloche ou tic de métronome — un mp3 à vous, ou le silence. Le bol et le tic sont
       accordés selon le changement qu’ils marquent : passer à l’inspiration ne sonne donc pas
@@ -68,7 +69,8 @@ raison : la seule raison d’y toucher est que l’une d’elles a cessé d’ê
       une heure par semaine. Ils sont comptés à partir du journal, donc un objectif fixé
       aujourd’hui tient déjà compte de la pratique qui le précède.
     • Des séries, des totaux et des étapes à 3 jours, une semaine, un mois, 100 jours, six mois
-      et un an — dites une seule fois, et sans tapage.
+      et un an — dites une seule fois, sans tapage, puis conservées dans vos accomplissements
+      avec une étoile à côté. Une série interrompue n’en retire aucune.
     • Des rappels, autant que vous voulez, chacun avec son nom et son heure : quotidiens, les
       jours que vous choisissez, hebdomadaires ou une semaine sur deux. Une notification discrète
       ou une alarme qui sonne jusqu’à ce que vous la fermiez. L’un d’eux peut n’arriver que si
@@ -119,7 +121,8 @@ Une seule ligne, comme en anglais : la seconde ne tient pas ici et vit dans le t
       durée que vous voulez.
     • Une sphère qui s’ouvre à l’inspiration et se referme à l’expiration, en nuage de points, en
       bulles, en étoiles ou en halo, dans la couleur de votre choix.
-    • Un son par phase : des vagues qui montent et redescendent avec le souffle, une onde sonore
+    • Un seul son pour toute la respiration, ou un par phase : des vagues qui montent et
+      redescendent avec le souffle, une onde sonore
       dont les harmoniques se rassemblent et se dissolvent, un repère à chaque changement — bol
       chantant, cloche ou tic de métronome — un mp3 à vous, ou le silence. Le bol et le tic sont
       accordés selon le changement qu’ils marquent : passer à l’inspiration ne sonne donc pas
@@ -141,7 +144,8 @@ Une seule ligne, comme en anglais : la seconde ne tient pas ici et vit dans le t
       une heure par semaine. Ils sont comptés à partir du journal, donc un objectif fixé
       aujourd’hui tient déjà compte de la pratique qui le précède.
     • Des séries, des totaux et des étapes à 3 jours, une semaine, un mois, 100 jours, six mois
-      et un an — dites une seule fois, et sans tapage.
+      et un an — dites une seule fois, sans tapage, puis conservées dans vos accomplissements
+      avec une étoile à côté. Une série interrompue n’en retire aucune.
     • Des rappels, autant que vous voulez, chacun avec son nom et son heure : quotidiens, les
       jours que vous choisissez, hebdomadaires ou une semaine sur deux. L’un d’eux peut n’arriver
       que si l’objectif du jour n’est pas encore atteint.
@@ -157,10 +161,14 @@ Une seule ligne, comme en anglais : la seconde ne tient pas ici et vit dans le t
 
 **Nouveautés** (500 max sur Play)
 
-    Les rappels. Réglez-en autant que vous voulez, chacun avec son nom et son heure :
-    quotidiens, les jours que vous choisissez, hebdomadaires ou une semaine sur deux. L’un d’eux
-    peut n’arriver que si l’objectif du jour n’est pas encore atteint, pour qu’une journée déjà
-    pratiquée reste silencieuse.
+    Désormais en néerlandais et en français, en plus de l’anglais, selon la langue réglée sur
+    votre appareil.
+
+    Les étapes sont conservées. Chacune de celles que vous avez atteintes reste dans vos
+    accomplissements avec une étoile à côté, et une série interrompue ne les enlève plus.
+
+    Réglages : un seul son pour toute la respiration sous Standard, le choix par phase restant
+    sous Avancé.
 
 **La première version**, au cas où une langue ajoutée en aurait besoin :
 

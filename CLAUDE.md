@@ -863,7 +863,17 @@ Functionality includes:
     8.14.3 for AGP and Kotlin; the pin is a toolchain fact, not a preference, so it moves when
     Gradle does and not before.
   - ~~**Screenshots for the App Store.**~~ Done, and by the same discipline as Android's:
-    `gh workflow run build.yml -f screenshots=true` drives a 6.9" simulator through
-    `iosApp/StoreScreenshots` and downloads as the `app-store-screenshots` artifact. **Never run and
-    therefore never yet proven** — the first run is the one that finds out whether Compose exposes
-    every label the test taps, and it says which one it could not find when it does not.
+    `gh workflow run build.yml -f screenshots=true` drives a 6.9" simulator and a 13" iPad through
+    `iosApp/StoreScreenshots` and downloads as the `app-store-screenshots` artifact. Proven: it has
+    run green, most recently as run 162 on 2026-09-19. This entry said "never run and therefore
+    never yet proven" for three weeks after it had been.
+
+    **It cost three CI rounds the first time a screen moved under it**, and both bugs are worth
+    knowing because neither was in the app. `scroll(to:)` stopped on a `LazyColumn` item composed
+    just beyond the viewport — `exists` and `isHittable` are both true there — and tapped a point
+    that was not on screen, so the failure surfaced one anchor later as a label that never
+    appeared. It now requires the frame to be inside the app's. And the tap it was making did not
+    take even once it was aimed properly: the sound shot's Marker mode is arranged in
+    `demo_backup()` now, like the log and the goals already were. **A screenshot of a state is
+    better arranged by putting the app in that state than by driving the UI into it** — and that
+    is the rule to reach for the next time one of these breaks, before reaching for another swipe.

@@ -5,8 +5,12 @@ submission. Build 70 went up with it empty, and the reply was a Guideline 2.1 "I
 Needed" letter asking for all seven items below — not a fault in the app, a fault in the
 paperwork. It is kept here rather than only in the Console because the Console field is not
 version-controlled and the answers change with the app: **anything that adds a permission
-prompt, an outbound link or a paid anything makes this file wrong**, and a wrong answer here
-is a rejection that costs a week.
+prompt, an outbound link, a paid anything or a language makes this file wrong**, and a wrong
+answer here is a rejection that costs a week.
+
+A language is on that list because it is the one that actually happened. Item 6 read "English
+only" for a week after the app shipped in three, and nothing anywhere went red — the same shape
+as item 2 going stale, and the reason this file is re-read rather than re-pasted.
 
 One of the seven is not text at all: **item 1**, the recording, which is uploaded to the
 Resolution Center. `video-script.md` beside this file is the shot list.
@@ -16,7 +20,7 @@ than half — it was 9520. It is the only version kept, because two lengths of t
 would drift and the shorter one is what actually gets pasted. **Anything added has to buy its
 space from something else**: the Rate link cost a sentence of item 3 and half of item 7's
 sourcing, and the notification prompt in item 1 cost the rest of that sourcing and two clauses of
-item 5's PayPal bullet. It stands at 3977, so there is room for one sentence and no more. Check
+item 5's PayPal bullet. It stands at 3982, so there is room for one sentence and no more. Check
 the count after editing — `awk '/^## Paste from here/{f=1;next} f&&/^```$/
 {if(++n==2)exit; next} f' docs/store/review-notes.md | wc -m`.
 
@@ -42,29 +46,28 @@ nothing given in return. That holds — no feature, theme, badge or acknowledgem
 and the screen says so in its own words. See the Monetisation section of CLAUDE.md; if that
 check ever stops holding, this file and the submission are both wrong.
 
-## The build these describe is uploaded, and the video is what is missing
+## The build these describe, and what is owed with it
 
-**Build 150, version 1.1, is on App Store Connect** as of 2026-09-11, and it is the one to film
-and submit. The notes below match that binary rather than running ahead of it.
+**Build 159, version 1.2, is on App Store Connect** as of 2026-09-19 — the three languages, the
+milestones kept on the achievements screen, and one sound for the whole breath under Standard.
+The notes below match that binary rather than running ahead of it.
 
-**Skip build 145.** It was the first with reminders in it and it carries a silent bug: saying yes
-to the reminder on the first-run screen armed it without asking for notification permission, so no
-prompt appeared and no notification ever arrived. Item 1 below would be wrong of 145 in the one
-direction Apple asks about, and a recording of it would show the switch doing nothing.
+**The recording is no longer owed.** It was filmed off build 150 and sent, 1.1 went live on
+2026-09-12, and the Guideline 2.1 letter is answered. Item 1 below still describes it, because
+the Notes field is pasted on every submission and the answer to "is there a permission prompt,
+and is it in the recording" has not changed. A *new* recording is wanted only if App Review asks
+again — an ordinary update owes none. `video-script.md` holds the shot list, with the one beat
+that has changed since marked.
 
-What is still owed is the recording, and it cannot be the one filmed for build 70:
+**Skip build 145**, still. It was the first with reminders in it and it carries a silent bug:
+saying yes to the reminder on the first-run screen armed it without asking for notification
+permission, so no prompt appeared and no notification ever arrived. Item 1 would be wrong of 145
+in the one direction Apple asks about.
 
-- The first-run question has **two** switches on iOS now — a goal and an evening reminder —
-  where the filmed one had a single switch. Item 4 says two.
-- Making a reminder asks for **notification permission**, the app's first and only prompt — either
-  by saying yes on the first-run screen or by adding one on the Reminders screen, and since 150
-  both ask. Item 1 said no prompt appeared anywhere. Apple's own letter asks for prompts to be in
-  the recording, so a video without it answers item 1 wrongly twice over. `video-script.md` films
-  it at step 6, with the first-run switches left off, so the prompt is seen being asked for rather
-  than arriving in the middle of a first run.
-
-So the order is: film 150 off TestFlight, attach the recording, paste these notes into App Review
-Information, submit. The notes are right for 150 and wrong for anything filmed before it.
+**Item 2's physical device is a claim about this build.** The iPhone 15 line was true of 150 off
+TestFlight; install 159 on it before pasting, or say which build it really was. The two simulator
+lines were re-checked against run 162 on 2026-09-19 — iPhone 17 Pro Max and iPad Pro 13-inch (M5),
+both iOS 26.2 — and are as written.
 
 ## What build 120 needed, kept because a rejected version asks the same questions
 
@@ -141,9 +144,9 @@ Targets iPhone and iPad; deployment target iOS 15.0.
 
 A paced breathing timer for coherence practice. You set the four phase lengths, or take a
 preset, and follow a sphere that opens and closes with the breath, with an optional sound
-at each turn so it can be followed with eyes shut. The problem it solves: counting breaths
-occupies the attention the practice is meant to free. Every sitting is logged, and goals
-and streaks counted from it.
+at each turn so it can be followed with eyes shut. Counting breaths occupies the attention
+the practice is meant to free. Every sitting is logged, and goals and streaks counted
+from it.
 
 For anyone practising paced or coherence breathing: a general-audience wellness and timing
 app, free, with no account and no network, so the log stays on the phone. It makes no
@@ -181,8 +184,9 @@ settings store reading its own file's metadata to write atomically.
 6. REGIONAL DIFFERENCES
 
 None. Identical in every region and storefront: no geo-restriction, no region-gated
-feature or content, no server that could vary by country. English only; dates and times
-follow the device locale, which is formatting, not a feature difference.
+feature or content, no server that could vary by country. English, Dutch and French,
+following the device language; dates and times follow the device locale. Wording and
+formatting, not a feature difference.
 
 7. REGULATED INDUSTRY AND THIRD-PARTY MATERIAL
 
@@ -191,6 +195,5 @@ HealthKit, no diagnostic or therapeutic claim. The app is our own work, GPL-3.0-
 source at github.com/wlemkens/openbreath.
 
 The only assets not ours are two recorded singing bowls from freesound_community on Pixabay
-under CC0 1.0, which requires no attribution or permission. Every other sound is
-synthesised.
+under CC0 1.0, requiring no attribution. Every other sound is synthesised.
 ```

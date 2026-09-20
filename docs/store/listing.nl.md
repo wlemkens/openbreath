@@ -43,7 +43,8 @@ de enige reden om eraan te komen is dat één ervan niet meer waar is.
       elke timing die je zelf verzint.
     • Een bol die opengaat als je inademt en sluit als je uitademt, als een wolk van punten,
       bellen, sterren of een gloed, in een kleur die jij kiest.
-    • Geluid per fase: golven die met de ademhaling stijgen en dalen, een geluidsgolf waarvan de
+    • Eén geluid voor de hele ademhaling, of één per fase: golven die met de ademhaling
+      stijgen en dalen, een geluidsgolf waarvan de
       boventonen samenkomen en oplossen, een markering bij elke omslag — klankschaal, bel of
       metronoomtik — een eigen mp3, of stilte. De schaal en de tik zijn gestemd op de omslag die
       ze markeren, zodat de overgang naar inademen niet klinkt als die naar uitademen.
@@ -66,7 +67,8 @@ de enige reden om eraan te komen is dat één ervan niet meer waar is.
       week. Ze worden uit het logboek geteld, dus een doel dat je vandaag stelt krijgt de oefening
       die eraan voorafging meteen mee.
     • Reeksen, totalen en mijlpalen bij 3 dagen, een week, een maand, 100 dagen, een half jaar en
-      een jaar — elk één keer gezegd, en rustig.
+      een jaar — elk één keer gezegd, en rustig, en daarna bewaard bij je prestaties met een
+      ster ernaast. Een onderbroken reeks neemt er geen enkele weg.
     • Herinneringen, zoveel als je wilt, elk met een eigen naam en tijd: dagelijks, op de dagen
       die je kiest, wekelijks of om de week. Een stille melding of een wekker die blijft rinkelen
       tot je hem wegveegt. Eén ervan kan zo staan dat ze alleen komt als het doel van die dag nog
@@ -115,7 +117,8 @@ Eén regel, zoals in het Engels: de tweede regel past hier niet en staat in de p
       elke timing die je zelf verzint.
     • Een bol die opengaat als je inademt en sluit als je uitademt, als een wolk van punten,
       bellen, sterren of een gloed, in een kleur die jij kiest.
-    • Geluid per fase: golven die met de ademhaling stijgen en dalen, een geluidsgolf waarvan de
+    • Eén geluid voor de hele ademhaling, of één per fase: golven die met de ademhaling
+      stijgen en dalen, een geluidsgolf waarvan de
       boventonen samenkomen en oplossen, een markering bij elke omslag — klankschaal, bel of
       metronoomtik — een eigen mp3, of stilte. De schaal en de tik zijn gestemd op de omslag die
       ze markeren, zodat de overgang naar inademen niet klinkt als die naar uitademen.
@@ -136,7 +139,8 @@ Eén regel, zoals in het Engels: de tweede regel past hier niet en staat in de p
       week. Ze worden uit het logboek geteld, dus een doel dat je vandaag stelt krijgt de oefening
       die eraan voorafging meteen mee.
     • Reeksen, totalen en mijlpalen bij 3 dagen, een week, een maand, 100 dagen, een half jaar en
-      een jaar — elk één keer gezegd, en rustig.
+      een jaar — elk één keer gezegd, en rustig, en daarna bewaard bij je prestaties met een
+      ster ernaast. Een onderbroken reeks neemt er geen enkele weg.
     • Herinneringen, zoveel als je wilt, elk met een eigen naam en tijd: dagelijks, op de dagen
       die je kiest, wekelijks of om de week. Eén ervan kan zo staan dat ze alleen komt als het
       doel van die dag nog niet gehaald is.
@@ -152,9 +156,14 @@ Eén regel, zoals in het Engels: de tweede regel past hier niet en staat in de p
 
 **Nieuw in deze versie** (max 500 bij Play)
 
-    Herinneringen. Stel er zoveel in als je wilt, elk met een eigen naam en tijd: dagelijks, op
-    de dagen die je kiest, wekelijks of om de week. Eén ervan kan alleen komen als het doel van
-    die dag nog niet gehaald is, zodat een dag waarop je al geoefend hebt stil blijft.
+    Nu ook in het Nederlands en het Frans, naast het Engels, volgens de taal die op je toestel
+    is ingesteld.
+
+    Mijlpalen blijven. Elke mijlpaal die je gehaald hebt staat met een ster bij je prestaties,
+    en een reeks die onderbroken wordt neemt ze niet meer weg.
+
+    Instellingen: één geluid voor de hele ademhaling onder Standaard, de keuze per fase staat
+    nog steeds onder Geavanceerd.
 
 **De eerste versie**, voor het geval een nieuw toegevoegde taal ook die nodig heeft:
 

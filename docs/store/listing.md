@@ -46,7 +46,8 @@ both, which is the fix noted below and never applied here.
     • Presets for the usual patterns — coherence 5.5, 4-6, 4-7-8, box 4 — and any timing of your own.
     • A sphere that opens as you breathe in and closes as you breathe out, as a cloud of points,
       bubbles, stars or a glow, in a colour you pick.
-    • Sound per phase: waves that rise and fall with the breath, a soundwave whose overtones
+    • One sound for the whole breath, or one for each phase: waves that rise and fall with
+      the breath, a soundwave whose overtones
       gather and dissolve, a marker at each turn — singing bowl, bell or metronome tick — an mp3
       of your own, or silence. The bowl and the tick are pitched by the turn they mark, so going
       into a breath in does not sound like going out.
@@ -67,7 +68,8 @@ both, which is the fix noted below and never applied here.
     • Goals, as many as you like: one sitting a day, a hundred breaths a day, an hour a week.
       They are counted from the log, so a goal set today already credits the practice behind it.
     • Streaks, totals and milestones at 3 days, a week, a month, 100 days, half a year and a
-      year — each said once, quietly.
+      year — each said once, quietly, then kept on the achievements screen with a star beside
+      it. A broken run takes none of them away.
     • Reminders, as many as you like, each with its own name and time: daily, on the days you
       pick, weekly or in alternate weeks. Either a quiet notification or an alarm that rings
       until you dismiss it. One can be set to arrive only when the day's goal is still undone.
@@ -124,7 +126,8 @@ side. Anything short of that, leave it alone.
     • Presets for the usual patterns — coherence 5.5, 4-6, 4-7-8, box 4 — and any timing of your own.
     • A sphere that opens as you breathe in and closes as you breathe out, as a cloud of points,
       bubbles, stars or a glow, in a colour you pick.
-    • Sound per phase: waves that rise and fall with the breath, a soundwave whose overtones
+    • One sound for the whole breath, or one for each phase: waves that rise and fall with
+      the breath, a soundwave whose overtones
       gather and dissolve, a marker at each turn — singing bowl, bell or metronome tick — an mp3
       of your own, or silence. The bowl and the tick are pitched by the turn they mark, so going
       into a breath in does not sound like going out.
@@ -143,7 +146,8 @@ side. Anything short of that, leave it alone.
     • Goals, as many as you like: one sitting a day, a hundred breaths a day, an hour a week.
       They are counted from the log, so a goal set today already credits the practice behind it.
     • Streaks, totals and milestones at 3 days, a week, a month, 100 days, half a year and a
-      year — each said once, quietly.
+      year — each said once, quietly, then kept on the achievements screen with a star beside
+      it. A broken run takes none of them away.
     • Reminders, as many as you like, each with its own name and time: daily, on the days you
       pick, weekly or in alternate weeks. One can be set to arrive only when the day's goal is
       still undone.
@@ -159,8 +163,18 @@ side. Anything short of that, leave it alone.
 **What's New** / **Release notes** (500 max on Play, 4000 on the App Store — write to Play's
 limit and the same text serves both)
 
-**This release — reminders on iPhone.** What goes in the App Store's What's New for the build
-that carries them:
+**This release — 1.2**, the languages and the kept milestones:
+
+    Now in Dutch and French as well as English, following the language your phone is set to.
+
+    Milestones are kept. Every one you have reached stays on the Achievements screen with a
+    star beside it, and a run that breaks no longer takes them away.
+
+    Settings: one sound for the whole breath under Standard, with the choice for each phase
+    still under Advanced.
+
+**1.1 — reminders on iPhone**, live since 2026-09-12 and kept because a store listing still
+shows the note that shipped with it:
 
     Reminders. Set as many as you like, each with its own name and time: daily, on the days
     you pick, weekly or in alternate weeks. One can arrive only when the day's goal is still
