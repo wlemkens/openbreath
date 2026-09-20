@@ -777,8 +777,14 @@ Functionality includes:
 
     Still owed before a submission: the Notes field pasted in by hand, which is not version
     controlled and is invisible when empty until the letter arrives. A new demo video is **not**
-    owed for an ordinary update — that recording answered a 2.1 rejection, and it is wanted again
-    only if App Review asks again.
+    owed for an ordinary update — 1.1 shipped without one, which is the proof.
+
+    **The recording that exists is older than it looks.** It was made on 2026-08-30 off build 120
+    and answered the 2.1 letter for the 1.0.120 review; it predates reminders, so the app's only
+    permission prompt is not in it. `review-notes.md` item 1 now says that out loud rather than
+    letting a reviewer discover it — and this file said for a fortnight that a refilm was owed,
+    which stopped being true the moment 1.1 was approved without one. Both halves of that are worth
+    keeping: the video is not owed, and the one on file does not show the prompt.
   - ~~**Ask Apple whether a Belgian VZW is eligible for the fee waiver.**~~ Answered: yes.
     Stanistil VZW is enrolled as an organisation, team `AD8Y56HX64`, D-U-N-S 37-171-7333, KBO
     0719.384.464. **Still worth confirming once that the waiver was actually applied** rather

@@ -20,7 +20,7 @@ than half — it was 9520. It is the only version kept, because two lengths of t
 would drift and the shorter one is what actually gets pasted. **Anything added has to buy its
 space from something else**: the Rate link cost a sentence of item 3 and half of item 7's
 sourcing, and the notification prompt in item 1 cost the rest of that sourcing and two clauses of
-item 5's PayPal bullet. It stands at 3985, so there is room for one sentence and no more. Check
+item 5's PayPal bullet. It stands at 3969, so there is room for one sentence and no more. Check
 the count after editing — `awk '/^## Paste from here/{f=1;next} f&&/^```$/
 {if(++n==2)exit; next} f' docs/store/review-notes.md | wc -m`.
 
@@ -52,11 +52,18 @@ check ever stops holding, this file and the submission are both wrong.
 milestones kept on the achievements screen, and one sound for the whole breath under Standard.
 The notes below match that binary rather than running ahead of it.
 
-**The recording is no longer owed, and item 1 no longer claims one is attached.** It was filmed
-off build 150 and sent to the Resolution Center, 1.1 went live on 2026-09-12, and the Guideline
-2.1 letter is answered. An ordinary update attaches nothing, so "Attached." — which item 1 opened
-with for as long as it was true — became a false sentence in the field App Review reads. It now
-says where the recording went and offers it again.
+**One recording exists, and it is older than the notes around it.** It was made on 2026-08-30 —
+commit `a294117`, "Describe the recording that exists, not the one the script asked for" — on a
+physical iPhone off build 120, and it answered the Guideline 2.1 letter for the 1.0.120 review.
+**It predates reminders**, so the app's only permission prompt is not in it, and neither are the
+first run's two switches. That is why this file spent a fortnight saying a refilm was owed.
+
+1.1 shipped on 2026-09-12 without one, which settles what an update actually needs: nothing. The
+2.1 letter belonged to the first review. But item 1 opened with **"Attached."** long after there
+was anything to attach, so it now says where that recording went, **says out loud that it does not
+show the prompt**, and offers a current one instead. Volunteering the gap is the same move item 5
+makes with the PayPal link: a reviewer who watches the old take and finds no prompt has caught
+item 1 lying, and there is no recovering from that in the same letter.
 
 **Do not empty the field on the strength of that.** Six of the seven answers are not about the
 video at all, and an empty Notes field is what earned the letter in the first place. The video is
@@ -132,9 +139,9 @@ another build goes up.
 ```
 1. SCREEN RECORDING AND PERMISSIONS
 
-A recording of the whole flow, made on a physical iPhone from a clean install, was sent to
-the Resolution Center for the first review of this app. The flows and the single prompt
-below are unchanged since; it can be provided again on request.
+A recording of the whole flow on a physical iPhone was sent to the Resolution Center for
+this app's first review. It predates reminders, so it does not show the prompt described
+below; a current one can be provided on request.
 
 There is no account, login, purchase, subscription, user-generated content or sharing, so
 none of those flows appear. One permission prompt exists: the standard iOS notification

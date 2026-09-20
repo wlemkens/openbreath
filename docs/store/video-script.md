@@ -12,11 +12,16 @@ first-run question has two switches now, and adding a reminder raises the app's 
 prompt. Apple's letter asks for prompts to be in the recording, so a take without it answers
 item 1 wrongly.
 
-**This has been sent, and it worked**: the take off build 150 answered the letter and 1.1 went
-live on 2026-09-12. What follows is kept for the next time App Review asks — which is the only
-reason to film again, since an ordinary update owes no video.
+**A take exists and it worked** — made 2026-08-30 off build 120, it answered the letter and
+1.0.120 was approved. It is **not** a recording of the app as it stands: reminders came after it,
+so neither the first run's second switch nor the notification prompt is in it, which is what this
+page was written to fix and what `review-notes.md` item 1 now declares rather than hides.
 
-Two notes for that next take, so it is not re-derived. Step 5 changed with the one-sound-for-the-
+Nobody refilmed it, and 1.1 shipped anyway on 2026-09-12. So an ordinary update owes no video,
+and the honest reading is that this shot list is for the next time App Review asks — or for the
+release someone decides is worth filming properly.
+
+Two notes for that take, so they are not re-derived. Step 5 changed with the one-sound-for-the-
 whole-breath work and is updated below. Nothing else did: the milestone badges are earned, and
 this take is made on a fresh install, so there are none to show; and the app being in three
 languages changes nothing a reviewer filming in English would see.
