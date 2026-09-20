@@ -20,7 +20,7 @@ than half — it was 9520. It is the only version kept, because two lengths of t
 would drift and the shorter one is what actually gets pasted. **Anything added has to buy its
 space from something else**: the Rate link cost a sentence of item 3 and half of item 7's
 sourcing, and the notification prompt in item 1 cost the rest of that sourcing and two clauses of
-item 5's PayPal bullet. It stands at 3982, so there is room for one sentence and no more. Check
+item 5's PayPal bullet. It stands at 3985, so there is room for one sentence and no more. Check
 the count after editing — `awk '/^## Paste from here/{f=1;next} f&&/^```$/
 {if(++n==2)exit; next} f' docs/store/review-notes.md | wc -m`.
 
@@ -52,12 +52,21 @@ check ever stops holding, this file and the submission are both wrong.
 milestones kept on the achievements screen, and one sound for the whole breath under Standard.
 The notes below match that binary rather than running ahead of it.
 
-**The recording is no longer owed.** It was filmed off build 150 and sent, 1.1 went live on
-2026-09-12, and the Guideline 2.1 letter is answered. Item 1 below still describes it, because
-the Notes field is pasted on every submission and the answer to "is there a permission prompt,
-and is it in the recording" has not changed. A *new* recording is wanted only if App Review asks
-again — an ordinary update owes none. `video-script.md` holds the shot list, with the one beat
-that has changed since marked.
+**The recording is no longer owed, and item 1 no longer claims one is attached.** It was filmed
+off build 150 and sent to the Resolution Center, 1.1 went live on 2026-09-12, and the Guideline
+2.1 letter is answered. An ordinary update attaches nothing, so "Attached." — which item 1 opened
+with for as long as it was true — became a false sentence in the field App Review reads. It now
+says where the recording went and offers it again.
+
+**Do not empty the field on the strength of that.** Six of the seven answers are not about the
+video at all, and an empty Notes field is what earned the letter in the first place. The video is
+one item; the field is the seven.
+
+If a recording is ever attached again — because App Review asks, or because a release is worth
+filming — item 1 opens with "Attached." again and `video-script.md` holds the shot list, with the
+one beat that has changed since marked. **Film it off the build being submitted**, which is that
+file's own rule and the reason build 150's take is not simply re-attached here: the Settings
+screen has changed under it.
 
 **Skip build 145**, still. It was the first with reminders in it and it carries a silent bug:
 saying yes to the reminder on the first-run screen armed it without asking for notification
@@ -121,18 +130,17 @@ another build goes up.
 ## Paste from here
 
 ```
-1. SCREEN RECORDING
+1. SCREEN RECORDING AND PERMISSIONS
 
-Attached. Physical iPhone 15, iOS 26.6, clean install of this build. It begins on the Home
-screen with the app being launched from its icon, and runs the typical flow through to a
-completed one-minute sitting and the log it writes.
+A recording of the whole flow, made on a physical iPhone from a clean install, was sent to
+the Resolution Center for the first review of this app. The flows and the single prompt
+below are unchanged since; it can be provided again on request.
 
 There is no account, login, purchase, subscription, user-generated content or sharing, so
-none of those flows appear. One permission prompt exists and is in the
-recording: the standard iOS notification alert, shown when a reminder is first added and
-only then; declining costs nothing but reminders. The app declares no purpose strings and
-needs none - the optional torch is device configuration, not capture, so no capture
-session is created.
+none of those flows appear. One permission prompt exists: the standard iOS notification
+alert, shown when a reminder is first added and only then; declining costs nothing but
+reminders. The app declares no purpose strings and needs none - the optional torch is
+device configuration, not capture, so no capture session is created.
 
 2. DEVICES AND OPERATING SYSTEMS TESTED
 
