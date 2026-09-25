@@ -160,7 +160,7 @@ fun SettingsScreen(
                 }
             }
         }
-        item {
+        if (advanced) item {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
