@@ -133,7 +133,7 @@
     <string name="achievements_section_milestones">Mijlpalen</string>
     <string name="achievements_section_practice">Oefening</string>
     <string name="achievements_not_yet">Nog niet</string>
-    <string name="achievements_days_in_row">Dagen op rij</string>
+    <string name="achievements_days_in_row">Huidige reeks</string>
     <string name="achievements_sittings">Sessies</string>
     <string name="achievements_breaths">Ademhalingen</string>
     <string name="achievements_minutes">Minuten</string>

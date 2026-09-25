@@ -157,7 +157,7 @@
     <string name="achievements_section_milestones">Milestones</string>
     <string name="achievements_section_practice">Practice</string>
     <string name="achievements_not_yet">Not yet</string>
-    <string name="achievements_days_in_row">Days in a row</string>
+    <string name="achievements_days_in_row">Current streak</string>
     <string name="achievements_sittings">Sittings</string>
     <string name="achievements_breaths">Breaths</string>
     <string name="achievements_minutes">Minutes</string>

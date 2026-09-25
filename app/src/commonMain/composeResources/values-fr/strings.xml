@@ -135,7 +135,7 @@
     <string name="achievements_section_milestones">Étapes</string>
     <string name="achievements_section_practice">Pratique</string>
     <string name="achievements_not_yet">Pas encore</string>
-    <string name="achievements_days_in_row">Jours d’affilée</string>
+    <string name="achievements_days_in_row">Série en cours</string>
     <string name="achievements_sittings">Séances</string>
     <string name="achievements_breaths">Respirations</string>
     <string name="achievements_minutes">Minutes</string>

@@ -361,7 +361,8 @@ internal fun periodStartMs(period: GoalPeriod, now: Instant, zone: TimeZone = Ti
 /**
  * How many periods in a row [goal] has been reached, counting back from now. The period in
  * progress cannot break a streak — a day you have not finished yet is not a day you failed —
- * so a run stands until a whole day or week goes by without reaching it.
+ * so a run stands until a whole day or week goes by without reaching it. A daily goal is
+ * also forgiven one missed day a week; see [dailyRun].
  */
 internal fun List<Entry>.streak(
     goal: Goal,
@@ -371,16 +372,49 @@ internal fun List<Entry>.streak(
     val reached = groupBy {
         periodStartDate(goal.period, Instant.fromEpochMilliseconds(it.at).toLocalDateTime(zone).date)
     }.filterValues { it.tally(goal.metric) >= goal.target }.keys
-    val step = if (goal.period == GoalPeriod.DAY) DateTimeUnit.DAY else DateTimeUnit.WEEK
+    val today = periodStartDate(goal.period, now.toLocalDateTime(zone).date)
+    if (goal.period == GoalPeriod.DAY) return dailyRun(today) { it in reached }
 
-    var at = periodStartDate(goal.period, now.toLocalDateTime(zone).date)
-    if (at !in reached) at = at.minus(1, step)
+    var at = today
+    if (at !in reached) at = at.minus(1, DateTimeUnit.WEEK)
     var run = 0
     while (at in reached) {
         run++
-        at = at.minus(1, step)
+        at = at.minus(1, DateTimeUnit.WEEK)
     }
     return run
+}
+
+/** At most one missed day in any this many is forgiven. */
+private const val GRACE_EVERY_DAYS = 7
+
+/**
+ * Days on which [met] held, counting back from [today] — the one walk both daily streaks take.
+ *
+ * **One missed day in any seven is forgiven.** This is an app for lowering stress, and a year's
+ * run lost to one bad day is the opposite of that. The forgiven day is not counted, so "30 days"
+ * still means thirty days of practice. Two missed days in a row, or two within a week, end it.
+ *
+ * Still read straight out of the log, so nothing is stored and nothing has to migrate: it is
+ * only ever more forgiving than the rule before it, so no run already counted gets shorter and
+ * `celebrated` cannot overtake what the log now says.
+ */
+private fun dailyRun(today: LocalDate, met: (LocalDate) -> Boolean): Int {
+    // today counts if it is already done, and cannot break the run if it is not: the day is
+    // not over yet
+    var at = if (met(today)) today else today.minus(1, DateTimeUnit.DAY)
+    var forgiven: LocalDate? = null
+    var run = 0
+    while (true) {
+        when {
+            met(at) -> run++
+            // a gap is only a gap with practice on its far side, and a week clear of the last one
+            met(at.minus(1, DateTimeUnit.DAY)) &&
+                (forgiven == null || at <= forgiven.minus(GRACE_EVERY_DAYS, DateTimeUnit.DAY)) -> forgiven = at
+            else -> return run
+        }
+        at = at.minus(1, DateTimeUnit.DAY)
+    }
 }
 
 /**
@@ -398,7 +432,7 @@ internal fun List<Goal>.allReached(
  * Days in a row on which everything asked for that day was done. Weekly goals are left out:
  * one is unmet for most of its own week, so counting it would make a daily streak impossible.
  * With no daily goals set the bar is simply having practised, which is the figure the
- * achievements screen already calls "days in a row".
+ * achievements screen calls the current streak. The same missed day a week is forgiven.
  */
 internal fun List<Entry>.allReachedStreak(
     goals: List<Goal>,
@@ -410,16 +444,7 @@ internal fun List<Entry>.allReachedStreak(
     fun met(day: LocalDate) =
         byDay[day].orEmpty().let { entries -> daily.all { entries.tally(it.metric) >= it.target } }
 
-    // today counts if it is already done, and cannot break the run if it is not: the day is
-    // not over yet
-    var at = now.toLocalDateTime(zone).date
-    if (!met(at)) at = at.minus(1, DateTimeUnit.DAY)
-    var run = 0
-    while (met(at)) {
-        run++
-        at = at.minus(1, DateTimeUnit.DAY)
-    }
-    return run
+    return dailyRun(now.toLocalDateTime(zone).date, ::met)
 }
 
 /** The lengths worth marking. Past the last of them, every anniversary. */

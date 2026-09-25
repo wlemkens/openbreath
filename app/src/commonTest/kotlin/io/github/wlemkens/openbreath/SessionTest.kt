@@ -297,8 +297,10 @@ class SessionTest {
         assertEquals(2, upToYesterday.streak(EVERY_DAY, wednesdayNoon, zone))
         // sitting today extends it rather than starting again
         assertEquals(3, (upToYesterday + on(12)).streak(EVERY_DAY, wednesdayNoon, zone))
-        // but a whole day missed ends it: Tuesday empty leaves only today
-        assertEquals(1, listOf(on(10), on(12)).streak(EVERY_DAY, wednesdayNoon, zone))
+        // one day missed is forgiven and not counted: Tuesday empty, Monday and today make two
+        assertEquals(2, listOf(on(10), on(12)).streak(EVERY_DAY, wednesdayNoon, zone))
+        // but two in a row end it: Monday and Tuesday empty leave only today
+        assertEquals(1, listOf(on(9), on(12)).streak(EVERY_DAY, wednesdayNoon, zone))
         // and nothing since Sunday means the run is over, not merely paused
         assertEquals(0, listOf(on(9)).streak(EVERY_DAY, wednesdayNoon, zone))
     }
@@ -314,13 +316,36 @@ class SessionTest {
         val tenADay = Goal(id = 1, metric = GoalMetric.MINUTES, period = GoalPeriod.DAY, target = 10)
         // Monday reached in two sittings; Tuesday sat, but only for six minutes
         val log = listOf(on(10, 9, 300_000L), on(10, 18, 360_000L), on(11, 9, 360_000L))
-        assertEquals(0, log.streak(tenADay, wednesdayNoon, zone))
+        // Tuesday falling short is the one forgiven day, so only Monday counts
+        assertEquals(1, log.streak(tenADay, wednesdayNoon, zone))
         // the same days do carry a streak of merely turning up
         assertEquals(2, log.streak(EVERY_DAY, wednesdayNoon, zone))
 
         // a weekly goal counts weeks: this one is reached in the week of the 10th alone
         val weekly = Goal(id = 2, metric = GoalMetric.MINUTES, period = GoalPeriod.WEEK, target = 15)
         assertEquals(1, log.streak(weekly, wednesdayNoon, zone))
+    }
+
+    @Test
+    fun `one missed day in any seven is forgiven and two are not`() {
+        val zone = TimeZone.of("Europe/Brussels")
+        val monday31Noon = LocalDateTime(2026, 8, 31, 12, 0).toInstant(zone)
+        val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
+        fun days(vararg d: Int) = d.map {
+            entryFor(LocalDateTime(2026, 8, it, 9, 0).toInstant(zone).toEpochMilliseconds(), 300_000L, preset)
+        }
+        fun run(log: List<Entry>) = log.streak(EVERY_DAY, monday31Noon, zone)
+
+        // today not done and yesterday missed: the run is still standing, and waits for today
+        assertEquals(5, run(days(25, 26, 27, 28, 29)))
+        // gaps on the 23rd and the 30th are seven days apart, so both are forgiven
+        assertEquals(9, run(days(21, 22, 24, 25, 26, 27, 28, 29, 31)))
+        // six apart is two in one week: the later one is forgiven, the earlier ends the run
+        assertEquals(6, run(days(22, 23, 25, 26, 27, 28, 29, 31)))
+        // a run cannot start on a gap: with nothing before the 30th there is only today
+        assertEquals(1, run(days(31)))
+        // the milestone run walks the same way
+        assertEquals(9, days(21, 22, 24, 25, 26, 27, 28, 29, 31).allReachedStreak(emptyList(), monday31Noon, zone))
     }
 
     @Test
@@ -360,8 +385,11 @@ class SessionTest {
         assertEquals(2, log.allReachedStreak(listOf(tenMinutes, weekly), wednesdayNoon, zone))
         // with no daily goals the bar is simply having practised, so Wednesday counts too
         assertEquals(3, log.allReachedStreak(listOf(weekly), wednesdayNoon, zone))
-        // and a day missed in the middle ends it
-        assertEquals(1, listOf(on(10, 9, 600_000L), on(12, 9, 600_000L))
+        // a day missed in the middle is forgiven and not counted
+        assertEquals(2, listOf(on(10, 9, 600_000L), on(12, 9, 600_000L))
+            .allReachedStreak(listOf(tenMinutes), wednesdayNoon, zone))
+        // two are not
+        assertEquals(1, listOf(on(9, 9, 600_000L), on(12, 9, 600_000L))
             .allReachedStreak(listOf(tenMinutes), wednesdayNoon, zone))
     }
 
