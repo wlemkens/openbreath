@@ -576,10 +576,10 @@ jobs:
       # message above with [1.1] on both sides. **A shipped version closes its train**, so this
       # line is bumped as part of deciding to release, not after an upload is refused.
       #
-      # So this is bumped by hand, once per release, and `iosApp/project.yml`'s MARKETING_VERSION
-      # is kept the same so a laptop build and a store build agree. The build number underneath it
-      # keeps climbing on its own.
-      VERSION: "1.2"
+      # So it is bumped by hand, once per release, in one place: MARKETING_VERSION in
+      # `iosApp/project.yml`. The step after checkout reads it into VERSION here, and
+      # app/build.gradle.kts reads the same line for Play and the desktop installers as
+      # 1.2.<build>. The build number underneath it keeps climbing on its own.
       BUILD: ${{ github.run_number }}
       BUNDLE_ID: io.github.wlemkens.openbreath
       PROFILE_NAME: OpenBreath App Store
@@ -597,6 +597,12 @@ jobs:
 
       - name: Check the bundled audio is audio
         run: .github/check-media.sh
+
+      - name: Read the release from project.yml
+        run: |
+          v=$(sed -n 's/^ *MARKETING_VERSION: *"\([0-9.]*\)".*/\1/p' iosApp/project.yml)
+          [ -n "$v" ] || { echo "::error title=No MARKETING_VERSION::iosApp/project.yml has no MARKETING_VERSION: \"x.y\" line"; exit 1; }
+          echo "VERSION=$v" >> "$GITHUB_ENV"
 
       - uses: actions/setup-java@v5
         with:

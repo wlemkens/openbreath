@@ -51,6 +51,18 @@ val buildNumber: String =
         ?: "1"
 
 /**
+ * The release, read from the iPhone's MARKETING_VERSION so the stores cannot drift apart: one
+ * bump in `iosApp/project.yml` names the release everywhere, and the build number goes on the
+ * end — 1.2.168. The App Store keeps the bare "1.2", because there the build number is a field
+ * of its own; the app-store job in build.yml reads the same line for it.
+ */
+val appVersion: String =
+    Regex("""MARKETING_VERSION:\s*"([\d.]+)"""")
+        .find(rootProject.file("iosApp/project.yml").readText())
+        ?.groupValues?.get(1)
+        .let { "${it ?: error("no MARKETING_VERSION in iosApp/project.yml")}.$buildNumber" }
+
+/**
  * Written into commonMain rather than into a BuildConfig or an Info.plist, because both
  * platforms need it and one generated Kotlin file cannot drift the way two mechanisms would.
  *
@@ -61,7 +73,7 @@ val buildNumber: String =
 val generateBuildInfo by tasks.registering {
     val dir = layout.buildDirectory.dir("generated/buildinfo/kotlin")
     outputs.dir(dir)
-    val version = "1.0.$buildNumber"
+    val version = appVersion
     val sha = System.getenv("GITHUB_SHA")?.take(7)
         ?: git("rev-parse", "--short=7", "HEAD")
         ?: "unknown"
@@ -235,7 +247,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Dmg, TargetFormat.Deb)
             packageName = "OpenBreath"
-            packageVersion = "1.0.$buildNumber"
+            packageVersion = appVersion
             description = "Heart coherence breathing"
             copyright = "Copyright (c) 2026 Wim Lemkens"
             vendor = "Wim Lemkens"
@@ -295,7 +307,7 @@ android {
         // CI's run number, or the commit count off a laptop — see buildNumber. Play needs this
         // to increase on every upload, which is the whole reason it is never simply 1
         versionCode = buildNumber.toInt()
-        versionName = "1.0.$buildNumber"
+        versionName = appVersion
     }
 
     compileOptions {

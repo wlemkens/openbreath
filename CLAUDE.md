@@ -767,7 +767,9 @@ Functionality includes:
     live in one line and needs no key — ask it before believing a date in here.
 
     So the next release is **1.2**, and the version is bumped as part of deciding to release rather
-    than after an upload is refused. Two numbers, and they are not the same number: the App Store
+    than after an upload is refused — in one place, `MARKETING_VERSION` in `iosApp/project.yml`,
+    which the app-store job, Play's versionName and the desktop installers all read.
+    Two numbers, and they are not the same number: the App Store
     build is `github.run_number` and Play's versionCode is the commit count, so one commit is build
     158 on one store and versionCode 168 on the other.
 
