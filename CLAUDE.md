@@ -861,9 +861,12 @@ Functionality includes:
     written and had quietly stopped being true; a TODO that describes the world rather than the
     repository goes stale without anything going red, so check it before believing it.
 
-    What is genuinely still owed is the **12-tester, 14-day closed test** a personal developer
-    account has to run before production opens. `alpha` *is* that closed test, so every upload
-    feeds it — what it wants now is twelve people and two weeks, neither of which is a command.
+    The **12-tester, 14-day closed test** a personal developer account has to run is behind it:
+    production opened, and on 2026-09-26 **versionCode 131 was in review for production**. 131 is
+    the 2026-08-30 build, which predates the first-run permission fix — on Android 13+ its first-run
+    reminder never notifies — and the milestones, stars and grace day the screenshots show. 179, on
+    `alpha`, has all of them; `-PplayTrack=production` sends a build there. A release still in
+    review is replaced by a newer one, so a stale build in review costs a restart, not a release.
 
     Uploading is wired: gradle-play-publisher, `./gradlew :app:publishBundle`, `docs/BUILDING.md` has the
     service-account setup. Release notes are generated from the commit subjects on the way, which
