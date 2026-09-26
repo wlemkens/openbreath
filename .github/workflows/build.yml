@@ -578,8 +578,8 @@ jobs:
       #
       # So it is bumped by hand, once per release, in one place: MARKETING_VERSION in
       # `iosApp/project.yml`. The step after checkout reads it into VERSION here, and
-      # app/build.gradle.kts reads the same line for Play and the desktop installers as
-      # 1.2.<build>. The build number underneath it keeps climbing on its own.
+      # app/build.gradle.kts reads the same line, unchanged, for Play's versionName and the desktop
+      # installers. The build number underneath it keeps climbing on its own, in a field of its own.
       BUILD: ${{ github.run_number }}
       BUNDLE_ID: io.github.wlemkens.openbreath
       PROFILE_NAME: OpenBreath App Store

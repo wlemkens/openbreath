@@ -23,8 +23,8 @@ set -euo pipefail
 src="$1"
 name="$2"
 
-# Unquoted on purpose: the caller passes a glob, because packageVersion carries the build number and
-# the built filename therefore changes every push.
+# Unquoted on purpose: the caller passes a glob, because packageVersion is the release and
+# the built filename therefore changes with every one.
 # shellcheck disable=SC2086
 file="$(ls -1 $src 2>/dev/null | head -1 || true)"
 [ -n "$file" ] || { echo "::error title=No installer::nothing matched $src"; exit 1; }

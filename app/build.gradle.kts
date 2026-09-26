@@ -52,15 +52,15 @@ val buildNumber: String =
 
 /**
  * The release, read from the iPhone's MARKETING_VERSION so the stores cannot drift apart: one
- * bump in `iosApp/project.yml` names the release everywhere, and the build number goes on the
- * end — 1.2.168. The App Store keeps the bare "1.2", because there the build number is a field
- * of its own; the app-store job in build.yml reads the same line for it.
+ * bump in `iosApp/project.yml` names the release everywhere — 1.3.1 on Play, the App Store and the
+ * installers alike. The build number is never glued onto it: Play and the App Store each have a
+ * field of their own for it (versionCode, CFBundleVersion), and the desktop has none.
  */
 val appVersion: String =
     Regex("""MARKETING_VERSION:\s*"([\d.]+)"""")
         .find(rootProject.file("iosApp/project.yml").readText())
         ?.groupValues?.get(1)
-        .let { "${it ?: error("no MARKETING_VERSION in iosApp/project.yml")}.$buildNumber" }
+        ?: error("no MARKETING_VERSION in iosApp/project.yml")
 
 /**
  * Written into commonMain rather than into a BuildConfig or an Info.plist, because both
@@ -236,9 +236,9 @@ compose.resources {
  * **each only on its own operating system**, because that is jpackage's limit and not a choice
  * made here. Asking Linux for an `.msi` fails; CI therefore has one job per format.
  *
- * The version is [buildNumber] again, so an installer and a Play bundle built from one commit
- * cannot disagree about which build they are. It also has to satisfy MSI's shape — major.minor.build
- * with build below 65536 — which a commit count will not reach for a very long time.
+ * The version is the release alone, [appVersion], because an installer has no build-number field
+ * to put [buildNumber] in. MSI and DMG take three parts at most, which is why a release is named
+ * "x.y" or "x.y.z" and never more; the About line carries the commit to tell two builds apart.
  */
 compose.desktop {
     application {
@@ -247,9 +247,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Dmg, TargetFormat.Deb)
             packageName = "OpenBreath"
-            // MSI and DMG take three parts at most, so a patch release such as 1.3.1 drops its
-            // patch here: 1.3.184 still climbs, since the build number does
-            packageVersion = appVersion.split('.').let { "${it[0]}.${it[1]}.${it.last()}" }
+            packageVersion = appVersion
             description = "Heart coherence breathing"
             copyright = "Copyright (c) 2026 Wim Lemkens"
             vendor = "Wim Lemkens"
