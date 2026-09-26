@@ -43,6 +43,7 @@ import org.jetbrains.compose.resources.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.time.Clock
@@ -88,6 +89,12 @@ fun Breath(modifier: Modifier = Modifier) {
     var showGoals by remember { mutableStateOf(false) }
     var showAchievements by remember { mutableStateOf(false) }
     var showSupport by remember { mutableStateOf(false) }
+
+    // every return to the app re-arms: iOS arms a few occurrences ahead and needs topping up, and
+    // an Android alarm lost to a force-stop comes back — see ReminderScheduler.apply
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        scope.launch { platform.reminders.apply(store.remindersFlow().first()) }
+    }
 
     // first frames, before DataStore has read. An empty list here would be a lie the goal screen
     // could act on: saving a goal built on "no goals yet" writes over every goal there is
@@ -290,7 +297,14 @@ fun SessionScreen(
             torch.off()
             // pausing and leaving the screen both cancel this coroutine, and a cancelled one
             // cannot suspend — without NonCancellable every sitting but a completed one is lost
-            withContext(NonCancellable) { store.logSession(startedAt, breathed, preset) }
+            withContext(NonCancellable) {
+                store.logSession(startedAt, breathed, preset)
+                // iOS decides onlyIfBehind when arming, so a sitting that meets the goals re-decides it
+                platform.reminders.apply(store.remindersFlow().first())
+                if (store.goalsFlow().first().allReached(store.historyFlow().first(), Clock.System.now())) {
+                    platform.reminders.dismissDelivered()
+                }
+            }
         }
     }
 

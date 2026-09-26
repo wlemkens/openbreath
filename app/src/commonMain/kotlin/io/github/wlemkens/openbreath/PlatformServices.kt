@@ -358,6 +358,12 @@ interface ReminderScheduler {
     suspend fun apply(reminders: List<Reminder>)
 
     fun cancel(id: Int)
+
+    /**
+     * Takes back every reminder that has already rung and is still on screen. Called once a sitting
+     * leaves every goal reached, when a notification asking for one has nothing left to ask.
+     */
+    fun dismissDelivered() = Unit
 }
 
 /** What a platform with no scheduler answers, so the screens need no branch of their own. */

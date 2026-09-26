@@ -481,6 +481,26 @@ class SessionTest {
     }
 
     @Test
+    fun `a reminder armed ahead is skipped for the rest of a reached period and no further`() {
+        // iOS arms occurrences in advance and asks allReached about each one's own moment, with
+        // the log as it stands now — so a later hour today counts this morning and tomorrow does not
+        val zone = TimeZone.of("Europe/Brussels")
+        val preset = Preset("Coherence 5.5", 5500, 0, 5500, 0)
+        val morning = listOf(
+            entryFor(LocalDateTime(2026, 8, 12, 9, 0).toInstant(zone).toEpochMilliseconds(), 300_000L, preset)
+        )
+        val daily = listOf(setupGoal())
+        val weekly = listOf(Goal(id = 1, metric = GoalMetric.SITTINGS, target = 1, period = GoalPeriod.WEEK))
+
+        assertTrue(daily.allReached(morning, LocalDateTime(2026, 8, 12, 20, 0).toInstant(zone), zone))
+        assertFalse(daily.allReached(morning, LocalDateTime(2026, 8, 13, 20, 0).toInstant(zone), zone))
+        // Wednesday the 12th holds the week through Friday, and a week on it has let go —
+        // whichever day the locale starts its weeks on
+        assertTrue(weekly.allReached(morning, LocalDateTime(2026, 8, 14, 20, 0).toInstant(zone), zone))
+        assertFalse(weekly.allReached(morning, LocalDateTime(2026, 8, 19, 20, 0).toInstant(zone), zone))
+    }
+
+    @Test
     fun `the standard sound is what all four phases agree on`() {
         val marker = PhaseSound(mode = SoundMode.MARKER, tone = MarkerTone.GONG)
         val same = Preset().let { p -> Phase.entries.fold(p) { acc, ph -> acc.withSound(ph) { marker } } }

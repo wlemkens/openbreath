@@ -530,6 +530,18 @@ Functionality includes:
     re-arms on launch and after every sitting. That is sound rather than approximate: the only way
     to get ahead of a goal is to practise, and the only way to practise is to open the app.
 
+  **Every return to the app re-arms, and so does every sitting.** `Breath` calls `apply()` on
+  `ON_START` and `SessionScreen` after `logSession`. Without the first, iOS never tops up past the
+  eight it armed when a reminder was saved and a daily one goes quiet after a week — which it did,
+  until 1.4, while the comment in `IosReminders` claimed otherwise. On iOS `apply()` skips any
+  occurrence of an `onlyIfBehind` reminder whose own moment `allReached` answers true for, which is
+  the rest of a met day or week and nothing past it.
+
+  **A sitting that meets every goal also clears what already rang** — `dismissDelivered()`, which is
+  `cancelAll()` on Android and `removeAllDeliveredNotifications()` on iOS. Both are exact only
+  because reminders are the only notifications the app posts; the day it posts another kind, that
+  becomes a per-id cancel.
+
   **The rule itself is shared and tested.** `Recurrence.kt` in commonMain holds `nextFireAt` and
   the ISO week arithmetic, with `isoWeek` computed rather than looked up because kotlinx-datetime
   carries no week fields — the Thursday of a week decides its year. Its tests were androidUnitTest's
@@ -770,7 +782,7 @@ Functionality includes:
     days after; the lookup above would have said so. **1.3 went live on 2026-09-26** (build 170, and
     versionCode 179 on Play's alpha track). The lookup lags a release by hours — it still answered
     1.2 after App Store Connect said `READY_FOR_SALE` — so a lookup that is *behind* proves nothing;
-    the API's `appStoreState` is the one to believe. So the next release is **1.4**, and the version is bumped as part of deciding to release rather
+    the API's `appStoreState` is the one to believe. So the next release is **1.4**, bumped on 2026-09-26 — and the version is bumped as part of deciding to release rather
     than after an upload is refused — in one place, `MARKETING_VERSION` in `iosApp/project.yml`,
     which the app-store job, Play's versionName and the desktop installers all read.
     Two numbers, and they are not the same number: the App Store

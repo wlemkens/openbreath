@@ -2,6 +2,7 @@ package io.github.wlemkens.openbreath
 
 import android.Manifest
 import android.app.Activity
+import android.app.NotificationManager
 import android.content.pm.PackageManager
 import android.os.Build
 import android.view.WindowManager
@@ -141,6 +142,10 @@ class AndroidPlatform(
         override suspend fun apply(reminders: List<Reminder>) = activity.applyReminders(reminders)
 
         override fun cancel(id: Int) = activity.cancelReminder(id)
+
+        // reminders are the only notifications this app posts, so all of ours is exactly them
+        override fun dismissDelivered() =
+            activity.getSystemService(NotificationManager::class.java)?.cancelAll() ?: Unit
     }
 
     override fun session(): SessionServices = AndroidSession(activity, focus, torch)

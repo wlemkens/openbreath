@@ -26,7 +26,7 @@ fun MainViewController(): UIViewController = ComposeUIViewController {
     LaunchedEffect(Unit) { importDemoLog(store) }
     CompositionLocalProvider(
         LocalStore provides store,
-        LocalPlatform provides IosPlatform(),
+        LocalPlatform provides IosPlatform(store),
     ) {
         AppTheme { Breath(Modifier.safeDrawingPadding()) }
     }

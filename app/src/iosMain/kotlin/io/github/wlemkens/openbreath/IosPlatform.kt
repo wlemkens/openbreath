@@ -25,7 +25,7 @@ private const val APP_STORE_ID = "6805899911"
  */
 private const val LISTING_IS_LIVE = true
 
-class IosPlatform : Platform {
+class IosPlatform(store: Store) : Platform {
 
     /**
      * CFBundleShortVersionString and CFBundleVersion, which CI stamps from the run number so a
@@ -80,7 +80,7 @@ class IosPlatform : Platform {
 
     override val torch = IosTorch()
 
-    override val reminders = IosReminders()
+    override val reminders = IosReminders(store)
 
     override fun session(): SessionServices = IosSession(focus, torch)
 

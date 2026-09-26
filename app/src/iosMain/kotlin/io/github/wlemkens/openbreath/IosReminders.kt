@@ -7,6 +7,8 @@ import org.jetbrains.compose.resources.getString
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.datetime.TimeZone
+import kotlinx.coroutines.flow.first
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import platform.Foundation.NSCalendar
 import platform.Foundation.NSCalendarUnitDay
@@ -55,7 +57,7 @@ import kotlin.time.Clock
  *   app. A day's reminder is withdrawn the moment the sitting that satisfies it is logged.
  */
 @OptIn(ExperimentalForeignApi::class)
-class IosReminders : ReminderScheduler {
+class IosReminders(private val store: Store) : ReminderScheduler {
 
     private val center = UNUserNotificationCenter.currentNotificationCenter()
 
@@ -105,11 +107,16 @@ class IosReminders : ReminderScheduler {
         val body = getString(Res.string.notification_body)
         val zone = TimeZone.currentSystemDefault()
         var now = Clock.System.now().toLocalDateTime(zone)
+        // read at arming time, which is the only time there is: an occurrence in a period whose
+        // goals already stand reached is not armed, and one in a later period counts nothing yet
+        val goals = store.goalsFlow().first()
+        val history = store.historyFlow().first()
         for (reminder in reminders) {
             if (!reminder.enabled) continue
             var at = now
             repeat(OCCURRENCES) {
                 at = nextFireAt(reminder, at)
+                if (reminder.onlyIfBehind && goals.allReached(history, at.toInstant(zone), zone)) return@repeat
                 schedule(reminder, body, at.hour, at.minute, at.date.year, at.date.monthNumber, at.date.dayOfMonth)
             }
         }
@@ -125,6 +132,9 @@ class IosReminders : ReminderScheduler {
             List(OCCURRENCES) { "$ID_PREFIX$id-$it" }
         )
     }
+
+    // reminders are the only notifications this app posts, so all of ours is exactly them
+    override fun dismissDelivered() = center.removeAllDeliveredNotifications()
 
     private fun schedule(
         reminder: Reminder,
