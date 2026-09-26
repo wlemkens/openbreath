@@ -767,7 +767,10 @@ Functionality includes:
     live in one line and needs no key — ask it before believing a date in here.
 
     **1.2 went live on 2026-09-20** and this file went on calling it "the next release" for five
-    days after; the lookup above would have said so. So the next release is **1.3**, and the version is bumped as part of deciding to release rather
+    days after; the lookup above would have said so. **1.3 went live on 2026-09-26** (build 170, and
+    versionCode 179 on Play's alpha track). The lookup lags a release by hours — it still answered
+    1.2 after App Store Connect said `READY_FOR_SALE` — so a lookup that is *behind* proves nothing;
+    the API's `appStoreState` is the one to believe. So the next release is **1.4**, and the version is bumped as part of deciding to release rather
     than after an upload is refused — in one place, `MARKETING_VERSION` in `iosApp/project.yml`,
     which the app-store job, Play's versionName and the desktop installers all read.
     Two numbers, and they are not the same number: the App Store
