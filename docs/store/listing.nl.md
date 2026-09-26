@@ -154,7 +154,16 @@ Eén regel, zoals in het Engels: de tweede regel past hier niet en staat in de p
     ontgrendelen. OpenBreath wordt uitgegeven onder de GNU General Public License v3 of later;
     de broncode is openbaar.
 
-**Nieuw in deze versie** (max 500 bij Play)
+**Nieuw in deze versie** (max 500 bij Play) — 1.4
+
+    Herinneringen ruimen zichzelf op zodra ze hun werk gedaan hebben. Haalt een sessie je
+    doelen, dan verdwijnt een herinnering die nog op je scherm staat, en een herinnering die
+    alleen komt als je achterloopt blijft de rest van die dag of week stil.
+
+    Op de iPhone blijven herinneringen komen: ze konden na ongeveer een week stoppen, tenzij
+    het scherm Herinneringen geopend werd.
+
+**1.2**
 
     Nu ook in het Nederlands en het Frans, naast het Engels, volgens de taal die op je toestel
     is ingesteld.

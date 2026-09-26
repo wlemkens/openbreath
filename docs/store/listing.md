@@ -163,7 +163,16 @@ side. Anything short of that, leave it alone.
 **What's New** / **Release notes** (500 max on Play, 4000 on the App Store — write to Play's
 limit and the same text serves both)
 
-**This release — 1.2**, the languages and the kept milestones:
+**This release — 1.4**, reminders that know when they are done:
+
+    Reminders clear themselves once they have done their job. When a sitting meets your
+    goals, a reminder still on screen goes away, and one set to arrive only when you are
+    behind stays quiet for the rest of that day or week.
+
+    On iPhone, reminders keep arriving: they could stop after about a week unless the
+    Reminders screen was opened.
+
+**1.2**, live since 2026-09-20:
 
     Now in Dutch and French as well as English, following the language your phone is set to.
 

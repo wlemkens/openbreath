@@ -159,7 +159,16 @@ Une seule ligne, comme en anglais : la seconde ne tient pas ici et vit dans le t
     OpenBreath est publiée sous la GNU General Public License v3 ou ultérieure ; le code source
     est public.
 
-**Nouveautés** (500 max sur Play)
+**Nouveautés** (500 max sur Play) — 1.4
+
+    Les rappels s’effacent d’eux-mêmes une fois leur travail fait. Quand une séance atteint vos
+    objectifs, un rappel encore affiché disparaît, et un rappel prévu seulement en cas de
+    retard reste silencieux pour le reste de la journée ou de la semaine.
+
+    Sur iPhone, les rappels continuent d’arriver : ils pouvaient s’arrêter au bout d’une
+    semaine environ, sauf si l’écran Rappels était ouvert.
+
+**1.2**
 
     Désormais en néerlandais et en français, en plus de l’anglais, selon la langue réglée sur
     votre appareil.
