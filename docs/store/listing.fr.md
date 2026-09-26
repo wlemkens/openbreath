@@ -159,7 +159,7 @@ Une seule ligne, comme en anglais : la seconde ne tient pas ici et vit dans le t
     OpenBreath est publiée sous la GNU General Public License v3 ou ultérieure ; le code source
     est public.
 
-**Nouveautés** (500 max sur Play) — 1.4
+**Nouveautés** (500 max sur Play) — 1.3.1
 
     Les rappels s’effacent d’eux-mêmes une fois leur travail fait. Quand une séance atteint vos
     objectifs, un rappel encore affiché disparaît, et un rappel prévu seulement en cas de

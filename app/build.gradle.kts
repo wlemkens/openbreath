@@ -247,7 +247,9 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Msi, TargetFormat.Dmg, TargetFormat.Deb)
             packageName = "OpenBreath"
-            packageVersion = appVersion
+            // MSI and DMG take three parts at most, so a patch release such as 1.3.1 drops its
+            // patch here: 1.3.184 still climbs, since the build number does
+            packageVersion = appVersion.split('.').let { "${it[0]}.${it[1]}.${it.last()}" }
             description = "Heart coherence breathing"
             copyright = "Copyright (c) 2026 Wim Lemkens"
             vendor = "Wim Lemkens"

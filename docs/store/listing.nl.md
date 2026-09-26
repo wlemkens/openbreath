@@ -154,7 +154,7 @@ Eén regel, zoals in het Engels: de tweede regel past hier niet en staat in de p
     ontgrendelen. OpenBreath wordt uitgegeven onder de GNU General Public License v3 of later;
     de broncode is openbaar.
 
-**Nieuw in deze versie** (max 500 bij Play) — 1.4
+**Nieuw in deze versie** (max 500 bij Play) — 1.3.1
 
     Herinneringen ruimen zichzelf op zodra ze hun werk gedaan hebben. Haalt een sessie je
     doelen, dan verdwijnt een herinnering die nog op je scherm staat, en een herinnering die

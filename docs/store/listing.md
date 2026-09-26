@@ -163,7 +163,7 @@ side. Anything short of that, leave it alone.
 **What's New** / **Release notes** (500 max on Play, 4000 on the App Store — write to Play's
 limit and the same text serves both)
 
-**This release — 1.4**, reminders that know when they are done:
+**This release — 1.3.1**, reminders that know when they are done:
 
     Reminders clear themselves once they have done their job. When a sitting meets your
     goals, a reminder still on screen goes away, and one set to arrive only when you are
