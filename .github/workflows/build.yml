@@ -25,6 +25,10 @@ on:
         description: Sign a Release build and upload it to App Store Connect
         type: boolean
         default: false
+      submit_review:
+        description: Submit the release for App Review — this run's upload, or the newest build of it
+        type: boolean
+        default: false
       screenshots:
         description: Retake the App Store screenshots from a 6.9" simulator
         type: boolean
@@ -749,3 +753,32 @@ jobs:
           name: app-store-ipa
           path: ${{ runner.temp }}/export/*.ipa
           if-no-files-found: warn
+
+  # What used to be typed into App Store Connect by hand before every submission — What's New in
+  # three languages, the review notes, the build, the button — from the files that already hold it.
+  # See .github/submit-review.py for what it reads and in which order.
+  #
+  # Its own input rather than part of the upload, because the two are different commitments: an
+  # upload reaches testers, a submission reaches the public once approved. Without app_store it
+  # submits the newest build of the release already up, which is how a build is sent to review
+  # without spending a rebuild on it.
+  #
+  # Linux: it is HTTP and nothing else, and a macOS runner costs ten times the minutes to wait on.
+  app-store-review:
+    name: Submit for App Review
+    runs-on: ubuntu-latest
+    needs: app-store
+    if: always() && inputs.submit_review && (needs.app-store.result == 'success' || needs.app-store.result == 'skipped')
+    # a fresh upload is listed after minutes and processed after more; the script waits 90
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Submit
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          # this run's build when it uploaded one, else the newest valid build of the release
+          BUILD: ${{ inputs.app_store && github.run_number || '' }}
+        run: python3 .github/submit-review.py 2>&1 | tee /tmp/submit.log

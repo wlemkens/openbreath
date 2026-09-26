@@ -48,9 +48,13 @@ check ever stops holding, this file and the submission are both wrong.
 
 ## The build these describe, and what is owed with it
 
-**Build 159, version 1.2, is on App Store Connect** as of 2026-09-19 — the three languages, the
-milestones kept on the achievements screen, and one sound for the whole breath under Standard.
-The notes below match that binary rather than running ahead of it.
+**Build 177, version 1.3.1, is on App Store Connect** as of 2026-09-26 — reminders that clear
+themselves once a sitting meets the goals, and iOS reminders that no longer stop after a week. No
+prompt, link or language was added, so the notes below still match that binary.
+
+**The block below is submitted as it stands**, by the `app-store-review` job in build.yml, on every
+submission. Nothing is pasted any more, which makes this file the field: a wrong line here reaches
+the reviewer without anyone reading it on the way.
 
 **One recording exists, and it is older than the notes around it.** It was made on 2026-08-30 —
 commit `a294117`, "Describe the recording that exists, not the one the script asked for" — on a

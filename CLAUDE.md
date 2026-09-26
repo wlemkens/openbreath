@@ -317,7 +317,8 @@ Functionality includes:
   the screen's business once the screen speaks three languages — which is the rule every other
   capability flag here already followed.
 
-  **The listings are drafted here and typed in by hand, in all three.** `docs/store/listing.md` is
+  **The listings are drafted here and typed in by hand, in all three** — except the App Store's
+  What's New, which the `app-store-review` job takes from these files on every submission. `docs/store/listing.md` is
   the English copy and `listing.nl.md` and `listing.fr.md` are the same two listings beside it;
   Play and App Store Connect keep per-language listings and neither is published from this
   repository, so **a feature added or dropped changes three files, not one**. The promotional-text
@@ -793,8 +794,12 @@ Functionality includes:
     uploading" rather than trusting the exit code. That grep is what caught this one; a green
     `app-store` job used to prove nothing.
 
-    Still owed before a submission: the Notes field pasted in by hand, which is not version
-    controlled and is invisible when empty until the letter arrives. A new demo video is **not**
+    **Submitting is a workflow input now**, `-f submit_review=true` beside `-f app_store=true`, or
+    alone to send a build already up. `.github/submit-review.py` makes or renames the version
+    record, writes What's New from the three listing files and the Notes from `review-notes.md`,
+    attaches the build and submits — so the Notes field is filled from version control rather than
+    by hand, and the files are what has to be right. It was written on 2026-09-26 and first run for
+    1.3.1; until it has gone green once, treat it as unproven. A new demo video is **not**
     owed for an ordinary update — 1.1 shipped without one, which is the proof.
 
     **The recording that exists is older than it looks.** It was made on 2026-08-30 off build 120
@@ -825,9 +830,9 @@ Functionality includes:
     on, and for a screen recording made on a physical device.
 
     The seven answers are written out in `docs/store/review-notes.md` and the shot list for the
-    recording in `docs/store/video-script.md`. **Paste the notes into App Review Information
-    before every submission** — the field is not version-controlled, so an empty one is invisible
-    until the letter arrives.
+    recording in `docs/store/video-script.md`. The `app-store-review` job writes them into App
+    Review Information on every submission — the field itself is not version-controlled, so an
+    empty one is invisible until the letter arrives, which is why the job fills it and not a hand.
 
     That file is a standing check of the same kind as the monetisation one, and for the same
     reason: it answers "no permission prompts, no network, no external services, no purchases,
