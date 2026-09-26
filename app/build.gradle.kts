@@ -371,6 +371,9 @@ val playCredentials = rootProject.file("play-service-account.json")
  * ponytail: stateless — it says "the most recent changes", not "everything since the last
  * upload", so two releases close together repeat a line. Answering it exactly needs a record of
  * what was last published; tag the release and read the range if the repetition ever grates.
+ *
+ * `-PreleaseNotes="…"` replaces them for one publish, for a release whose recent subjects are
+ * mostly paperwork no reader needs; `\n` in it is a line break.
  */
 val releaseNotesFile = layout.projectDirectory.file("src/main/play/release-notes/en-US/default.txt")
 
@@ -379,8 +382,15 @@ val generateReleaseNotes by tasks.registering {
     outputs.file(releaseNotesFile)
     // the log moves under it with every commit, and the task costs one git call
     outputs.upToDateWhen { false }
+    val override = providers.gradleProperty("releaseNotes")
     doLast {
         val budget = 500
+        override.orNull?.replace("\\n", "\n")?.let { text ->
+            require(text.length < budget) { "releaseNotes is ${text.length} characters; Play keeps $budget" }
+            releaseNotesFile.asFile.apply { parentFile.mkdirs() }.writeText(text + "\n")
+            logger.lifecycle("release notes, given — ${text.length + 1} of $budget characters:\n$text")
+            return@doLast
+        }
         val notes = mutableListOf<String>()
         var used = 0
         for (subject in (git("log", "--format=%s", "-40") ?: "").lines().filter(String::isNotBlank)) {
